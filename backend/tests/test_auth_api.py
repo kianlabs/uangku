@@ -49,7 +49,7 @@ def test_register_409_duplicate(client):
     client.post("/api/v1/auth/register", json={"email": "dup@test.com", "password": "x"})
     r = client.post("/api/v1/auth/register", json={"email": "dup@test.com", "password": "y"})
     assert r.status_code == 409
-    assert r.json()["detail"]["code"] == "EMAIL_TAKEN"
+    assert r.json()["error"]["code"] == "EMAIL_TAKEN"
 
 
 def test_register_422_invalid_email(client):
@@ -68,7 +68,7 @@ def test_login_401_wrong_password(client):
     client.post("/api/v1/auth/register", json={"email": "wp@test.com", "password": "correct"})
     r = client.post("/api/v1/auth/login", json={"email": "wp@test.com", "password": "wrong"})
     assert r.status_code == 401
-    assert r.json()["detail"]["code"] == "INVALID_CREDENTIALS"
+    assert r.json()["error"]["code"] == "INVALID_CREDENTIALS"
 
 
 def test_me_authenticated(client):
