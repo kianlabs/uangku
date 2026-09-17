@@ -1,11 +1,8 @@
 from fastapi import FastAPI
 
-app = FastAPI(
-    title="UangKu API",
-    version="0.1.0",
-)
+app = FastAPI(title="UangKu API")
 
 
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "ok"}

@@ -1,0 +1,42 @@
+[tools]
+node = "24"
+python = "3.13"
+
+[env]
+APP_ENV = "development"
+
+[tasks."dev:frontend"]
+dir = "frontend"
+run = "npm run dev"
+
+[tasks."dev:backend"]
+dir = "backend"
+run = "uv run uvicorn app.main:app --reload --port 8000"
+
+[tasks.dev]
+run = [{ tasks = ["dev:frontend", "dev:backend"] }]
+
+[tasks."test:backend"]
+dir = "backend"
+run = "uv run pytest"
+
+[tasks.test]
+run = [{ task = "test:backend" }]
+
+[tasks."lint:frontend"]
+dir = "frontend"
+run = "npm run lint"
+
+[tasks."lint:backend"]
+dir = "backend"
+run = "uv run ruff check ."
+
+[tasks.lint]
+run = [{ tasks = ["lint:frontend", "lint:backend"] }]
+
+[tasks."build:frontend"]
+dir = "frontend"
+run = "npm run build"
+
+[tasks.build]
+run = [{ task = "build:frontend" }]
