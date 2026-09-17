@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.category import Category
@@ -27,6 +27,25 @@ def _get_owned_category(db: Session, user: User, category_id: uuid.UUID) -> Cate
 def _validate_type_match(tx_type: str, cat_type: str) -> None:
     if tx_type != cat_type:
         raise ValueError("type_mismatch")
+
+
+def _apply_transaction_filters(
+    stmt: Select,
+    *,
+    type_filter: str | None,
+    category_id: uuid.UUID | None,
+    date_from: date | None,
+    date_to: date | None,
+) -> Select:
+    if type_filter:
+        stmt = stmt.where(Transaction.type == type_filter)
+    if category_id:
+        stmt = stmt.where(Transaction.category_id == category_id)
+    if date_from:
+        stmt = stmt.where(Transaction.transaction_date >= date_from)
+    if date_to:
+        stmt = stmt.where(Transaction.transaction_date <= date_to)
+    return stmt
 
 
 def create_transaction(
@@ -80,14 +99,13 @@ def list_transactions(
     date_to: date | None = None,
 ) -> dict[str, Any]:
     stmt = select(Transaction).where(Transaction.user_id == user.id)
-    if type_filter:
-        stmt = stmt.where(Transaction.type == type_filter)
-    if category_id:
-        stmt = stmt.where(Transaction.category_id == category_id)
-    if date_from:
-        stmt = stmt.where(Transaction.transaction_date >= date_from)
-    if date_to:
-        stmt = stmt.where(Transaction.transaction_date <= date_to)
+    stmt = _apply_transaction_filters(
+        stmt,
+        type_filter=type_filter,
+        category_id=category_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
 
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_items = db.scalar(count_stmt) or 0
@@ -155,3 +173,28 @@ def delete_transaction(db: Session, user: User, transaction_id: uuid.UUID) -> No
     tx = get_transaction(db, user, transaction_id)
     db.delete(tx)
     db.commit()
+
+
+def get_transactions_for_export(
+    db: Session,
+    user: User,
+    *,
+    type_filter: str | None = None,
+    category_id: uuid.UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> list[Transaction]:
+    stmt = select(Transaction).where(Transaction.user_id == user.id)
+    stmt = _apply_transaction_filters(
+        stmt,
+        type_filter=type_filter,
+        category_id=category_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    stmt = (
+        stmt
+        .options(joinedload(Transaction.category))
+        .order_by(Transaction.transaction_date.desc(), Transaction.created_at.desc())
+    )
+    return list(db.scalars(stmt).all())
