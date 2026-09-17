@@ -6,6 +6,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/uangku"
     database_url_test: str = "postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test"
+    secret_key: str = "change-me-in-production"
+    https_only: bool = False
 
 
 settings = Settings()
