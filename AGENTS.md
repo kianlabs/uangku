@@ -39,3 +39,14 @@
 - The requested behavior is implemented and manually verified where relevant.
 - Tests, lint, and build pass using the commands above.
 - Apply `verification-before-completion` and review the final diff before finishing.
+
+## Frontend Design
+
+For any user-facing frontend work:
+
+- Read `DESIGN.md` before implementation.
+- Treat `DESIGN.md` as the visual source of truth.
+- Respect `docs/ux-flow.md`, `docs/ui-wireframe.md`, and `docs/visual-direction.md`.
+- Project-specific product docs take precedence if they conflict.
+- Do not introduce a new visual language without explicit approval.
+- Render and review the result in a browser before considering UI work complete.
