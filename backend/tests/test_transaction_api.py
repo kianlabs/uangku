@@ -37,8 +37,8 @@ def client(test_engine):
 
     app.dependency_overrides[deps.get_db] = override_get_db
     with TestClient(app, raise_server_exceptions=True) as c:
-        c.post("/api/v1/auth/register", json={"email": "tx_user@test.com", "password": "pass"})
-        c.post("/api/v1/auth/login", json={"email": "tx_user@test.com", "password": "pass"})
+        c.post("/api/v1/auth/register", json={"email": "tx_user@test.com", "password": "pass1234"})
+        c.post("/api/v1/auth/login", json={"email": "tx_user@test.com", "password": "pass1234"})
         yield c
     app.dependency_overrides.clear()
 
@@ -54,8 +54,8 @@ def other_client(test_engine):
 
     app.dependency_overrides[deps.get_db] = override_get_db
     with TestClient(app, raise_server_exceptions=True) as c:
-        c.post("/api/v1/auth/register", json={"email": "tx_other@test.com", "password": "pass"})
-        c.post("/api/v1/auth/login", json={"email": "tx_other@test.com", "password": "pass"})
+        c.post("/api/v1/auth/register", json={"email": "tx_other@test.com", "password": "pass1234"})
+        c.post("/api/v1/auth/login", json={"email": "tx_other@test.com", "password": "pass1234"})
         yield c
     app.dependency_overrides.clear()
 
