@@ -46,16 +46,24 @@ def test_register_201(client):
 
 
 def test_register_409_duplicate(client):
-    client.post("/api/v1/auth/register", json={"email": "dup@test.com", "password": "x"})
-    r = client.post("/api/v1/auth/register", json={"email": "dup@test.com", "password": "y"})
+    client.post("/api/v1/auth/register", json={"email": "dup@test.com", "password": "pass1234"})
+    r = client.post("/api/v1/auth/register", json={"email": "dup@test.com", "password": "pass5678"})
     assert r.status_code == 409
     assert r.json()["error"]["code"] == "EMAIL_TAKEN"
 
 
 def test_register_422_invalid_email(client):
-    r = client.post("/api/v1/auth/register", json={"email": "not-an-email", "password": "x"})
+    r = client.post("/api/v1/auth/register", json={"email": "not-an-email", "password": "pass1234"})
     assert r.status_code == 422
 
+
+
+def test_register_422_short_password(client):
+    r = client.post("/api/v1/auth/register", json={"email": "short@test.com", "password": "abc"})
+    assert r.status_code == 422
+    body = r.json()
+    assert body["error"]["code"] == "VALIDATION_ERROR"
+    assert any(f["field"] == "password" for f in body["error"]["fields"])
 
 def test_login_200(client):
     client.post("/api/v1/auth/register", json={"email": "login@test.com", "password": "pass1234"})
@@ -65,7 +73,7 @@ def test_login_200(client):
 
 
 def test_login_401_wrong_password(client):
-    client.post("/api/v1/auth/register", json={"email": "wp@test.com", "password": "correct"})
+    client.post("/api/v1/auth/register", json={"email": "wp@test.com", "password": "correct1"})
     r = client.post("/api/v1/auth/login", json={"email": "wp@test.com", "password": "wrong"})
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "INVALID_CREDENTIALS"
@@ -86,15 +94,15 @@ def test_me_unauthenticated():
 
 
 def test_logout_204(client):
-    client.post("/api/v1/auth/register", json={"email": "out@test.com", "password": "pass"})
-    client.post("/api/v1/auth/login", json={"email": "out@test.com", "password": "pass"})
+    client.post("/api/v1/auth/register", json={"email": "out@test.com", "password": "pass1234"})
+    client.post("/api/v1/auth/login", json={"email": "out@test.com", "password": "pass1234"})
     r = client.post("/api/v1/auth/logout")
     assert r.status_code == 204
 
 
 def test_me_after_logout(client):
-    client.post("/api/v1/auth/register", json={"email": "postout@test.com", "password": "pass"})
-    client.post("/api/v1/auth/login", json={"email": "postout@test.com", "password": "pass"})
+    client.post("/api/v1/auth/register", json={"email": "postout@test.com", "password": "pass1234"})
+    client.post("/api/v1/auth/login", json={"email": "postout@test.com", "password": "pass1234"})
     client.post("/api/v1/auth/logout")
     r = client.get("/api/v1/auth/me")
     assert r.status_code == 401

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -37,6 +38,27 @@ async def http_exception_handler(_request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content=content,
         headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_request: Request, exc: RequestValidationError):
+    fields = [
+        {
+            "field": ".".join(str(loc) for loc in err["loc"] if loc != "body"),
+            "message": err["msg"],
+        }
+        for err in exc.errors()
+    ]
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Request validation failed.",
+                "fields": fields,
+            }
+        },
     )
 
 
