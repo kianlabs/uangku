@@ -1,6 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function FAB() {
+  const pathname = usePathname();
+
+  // Hide FAB on /transaksi/tambah, /transaksi/[id], /transaksi/[id]/edit
+  const isHidden =
+    pathname === "/transaksi/tambah" ||
+    /^\/transaksi\/[^/]+(\/edit)?$/.test(pathname);
+
+  if (isHidden) {
+    return null;
+  }
+
   return (
     <Link
       href="/transaksi/tambah"

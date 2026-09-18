@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.base import Base
+from app.models import Base
 from app.models import Category, Transaction, User
 
 

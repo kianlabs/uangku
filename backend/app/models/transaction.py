@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.models import Base
 
 if TYPE_CHECKING:
     from app.models.category import Category

@@ -1,3 +1,30 @@
+function normalizeFields(fields: unknown): Record<string, string> | undefined {
+  if (Array.isArray(fields)) {
+    const normalized: Record<string, string> = {};
+    for (const item of fields) {
+      if (
+        item &&
+        typeof item === "object" &&
+        "field" in item &&
+        "message" in item &&
+        typeof item.field === "string" &&
+        typeof item.message === "string"
+      ) {
+        normalized[item.field] = normalized[item.field]
+          ? `${normalized[item.field]} ${item.message}`
+          : item.message;
+      }
+    }
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
+  }
+
+  if (fields && typeof fields === "object") {
+    return fields as Record<string, string>;
+  }
+
+  return undefined;
+}
+
 export class ApiResponseError extends Error {
   status: number;
   code: string;
@@ -48,12 +75,16 @@ export async function apiFetch<T>(
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("uangku:unauthorized"));
+    }
+
     const err = data?.error ?? data?.detail ?? {};
     throw new ApiResponseError(
       response.status,
       err.code ?? "UNKNOWN_ERROR",
       err.message ?? "Terjadi kesalahan. Coba lagi.",
-      err.fields
+      normalizeFields(err.fields)
     );
   }
 

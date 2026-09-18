@@ -1,24 +1,24 @@
 # Project Overview
 
-- Purpose: Describe the user-facing goal of this project.
-- Stack: List the primary languages, frameworks, and data stores.
+- Purpose: Personal finance tracking app for managing income and expenses
+- Stack: Next.js (frontend), FastAPI (backend), PostgreSQL
 
 # Development
 
-- Package manager: `<npm | pnpm | bun | uv | other>`
-- Install: `<command>`
-- Dev: `<command>`
-- Test: `<command>`
-- Lint: `<command>`
-- Build: `<command>`
+- Package manager: `mise` (manages Node.js, Python, PostgreSQL)
+- Install: `mise install`
+- Dev: `mise run dev` (starts both frontend and backend)
+- Test: `mise run test` (backend only); frontend: `cd frontend && npm run test`
+- Lint: `mise run lint`
+- Build: `mise run build`
 
 # Architecture
 
-- Frontend: `<path or none>`
-- Backend: `<path or none>`
-- Tests: `<path>`
-- Docs: `<path>`
-- Database and migrations: `<path or none>`
+- Frontend: `frontend/src/` (Next.js 16, React 19, TypeScript, Tailwind CSS)
+- Backend: `backend/app/` (FastAPI, SQLAlchemy, PostgreSQL)
+- Tests: `backend/tests/` (pytest)
+- Docs: `docs/` (architecture, ERD, product brief, DESIGN); archived in `docs/archive/`: api-contract, ux-flow, ui-wireframe, visual-direction
+- Database and migrations: `backend/migrations/` (Alembic)
 
 # Coding Rules
 
@@ -34,38 +34,55 @@
 - Do not change migrations without a clear requirement and impact review.
 - Use Context7 or `source-driven-development` for libraries and APIs that may have changed.
 
-# Specialist Delegation (Hermes-native lane)
+# Coordinator Role (Pi → omp worker)
 
-Main session remains the orchestrator. Specialist work runs as Hermes-native
-children through `omh_delegate_route` + `delegate_task`.
+Pi is the coordinator. For any coding, file editing, implementation, or
+multi-step technical task, spawn an omp worker instead of doing it yourself.
 
-Always resolve the current category head from OMH routing.
-Do not duplicate or override model-chain configuration in this file.
+## When to spawn omp
 
-Task → category:
+- File write/edit tasks
+- Multi-step technical investigation
+- Frontend or backend implementation
+- Debugging, refactoring, testing
 
-- planning / architecture → `architect`
-- deep reasoning / hard investigation → `deep`
-- normal backend/general implementation → `capable`
-- frontend implementation → `visual-engineering`
-- visual exploration / UI direction → `artistry`
-- tiny lookup / trivial analysis / very small task → `quick`
-- small scoped implementation / maintenance → `simple-work`
+## When NOT to spawn omp
 
-Mandatory lifecycle per lane:
+- Simple file reads or verification (read directly)
+- Simple questions or clarifications (answer directly)
+- Planning/architecture discussion only (answer directly)
 
-`status` → `set category` → `delegate_task` → verify result →
-`fallback` + re-dispatch on model rejection/error-without-usage →
-`clear` → `status`
+## How to spawn omp
 
-Rules:
+Use the bash tool to run:
 
-- One lane, one category.
-- `clear` is mandatory after every lane, success or failure.
-- Never assume a child succeeded only because delegation reports completed; verify the result.
-- If a child returns a model/provider error without usage, use the category fallback and re-dispatch.
-- Keep delegated scopes narrow and give explicit acceptance criteria and verification steps.
-- Do not change model chains, providers, or the main session model from project instructions.
+```bash
+/home/k14n/.local/bin/pi-spawn-omp.sh "<full task description with context and acceptance criteria>"
+```
+
+The script will:
+1. Create a fresh omp terminal (model: kr/claude-sonnet-4.5)
+2. Dispatch the task as a supervised Orca worker
+3. Return the worker dispatch result JSON including the terminal handle
+
+After spawning, DO NOT tell the user to watch a terminal handle. Instead:
+1. Wait for the bash tool to return — it blocks until omp sends worker_done
+2. Parse the result: look for `"type":"worker_done"` or `"type":"escalation"` in the events array
+3. If worker_done: tell the user the task is complete and summarize what was done
+4. If escalation or question: relay omp's message to the user and ask for input
+5. If timeout or error: tell the user the worker failed and ask if they want to retry
+
+Do NOT do the coding work yourself.
+
+If `/home/k14n/.local/bin/pi-spawn-omp.sh` does not exist, run `pi-coord` first or wait a few seconds.
+
+## Task description format
+
+Write the spec as if briefing a senior engineer cold:
+- What to do and where (file paths if known)
+- Acceptance criteria
+- What NOT to change
+- Relevant context from the conversation
 
 # Definition of Done
 
@@ -79,7 +96,7 @@ For any user-facing frontend work:
 
 - Read `DESIGN.md` before implementation.
 - Treat `DESIGN.md` as the visual source of truth.
-- Respect `docs/ux-flow.md`, `docs/ui-wireframe.md`, and `docs/visual-direction.md`.
+- Respect `docs/archive/ux-flow.md`, `docs/archive/ui-wireframe.md`, and `docs/archive/visual-direction.md`.
 - Project-specific product docs take precedence if they conflict.
 - Do not introduce a new visual language without explicit approval.
 - Render and review the result in a browser before considering UI work complete.

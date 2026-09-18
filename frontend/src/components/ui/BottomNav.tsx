@@ -78,20 +78,19 @@ export function BottomNav() {
     >
       <ul className="flex h-16 max-w-lg mx-auto list-none m-0 p-0">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = pathname.startsWith(item.href);
           return (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={[
-                  "flex flex-col items-center justify-center gap-1 h-full text-xs font-medium transition-colors min-h-[44px]",
+                  "flex flex-col items-center justify-center h-full gap-1 transition-colors select-none min-h-[44px]",
                   isActive ? "text-accent" : "text-muted hover:text-text",
                 ].join(" ")}
-                aria-current={isActive ? "page" : undefined}
               >
                 {item.icon}
-                <span>{item.label}</span>
+                <span className="text-[11px] font-medium">{item.label}</span>
               </Link>
             </li>
           );

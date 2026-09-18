@@ -10,7 +10,7 @@ if config.config_file_name is not None:
 
 import app.models  # noqa: F401 — ensure all models are registered
 from app.core.config import settings
-from app.db.base import Base
+from app.models import Base
 
 config.set_main_option("sqlalchemy.url", settings.database_url)
 

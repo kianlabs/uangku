@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import uuid
 
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password, verify_password
 from app.models.category import Category
 from app.models.user import User
 
+_pwd_hash = PasswordHash([Argon2Hasher()])
 _DEFAULT_EXPENSE_CATEGORIES = [
     "Makanan", "Transportasi", "Belanja", "Hiburan",
     "Tagihan", "Kesehatan", "Pendidikan", "Lainnya",
@@ -20,7 +22,7 @@ _DEFAULT_INCOME_CATEGORIES = [
 
 def register_user(db: Session, email: str, password: str) -> User:
     normalized = email.strip().lower()
-    user = User(email=normalized, password_hash=hash_password(password))
+    user = User(email=normalized, password_hash=_pwd_hash.hash(password))
     db.add(user)
     try:
         db.flush()
@@ -36,7 +38,7 @@ def register_user(db: Session, email: str, password: str) -> User:
 def authenticate_user(db: Session, email: str, password: str) -> User:
     normalized = email.strip().lower()
     user = db.query(User).filter(User.email == normalized).first()
-    if not user or not verify_password(password, user.password_hash):
+    if not user or not _pwd_hash.verify(password, user.password_hash):
         raise ValueError("invalid_credentials")
     return user
 

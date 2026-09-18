@@ -1,5 +1,5 @@
-import { apiFetch } from "./api";
-import type { Category, TransactionListResponse, TransactionType } from "./types";
+import { apiFetch, ApiResponseError } from "./api";
+import type { TransactionListResponse, TransactionType } from "./types";
 
 export interface ListTransactionsParams {
   page?: number;
@@ -43,15 +43,71 @@ export async function deleteTransaction(id: string): Promise<void> {
   return apiFetch<void>(`/api/v1/transactions/${id}`, { method: "DELETE" });
 }
 
-export interface ListCategoriesParams {
+export interface ExportTransactionsParams {
   type?: TransactionType;
+  date_from?: string;
+  date_to?: string;
 }
 
-export async function listCategories(
-  params: ListCategoriesParams = {}
-): Promise<{ items: Category[] }> {
+export async function exportTransactionsCsv(
+  params: ExportTransactionsParams = {}
+): Promise<{ blob: Blob; filename: string }> {
   const q = new URLSearchParams();
   if (params.type) q.set("type", params.type);
+  if (params.date_from) q.set("date_from", params.date_from);
+  if (params.date_to) q.set("date_to", params.date_to);
   const qs = q.toString();
-  return apiFetch<{ items: Category[] }>(`/api/v1/categories${qs ? `?${qs}` : ""}`);
+  const path = `/api/v1/export/transactions.csv${qs ? `?${qs}` : ""}`;
+
+  let response: Response;
+  try {
+    response = await fetch(path, { credentials: "include" });
+  } catch {
+    throw new ApiResponseError(
+      0,
+      "NETWORK_ERROR",
+      "Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi."
+    );
+  }
+
+  if (!response.ok) {
+    let message = "Gagal mengekspor data. Coba lagi.";
+    try {
+      const data = await response.clone().json();
+      const err = data?.error ?? data?.detail ?? {};
+      if (err.message) message = err.message;
+    } catch {
+      // biarkan pesan default
+    }
+    throw new ApiResponseError(
+      response.status,
+      "EXPORT_FAILED",
+      message
+    );
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const match = disposition.match(/filename="?([^";]+)"?/);
+  const filename = match?.[1] ?? "uangku-transactions.csv";
+  return { blob, filename };
 }
+
+export interface UpdateTransactionParams {
+  type?: TransactionType;
+  amount?: string;
+  category_id?: string;
+  transaction_date?: string;
+  description?: string | null;
+}
+
+export async function updateTransaction(
+  id: string,
+  params: UpdateTransactionParams
+) {
+  return apiFetch(`/api/v1/transactions/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(params),
+  });
+}
+

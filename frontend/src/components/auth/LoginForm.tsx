@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ApiResponseError } from "@/lib/api";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export function LoginForm() {
@@ -39,19 +38,20 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await loginUser(email, password);
-      const next = searchParams.get("next") ?? "/beranda";
-      router.push(next);
+      const next = searchParams.get("next") || searchParams.get("redirect") || "/beranda";
+      const redirect = next.startsWith("/") && !next.startsWith("//") ? next : "/beranda";
+      router.push(redirect);
     } catch (err) {
-      if (err instanceof ApiResponseError) {
-        if (err.status === 401) {
-          setServerError("Email atau password salah.");
-        } else if (err.status === 0) {
-          setServerError(err.message);
-        } else {
-          setServerError("Terjadi kesalahan. Coba lagi.");
+      if (err instanceof ApiResponseError && err.fields) {
+        const newErrors: typeof errors = {};
+        if (err.fields.email) newErrors.email = err.fields.email;
+        if (err.fields.password) newErrors.password = err.fields.password;
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length === 0) {
+          setServerError(err.message || "Gagal masuk.");
         }
       } else {
-        setServerError("Terjadi kesalahan. Coba lagi.");
+        setServerError("Gagal masuk. Coba lagi.");
       }
     } finally {
       setIsLoading(false);
@@ -61,51 +61,53 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-text">Masuk</h1>
-        <p className="text-sm text-muted">Masuk ke akun UangKu kamu.</p>
+        <h1 className="text-2xl font-bold text-text">Masuk</h1>
+        <p className="text-sm text-muted">Masuk ke akun untuk mulai mencatat keuangan.</p>
       </div>
 
       {serverError && (
-        <div
-          role="alert"
-          className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-danger"
-        >
-          {serverError}
+        <div className="rounded-xl bg-surface border border-danger px-4 py-3">
+          <p className="text-sm text-danger">{serverError}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-4">
         <Input
-          label="Email"
           type="email"
-          inputMode="email"
-          autoComplete="email"
+          label="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (errors.email) setErrors({ ...errors, email: undefined });
+          }}
           error={errors.email}
-          placeholder="kamu@email.com"
+          autoComplete="email"
+          placeholder="nama@email.com"
         />
         <Input
-          label="Password"
           type="password"
-          autoComplete="current-password"
+          label="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (errors.password) setErrors({ ...errors, password: undefined });
+          }}
           error={errors.password}
-          placeholder="Password kamu"
+          autoComplete="current-password"
         />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <Button type="submit" variant="primary" loading={isLoading} className="w-full">
-          Masuk
-        </Button>
-        <p className="text-center text-sm text-muted">
+      <div className="flex flex-col gap-4">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isLoading ? "Masuk..." : "Masuk"}
+        </button>
+        <p className="text-sm text-center text-muted">
           Belum punya akun?{" "}
-          <Link
-            href="/daftar"
-            className="text-accent font-medium underline-offset-2 hover:underline"
-          >
+          <Link href="/daftar" className="text-accent font-medium hover:underline">
             Daftar
           </Link>
         </p>

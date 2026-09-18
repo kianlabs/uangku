@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core import deps
 from app.core.config import settings
-from app.db.base import Base
+from app.models import Base
 from app.main import app
 from app.models import Category, User  # noqa: F401
 

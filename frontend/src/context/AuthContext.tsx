@@ -39,6 +39,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  useEffect(() => {
+    function handleUnauthorized() {
+      setUser(null);
+      if (!["/masuk", "/daftar"].includes(window.location.pathname)) {
+        router.push("/masuk");
+      }
+    }
+
+    window.addEventListener("uangku:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("uangku:unauthorized", handleUnauthorized);
+    };
+  }, [router]);
+
   const loginUser = useCallback(async (email: string, password: string) => {
     const u = await login(email, password);
     setUser(u);

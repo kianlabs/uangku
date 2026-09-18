@@ -18,6 +18,15 @@ export interface Category {
   type: TransactionType;
 }
 
+export interface TransactionDetail {
+  id: string;
+  type: TransactionType;
+  amount: string;
+  description: string | null;
+  transaction_date: string;
+  category: Category;
+}
+
 export interface Transaction {
   id: string;
   type: TransactionType;

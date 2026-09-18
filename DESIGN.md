@@ -11,11 +11,10 @@
 ## Hubungan dengan docs
 
 File berikut adalah otoritas produk:
-
 - `docs/product-brief.md`
-- `docs/ux-flow.md`
-- `docs/ui-wireframe.md`
-- `docs/visual-direction.md`
+- `docs/archive/ux-flow.md`
+- `docs/archive/ui-wireframe.md`
+- `docs/archive/visual-direction.md`
 
 Jika ada konflik antara `DESIGN.md` dan dokumen produk di atas:
 
@@ -55,8 +54,8 @@ hanya untuk memenuhi file ini.
 
 Sebelum melakukan pekerjaan frontend:
 
-1. Baca `docs/visual-direction.md`.
-2. Baca `docs/ux-flow.md`.
+1. Baca `docs/archive/visual-direction.md`.
+2. Baca `docs/archive/ux-flow.md`.
 3. Baca `DESIGN.md`.
 4. Periksa existing components dan frontend architecture.
 5. Baru implementasikan UI.
@@ -1974,24 +1973,22 @@ Revision
 Verification
 ```
 
-Untuk environment agent saat ini, idealnya:
+Untuk environment saat ini (koordinator Pi → worker omp):
 
 ```text
-OMH artistry
-→ visual exploration
+Koordinator Pi
+→ parse request, spawn worker via pi-spawn-omp.sh
 
-impeccable
-→ UI creation/refinement
+Worker omp (kr/claude-sonnet-4.5)
+→ implementasi UI/frontend/backend
+→ verifikasi di browser
+→ kirim worker_done
 
-visual-engineering
-→ React / Next.js implementation
-
-webapp-testing
-→ browser validation
-
-frontend-design-review
-→ independent critique
+Koordinator Pi
+→ relay hasil ke user
 ```
+
+Worker melakukan implementasi dan verifikasi browser sebelum menyelesaikan task.
 
 `DESIGN.md` tetap menjadi source of truth.
 

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ApiResponseError } from "@/lib/api";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export function RegisterForm() {
@@ -48,16 +47,16 @@ export function RegisterForm() {
       await registerUser(email, password);
       router.push("/beranda");
     } catch (err) {
-      if (err instanceof ApiResponseError) {
-        if (err.status === 409) {
-          setErrors({ email: "Email sudah terdaftar." });
-        } else if (err.status === 0) {
-          setServerError(err.message);
-        } else {
-          setServerError("Pendaftaran gagal. Coba lagi.");
+      if (err instanceof ApiResponseError && err.fields) {
+        const newErrors: typeof errors = {};
+        if (err.fields.email) newErrors.email = err.fields.email;
+        if (err.fields.password) newErrors.password = err.fields.password;
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length === 0) {
+          setServerError(err.message || "Gagal mendaftar.");
         }
       } else {
-        setServerError("Pendaftaran gagal. Coba lagi.");
+        setServerError("Gagal mendaftar. Coba lagi.");
       }
     } finally {
       setIsLoading(false);
@@ -67,61 +66,65 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-text">Buat akun</h1>
-        <p className="text-sm text-muted">Mulai catat keuanganmu secara gratis.</p>
+        <h1 className="text-2xl font-bold text-text">Daftar</h1>
+        <p className="text-sm text-muted">Buat akun baru untuk mulai mencatat keuangan.</p>
       </div>
 
       {serverError && (
-        <div
-          role="alert"
-          className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-danger"
-        >
-          {serverError}
+        <div className="rounded-xl bg-surface border border-danger px-4 py-3">
+          <p className="text-sm text-danger">{serverError}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-4">
         <Input
-          label="Email"
           type="email"
-          inputMode="email"
-          autoComplete="email"
+          label="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (errors.email) setErrors({ ...errors, email: undefined });
+          }}
           error={errors.email}
-          placeholder="kamu@email.com"
+          autoComplete="email"
+          placeholder="nama@email.com"
         />
         <Input
+          type="password"
           label="Password"
-          type="password"
-          autoComplete="new-password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (errors.password) setErrors({ ...errors, password: undefined });
+          }}
           error={errors.password}
+          autoComplete="new-password"
           hint="Minimal 8 karakter"
-          placeholder="Buat password"
         />
         <Input
-          label="Konfirmasi Password"
           type="password"
-          autoComplete="new-password"
+          label="Konfirmasi Password"
           value={konfirmasi}
-          onChange={(e) => setKonfirmasi(e.target.value)}
+          onChange={(e) => {
+            setKonfirmasi(e.target.value);
+            if (errors.konfirmasi) setErrors({ ...errors, konfirmasi: undefined });
+          }}
           error={errors.konfirmasi}
-          placeholder="Ulangi password"
+          autoComplete="new-password"
         />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <Button type="submit" variant="primary" loading={isLoading} className="w-full">
-          Daftar
-        </Button>
-        <p className="text-center text-sm text-muted">
+      <div className="flex flex-col gap-4">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isLoading ? "Mendaftar..." : "Daftar"}
+        </button>
+        <p className="text-sm text-center text-muted">
           Sudah punya akun?{" "}
-          <Link
-            href="/masuk"
-            className="text-accent font-medium underline-offset-2 hover:underline"
-          >
+          <Link href="/masuk" className="text-accent font-medium hover:underline">
             Masuk
           </Link>
         </p>
