@@ -100,9 +100,9 @@ export default function RiwayatPage() {
 
       {!isLoading && items.length > 0 && (
         <>
-          <div className="flex flex-col gap-0 rounded-xl border border-border overflow-hidden">
-            {items.map((tx, i) => (
-              <TxRow key={tx.id} tx={tx} isLast={i === items.length - 1} />
+          <div className="flex flex-col divide-y divide-border border-t border-b border-border">
+            {items.map((tx) => (
+              <TxRow key={tx.id} tx={tx} />
             ))}
           </div>
 
@@ -140,33 +140,33 @@ export default function RiwayatPage() {
   );
 }
 
-function TxRow({ tx, isLast }: { tx: Transaction; isLast: boolean }) {
+function TxRow({ tx }: { tx: Transaction }) {
   return (
-    <div className={`flex items-center gap-3 bg-surface px-4 py-3 ${!isLast ? "border-b border-border" : ""}`}>
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-          tx.type === "income" ? "bg-[#DCFCE7]" : "bg-[#FEE2E2]"
-        }`}
-      >
+    <div className="flex items-center gap-3.5 py-3.5">
+      <div className="w-10 h-10 rounded-[11px] bg-surface-muted flex items-center justify-center shrink-0 text-muted">
         {tx.type === "income" ? (
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14532D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 19V5M5 12l7-7 7 7" />
           </svg>
         ) : (
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#991B1B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 5v14M19 12l-7 7-7-7" />
           </svg>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-text truncate">{tx.description ?? tx.category.name}</p>
-        <p className="text-xs text-muted">{tx.category.name}</p>
+        <p className="text-sm font-semibold text-text truncate">
+          {tx.description || tx.category.name}
+        </p>
+        {tx.description && (
+          <p className="text-xs text-muted truncate mt-0.5">{tx.category.name}</p>
+        )}
       </div>
       <div className="text-right shrink-0">
-        <p className={`text-sm font-medium tabular-nums ${tx.type === "income" ? "text-income" : "text-expense"}`}>
-          {tx.type === "income" ? "+" : "-"}{formatRupiah(tx.amount)}
+        <p className={`text-sm font-bold tabular-nums ${tx.type === "income" ? "text-income" : "text-expense"}`}>
+          {tx.type === "income" ? "+ " : "- "}{formatRupiah(tx.amount)}
         </p>
-        <p className="text-xs text-muted">{formatDate(tx.transaction_date)}</p>
+        <p className="text-[11px] text-muted mt-0.5">{formatDate(tx.transaction_date)}</p>
       </div>
     </div>
   );
