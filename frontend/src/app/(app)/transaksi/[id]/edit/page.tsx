@@ -14,7 +14,6 @@ import type { Category, TransactionDetail, TransactionType } from "@/lib/types";
 
 const today = todayLocalISO();
 
-
 function parseAmountInput(value: string): number {
   return value.includes(".") ? parseFloat(value) : parseFloat(value.replace(/\D/g, ""));
 }
@@ -128,13 +127,14 @@ export default function EditTransaksiPage() {
     e.preventDefault();
     if (!original) return;
 
-    setServerError(null);
     const fieldErrors = validate();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
       return;
     }
+
     setErrors({});
+    setServerError(null);
     setIsSubmitting(true);
 
     try {
@@ -187,7 +187,7 @@ export default function EditTransaksiPage() {
           <Link
             href={`/transaksi/${id}`}
             aria-label="Kembali"
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
           >
             <svg
               aria-hidden="true"
@@ -206,7 +206,10 @@ export default function EditTransaksiPage() {
           <h1 className="text-base font-semibold text-text">Edit Transaksi</h1>
         </header>
         <main className="flex-1 flex items-center justify-center px-4">
-          <p className="text-sm text-muted">Memuat…</p>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-text font-medium">Memuat…</p>
+          </div>
         </main>
       </div>
     );
@@ -219,7 +222,7 @@ export default function EditTransaksiPage() {
           <Link
             href="/riwayat"
             aria-label="Kembali"
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
           >
             <svg
               aria-hidden="true"
@@ -238,7 +241,15 @@ export default function EditTransaksiPage() {
           <h1 className="text-base font-semibold text-text">Edit Transaksi</h1>
         </header>
         <main className="flex-1 flex items-center justify-center px-4">
-          <p className="text-sm text-danger">{loadError || "Transaksi tidak ditemukan."}</p>
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-base font-medium text-danger text-center">{loadError || "Transaksi tidak ditemukan."}</p>
+            <Link
+              href="/riwayat"
+              className="px-5 h-11 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all inline-flex items-center justify-center"
+            >
+              Kembali ke Riwayat
+            </Link>
+          </div>
         </main>
       </div>
     );
@@ -250,7 +261,7 @@ export default function EditTransaksiPage() {
         <Link
           href={`/transaksi/${id}`}
           aria-label="Kembali"
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
         >
           <svg
             aria-hidden="true"
@@ -311,21 +322,36 @@ export default function EditTransaksiPage() {
           </div>
 
           {/* Amount */}
-          <div className="flex flex-col gap-1.5">
-            <Input
-              label="Nominal"
-              type="text"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value.replace(/\D/g, ""));
-              }}
-              error={errors.amount}
-              placeholder="0"
-              autoComplete="off"
-            />
+          <div className="flex flex-col gap-2">
+            <label htmlFor="amount" className="text-xs font-semibold text-muted uppercase tracking-wide">
+              Nominal
+            </label>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-semibold text-muted">Rp</span>
+              <input
+                id="amount"
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value.replace(/\D/g, ""));
+                }}
+                placeholder="0"
+                autoComplete="off"
+                className="flex-1 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 focus:outline-none"
+                aria-invalid={errors.amount ? "true" : undefined}
+                aria-describedby={errors.amount ? "amount-error" : amountPreview ? "amount-preview" : undefined}
+              />
+            </div>
             {amountPreview && !errors.amount && (
-              <p className="text-sm text-muted tabular-nums">{amountPreview}</p>
+              <p id="amount-preview" className="text-sm text-muted tabular-nums">
+                {amountPreview}
+              </p>
+            )}
+            {errors.amount && (
+              <p id="amount-error" role="alert" className="text-sm text-danger">
+                {errors.amount}
+              </p>
             )}
           </div>
 
@@ -374,6 +400,8 @@ export default function EditTransaksiPage() {
               </div>
             )}
           </div>
+
+          {/* Date */}
           <Input
             label="Tanggal"
             type="date"
@@ -396,7 +424,7 @@ export default function EditTransaksiPage() {
           {serverError && (
             <div
               role="alert"
-              className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-danger"
+              className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm font-medium text-danger"
             >
               {serverError}
             </div>
