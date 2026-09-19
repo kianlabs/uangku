@@ -111,3 +111,55 @@ def test_me_after_logout(client):
     client.post("/api/v1/auth/logout")
     r = client.get("/api/v1/auth/me")
     assert r.status_code == 401
+
+
+def test_register_429_rate_limited():
+    """Test that register endpoint returns 429 after 5 requests per minute."""
+    with TestClient(app, raise_server_exceptions=True) as fresh_client:
+        # Make 5 successful requests (should all pass)
+        for i in range(5):
+            r = fresh_client.post(
+                "/api/v1/auth/register",
+                json={"email": f"rl{i}@test.com", "password": "pass1234"}
+            )
+            assert r.status_code == 201, f"Request {i+1} failed with {r.status_code}"
+
+        # 6th request should be rate limited
+        r = fresh_client.post(
+            "/api/v1/auth/register",
+            json={"email": "rl6@test.com", "password": "pass1234"}
+        )
+        assert r.status_code == 429
+        body = r.json()
+        assert body["error"]["code"] == "RATE_LIMITED"
+        assert "Rate limit exceeded" in body["error"]["message"]
+
+
+def test_login_429_rate_limited():
+    """Test that login endpoint returns 429 after 5 requests per minute."""
+    # Register a test user first
+    with TestClient(app, raise_server_exceptions=True) as setup_client:
+        setup_client.post(
+            "/api/v1/auth/register",
+            json={"email": "ratetest@test.com", "password": "correctpass123"}
+        )
+
+    # Use a fresh client to test rate limiting on login
+    with TestClient(app, raise_server_exceptions=True) as fresh_client:
+        # Make 5 login attempts (should all pass or fail auth, but not rate limited)
+        for i in range(5):
+            r = fresh_client.post(
+                "/api/v1/auth/login",
+                json={"email": "ratetest@test.com", "password": "wrongpass"}
+            )
+            assert r.status_code == 401, f"Request {i+1} failed with {r.status_code}"
+
+        # 6th request should be rate limited
+        r = fresh_client.post(
+            "/api/v1/auth/login",
+            json={"email": "ratetest@test.com", "password": "wrongpass"}
+        )
+        assert r.status_code == 429
+        body = r.json()
+        assert body["error"]["code"] == "RATE_LIMITED"
+        assert "Rate limit exceeded" in body["error"]["message"]
