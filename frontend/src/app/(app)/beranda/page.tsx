@@ -102,6 +102,8 @@ export default function BerandaPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-4">
+    {/* 1. Summary Section: Period + Balance + Safe-to-spend (focal point) */}
+    <section className="flex flex-col gap-6">
       {/* Period selector */}
       <div className="flex items-center justify-between">
         <button
@@ -184,61 +186,67 @@ export default function BerandaPage() {
           </p>
         </div>
       )}
-
-      {/* Income/Expense summary */}
-      <div className="grid grid-cols-2 gap-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-income font-semibold text-sm">
-            <svg
-              aria-hidden="true"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
-            <span>Pemasukan</span>
-          </div>
-          <span className="text-xl sm:text-2xl font-bold tabular-nums text-income whitespace-nowrap">
-            + {formatRupiah(data.monthly_income)}
-          </span>
+    </section>
+    {/* Ringkasan: income/expense summary (+/- jelas) */}
+    <section aria-label="Ringkasan pemasukan dan pengeluaran" className="grid grid-cols-2 gap-6">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 text-income font-semibold text-sm">
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+          <span>Pemasukan</span>
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-expense font-semibold text-sm">
-            <svg
-              aria-hidden="true"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 5v14M19 12l-7 7-7-7" />
-            </svg>
-            <span>Pengeluaran</span>
-          </div>
-          <span className="text-xl sm:text-2xl font-bold tabular-nums text-expense whitespace-nowrap">
-            - {formatRupiah(data.monthly_expense)}
-          </span>
-        </div>
+        <span className="text-xl sm:text-2xl font-bold tabular-nums text-income whitespace-nowrap">
+          + {formatRupiah(data.monthly_income)}
+        </span>
       </div>
-      {/* Streak */}
-      {streak > 0 && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted">Catat harian:</span>
-          <span className="font-semibold text-text">{streak} hari berturut-turut</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 text-expense font-semibold text-sm">
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14M19 12l-7 7-7-7" />
+          </svg>
+          <span>Pengeluaran</span>
         </div>
+        <span className="text-xl sm:text-2xl font-bold tabular-nums text-expense whitespace-nowrap">
+          - {formatRupiah(data.monthly_expense)}
+        </span>
+      </div>
+    </section>
+
+    {/* Analisis: breakdown kategori (chart) + ringkasan (budget warning, refleksi, streak) */}
+    <section aria-label="Analisis pengeluaran" className="flex flex-col gap-6">
+      {hasSpending && (
+        <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
       )}
 
-      {/* Weekly Reflection */}
+      {budgetWarning && (
+        <BudgetWarning
+          categoryName={budgetWarning.categoryName}
+          percent={budgetWarning.percent}
+          remainingText={budgetWarning.remainingText}
+        />
+      )}
+
       {weeklyExpense.total > 0 && (
         <div className="flex flex-col gap-2 p-4 rounded-xl border border-border bg-surface">
           <span className="text-xs font-medium text-muted uppercase tracking-wide">Refleksi Minggu Ini</span>
@@ -248,47 +256,43 @@ export default function BerandaPage() {
         </div>
       )}
 
-      {/* Budget Warning Card */}
-      {budgetWarning && (
-        <BudgetWarning
-          categoryName={budgetWarning.categoryName}
-          percent={budgetWarning.percent}
-          remainingText={budgetWarning.remainingText}
-        />
-      )}
-
-      {/* Spending Donut Chart */}
-      {hasSpending && <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />}
-
-      {/* Recent transactions */}
-      {hasTransactions ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-text">Transaksi terbaru</h2>
-            <Link href="/riwayat" className="text-sm font-medium text-accent hover:underline">
-              Lihat semua
-            </Link>
-          </div>
-          <div className="flex flex-col divide-y divide-border">
-            {data.recent_transactions.slice(0, 5).map((tx) => (
-              <RecentTxRow key={tx.id} tx={tx} />
-            ))}
-          </div>
+      {streak > 0 && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted">Catat harian:</span>
+          <span className="font-semibold text-text">{streak} hari berturut-turut</span>
         </div>
-      ) : (
-        <div className="flex flex-col items-center gap-4 py-12">
-          <p className="text-base text-muted text-center max-w-xs">
-            Belum ada transaksi. Catat pengeluaran atau pemasukan pertamamu untuk mulai melihat
-            kondisi keuangan.
-          </p>
-          <Link
-            href="/transaksi/tambah"
-            className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
-          >
-            Tambah transaksi
+      )}
+    </section>
+
+    {/* 5. Activity Section: Recent Transactions */}
+    {hasTransactions ? (
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-text">Transaksi terbaru</h2>
+          <Link href="/riwayat" className="text-sm font-medium text-accent hover:underline">
+            Lihat semua
           </Link>
         </div>
-      )}
+        <div className="flex flex-col divide-y divide-border">
+          {data.recent_transactions.slice(0, 5).map((tx) => (
+            <RecentTxRow key={tx.id} tx={tx} />
+          ))}
+        </div>
+      </section>
+    ) : (
+      <section className="flex flex-col items-center gap-4 py-12">
+        <p className="text-base text-muted text-center max-w-xs">
+          Belum ada transaksi. Catat pengeluaran atau pemasukan pertamamu untuk mulai melihat
+          kondisi keuangan.
+        </p>
+        <Link
+          href="/transaksi/tambah"
+          className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+        >
+          Tambah transaksi
+        </Link>
+      </section>
+    )}
     </div>
   );
 }
