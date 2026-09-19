@@ -70,7 +70,7 @@ export default function KategoriPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-lg font-semibold text-text">Kategori</h1>
+        <h1 className="text-2xl font-bold text-text">Kategori</h1>
         <p className="text-sm text-muted">Memuat…</p>
       </div>
     );
@@ -79,8 +79,8 @@ export default function KategoriPage() {
   if (error) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-lg font-semibold text-text">Kategori</h1>
-        <p className="text-sm text-danger">{error}</p>
+        <h1 className="text-2xl font-bold text-text">Kategori</h1>
+        <p role="alert" className="text-sm text-danger">{error}</p>
         <Button variant="secondary" onClick={load}>
           Coba lagi
         </Button>
@@ -91,7 +91,7 @@ export default function KategoriPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text">Kategori</h1>
+        <h1 className="text-2xl font-bold text-text">Kategori</h1>
         {!showAddForm && (
           <Button size="sm" onClick={() => setShowAddForm(true)}>
             Tambah
@@ -299,23 +299,25 @@ function CategoryRow({
       <div className="flex items-center justify-between">
         <span className="text-base text-text">{category.name}</span>
         <div className="flex gap-2">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-sm text-accent hover:underline"
-          >
-            Ubah
-          </button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="text-sm text-danger hover:underline"
-          >
-            Hapus
-          </button>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[36px] flex items-center"
+            >
+              Ubah
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-sm text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger rounded px-2 py-1 min-h-[36px] flex items-center"
+            >
+              Hapus
+            </button>
         </div>
       </div>
-      {deleteError && (
-        <p className="text-sm text-danger">{deleteError}</p>
-      )}
+        {deleteError && (
+          <p role="alert" className="text-sm text-danger">
+            {deleteError}
+          </p>
+        )}
     </div>
   );
 }

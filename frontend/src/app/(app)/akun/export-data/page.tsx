@@ -50,7 +50,7 @@ export default function ExportDataPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-lg font-semibold text-text">Export Data</h1>
+        <h1 className="text-2xl font-bold text-text">Export Data</h1>
         <p className="text-sm text-muted">
           Download transaksi Anda dalam format CSV
         </p>
@@ -88,7 +88,7 @@ export default function ExportDataPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-danger"
+          className="rounded-xl bg-surface border border-danger px-4 py-3 text-sm text-danger"
         >
           {error}
         </div>

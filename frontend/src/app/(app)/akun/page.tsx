@@ -44,7 +44,9 @@ export default function AkunPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">Pengaturan</h2>
+        <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">
+          Pengaturan
+        </h2>
         <div className="flex flex-col gap-3 py-4 border-b border-border">
           <div className="flex items-center justify-between">
             <span className="text-base font-medium text-text">Tanggal gajian</span>
@@ -56,11 +58,11 @@ export default function AkunPage() {
                   max="31"
                   value={payday}
                   onChange={(e) => setPaydayState(parseInt(e.target.value) || 1)}
-                  className="w-16 h-10 px-2 text-center rounded-lg border border-border bg-surface text-text font-semibold focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+                  className="w-16 h-10 px-2 text-center rounded-lg border border-border bg-surface text-text font-semibold focus:outline-none focus:ring-2 focus:ring-accent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 />
                 <button
                   onClick={() => handlePaydaySave(payday)}
-                  className="px-4 h-10 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all"
+                  className="px-4 h-10 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   Simpan
                 </button>
@@ -70,7 +72,7 @@ export default function AkunPage() {
                     setPaydayState(getPayday());
                     setPaydayError(null);
                   }}
-                  className="px-4 h-10 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all"
+                  className="px-4 h-10 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   Batal
                 </button>
@@ -86,7 +88,9 @@ export default function AkunPage() {
             )}
           </div>
           {paydayError && editingPayday && (
-            <p className="text-sm text-danger">{paydayError}</p>
+            <p role="alert" className="text-sm text-danger">
+              {paydayError}
+            </p>
           )}
         </div>
       </div>
@@ -141,7 +145,11 @@ export default function AkunPage() {
       >
         {isLoading ? "Keluar..." : "Keluar"}
       </button>
-      {logoutError && <p className="text-sm text-danger">{logoutError}</p>}
+      {logoutError && (
+        <p role="alert" className="text-sm text-danger">
+          {logoutError}
+        </p>
+      )}
     </div>
   );
 }
