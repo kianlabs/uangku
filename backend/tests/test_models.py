@@ -8,8 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import Base
-from app.models import Category, Transaction, User
+from app.models import Base, Category, Transaction, User
 
 
 @pytest.fixture(scope="session")

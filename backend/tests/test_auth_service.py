@@ -3,8 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import Base
-from app.models import Category, User  # noqa: F401
+from app.models import Base, Category, User  # noqa: F401
 from app.services.auth import authenticate_user, register_user
 
 

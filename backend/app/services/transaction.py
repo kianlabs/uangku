@@ -8,6 +8,12 @@ from typing import Any
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.errors import (
+    InvalidAmountError,
+    InvalidCategoryError,
+    NotFoundError,
+    TypeMismatchError,
+)
 from app.models.category import Category
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -20,13 +26,13 @@ def _get_owned_category(db: Session, user: User, category_id: uuid.UUID) -> Cate
         )
     )
     if not cat:
-        raise ValueError("invalid_category")
+        raise InvalidCategoryError()
     return cat
 
 
 def _validate_type_match(tx_type: str, cat_type: str) -> None:
     if tx_type != cat_type:
-        raise ValueError("type_mismatch")
+        raise TypeMismatchError()
 
 
 def _apply_transaction_filters(
@@ -59,7 +65,7 @@ def create_transaction(
     description: str | None = None,
 ) -> Transaction:
     if amount <= 0:
-        raise ValueError("amount must be greater than 0")
+        raise InvalidAmountError()
     cat = _get_owned_category(db, user, category_id)
     _validate_type_match(type_, cat.type)
     tx = Transaction(
@@ -83,7 +89,7 @@ def get_transaction(db: Session, user: User, transaction_id: uuid.UUID) -> Trans
         .where(Transaction.id == transaction_id, Transaction.user_id == user.id)
     )
     if not tx:
-        raise ValueError("not_found")
+        raise NotFoundError()
     return tx
 
 

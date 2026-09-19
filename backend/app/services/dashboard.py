@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.errors import InvalidMonthError
 from app.models.category import Category
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -15,15 +16,15 @@ from app.models.user import User
 
 def _parse_month(month_str: str) -> tuple[date, date]:
     if not re.fullmatch(r"\d{4}-\d{2}", month_str):
-        raise ValueError("invalid_month")
+        raise InvalidMonthError()
     try:
         parts = month_str.split("-")
         year, month = int(parts[0]), int(parts[1])
         if not (1 <= month <= 12):
-            raise ValueError
+            raise InvalidMonthError()
         date_from = date(year, month, 1)
     except (ValueError, OverflowError):
-        raise ValueError("invalid_month")
+        raise InvalidMonthError() from None
 
     if month == 12:
         date_to_exclusive = date(year + 1, 1, 1)

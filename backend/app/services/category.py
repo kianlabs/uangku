@@ -6,6 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.errors import (
+    CategoryInUseError,
+    DuplicateCategoryError,
+    NotFoundError,
+)
 from app.models.category import Category
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -30,7 +35,7 @@ def create_category(db: Session, user: User, name: str, type_: str) -> Category:
         db.refresh(cat)
     except IntegrityError:
         db.rollback()
-        raise ValueError("duplicate_category")
+        raise DuplicateCategoryError()
     return cat
 
 
@@ -43,7 +48,7 @@ def update_category(
         )
     )
     if not cat:
-        raise ValueError("not_found")
+        raise NotFoundError()
     cat.name = name
     try:
         db.flush()
@@ -51,7 +56,7 @@ def update_category(
         db.refresh(cat)
     except IntegrityError:
         db.rollback()
-        raise ValueError("duplicate_category")
+        raise DuplicateCategoryError()
     return cat
 
 
@@ -62,11 +67,11 @@ def delete_category(db: Session, user: User, category_id: uuid.UUID) -> None:
         )
     )
     if not cat:
-        raise ValueError("not_found")
+        raise NotFoundError()
     in_use = db.scalar(
         select(Transaction).where(Transaction.category_id == category_id)
     )
     if in_use:
-        raise ValueError("category_in_use")
+        raise CategoryInUseError()
     db.delete(cat)
     db.commit()

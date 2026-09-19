@@ -40,3 +40,7 @@ run = "npm run build"
 
 [tasks.build]
 run = [{ task = "build:frontend" }]
+
+[tasks.orchestra]
+description = "Herdr parallel agent dispatcher (up/next/status/wait/collect/prompt/down)"
+run = "bash scripts/orchestra.sh"

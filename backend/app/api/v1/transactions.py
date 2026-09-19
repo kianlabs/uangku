@@ -7,6 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
+from app.core.errors import (
+    DomainError,
+    InvalidCategoryError,
+    NotFoundError,
+    TypeMismatchError,
+)
 from app.models.user import User
 from app.schemas.category import CategoryType
 from app.schemas.transaction import (
@@ -78,21 +84,20 @@ def post_transaction(
             transaction_date=body.transaction_date,
             description=body.description,
         )
-    except ValueError as exc:
-        s = str(exc)
-        if "invalid_category" in s:
-            raise HTTPException(
-                status_code=422,
-                detail={"code": "INVALID_CATEGORY", "message": "Category not found or not owned by user."},
-            )
-        if "type_mismatch" in s:
-            raise HTTPException(
-                status_code=422,
-                detail={"code": "TYPE_MISMATCH", "message": "Transaction type does not match category type."},
-            )
+    except InvalidCategoryError:
         raise HTTPException(
             status_code=422,
-            detail={"code": "VALIDATION_ERROR", "message": s},
+            detail={"code": "INVALID_CATEGORY", "message": "Category not found or not owned by user."},
+        )
+    except TypeMismatchError:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "TYPE_MISMATCH", "message": "Transaction type does not match category type."},
+        )
+    except DomainError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "VALIDATION_ERROR", "message": str(exc)},
         )
     return TransactionResponse.model_validate(tx)
 
@@ -105,7 +110,7 @@ def get_transaction_endpoint(
 ):
     try:
         tx = get_transaction(db, current_user, transaction_id)
-    except ValueError:
+    except NotFoundError:
         raise HTTPException(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "Transaction not found."},
@@ -144,26 +149,25 @@ def patch_transaction(
             clear_description=clear_description,
             transaction_date=body.transaction_date,
         )
-    except ValueError as exc:
-        s = str(exc)
-        if "not_found" in s:
-            raise HTTPException(
-                status_code=404,
-                detail={"code": "NOT_FOUND", "message": "Transaction not found."},
-            )
-        if "invalid_category" in s:
-            raise HTTPException(
-                status_code=422,
-                detail={"code": "INVALID_CATEGORY", "message": "Category not found or not owned by user."},
-            )
-        if "type_mismatch" in s:
-            raise HTTPException(
-                status_code=422,
-                detail={"code": "TYPE_MISMATCH", "message": "Transaction type does not match category type."},
-            )
+    except NotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "Transaction not found."},
+        )
+    except InvalidCategoryError:
         raise HTTPException(
             status_code=422,
-            detail={"code": "VALIDATION_ERROR", "message": s},
+            detail={"code": "INVALID_CATEGORY", "message": "Category not found or not owned by user."},
+        )
+    except TypeMismatchError:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "TYPE_MISMATCH", "message": "Transaction type does not match category type."},
+        )
+    except DomainError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "VALIDATION_ERROR", "message": str(exc)},
         )
     return TransactionUpdatedResponse.model_validate(tx)
 
@@ -176,7 +180,7 @@ def delete_transaction_endpoint(
 ):
     try:
         delete_transaction(db, current_user, transaction_id)
-    except ValueError:
+    except NotFoundError:
         raise HTTPException(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "Transaction not found."},

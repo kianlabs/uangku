@@ -7,6 +7,7 @@ from pwdlib.hashers.argon2 import Argon2Hasher
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.errors import EmailTakenError, InvalidCredentialsError
 from app.models.category import Category
 from app.models.user import User
 
@@ -28,7 +29,7 @@ def register_user(db: Session, email: str, password: str) -> User:
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise ValueError("email_taken")
+        raise EmailTakenError()
     _seed_default_categories(db, user.id)
     db.commit()
     db.refresh(user)
@@ -39,7 +40,7 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     normalized = email.strip().lower()
     user = db.query(User).filter(User.email == normalized).first()
     if not user or not _pwd_hash.verify(password, user.password_hash):
-        raise ValueError("invalid_credentials")
+        raise InvalidCredentialsError()
     return user
 
 

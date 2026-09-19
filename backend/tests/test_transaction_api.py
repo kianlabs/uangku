@@ -7,9 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.core import deps
 from app.core.config import settings
-from app.models import Base
 from app.main import app
-from app.models import Category, Transaction, User  # noqa: F401
+from app.models import Base, Category, Transaction, User  # noqa: F401
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -139,6 +138,23 @@ def test_create_201(client, expense_cat_id):
     assert "created_at" in body
     assert "category" in body
     assert body["category"]["type"] == "expense"
+
+
+def test_create_income_201(client, income_cat_id):
+    r = client.post("/api/v1/transactions", json={
+        "type": "income",
+        "amount": "5000000",
+        "category_id": income_cat_id,
+        "description": "Gaji",
+        "transaction_date": "2026-09-17",
+    })
+    assert r.status_code == 201
+    body = r.json()
+    assert body["type"] == "income"
+    assert body["amount"] == "5000000.00"  # API contract: 2dp decimal string
+    assert "id" in body
+    assert "created_at" in body
+    assert body["category"]["type"] == "income"
 
 
 def test_create_amount_is_string_decimal(client, expense_cat_id):

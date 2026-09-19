@@ -5,9 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.core import deps
 from app.core.config import settings
-from app.models import Base
 from app.main import app
-from app.models import Category, User  # noqa: F401
+from app.models import Base, Category, User  # noqa: F401
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -75,6 +74,12 @@ def test_login_200(client):
 def test_login_401_wrong_password(client):
     client.post("/api/v1/auth/register", json={"email": "wp@test.com", "password": "correct1"})
     r = client.post("/api/v1/auth/login", json={"email": "wp@test.com", "password": "wrong"})
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+def test_login_401_unknown_email(client):
+    r = client.post("/api/v1/auth/login", json={"email": "ghost@test.com", "password": "whatever1"})
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "INVALID_CREDENTIALS"
 

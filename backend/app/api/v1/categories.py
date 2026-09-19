@@ -6,6 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
+from app.core.errors import (
+    CategoryInUseError,
+    DomainError,
+    DuplicateCategoryError,
+    NotFoundError,
+)
 from app.models.user import User
 from app.schemas.category import (
     CategoryCreateRequest,
@@ -43,12 +49,12 @@ def post_category(
 ):
     try:
         cat = create_category(db, current_user, name=body.name, type_=body.type)
-    except ValueError as exc:
-        if "duplicate_category" in str(exc):
-            raise HTTPException(
-                status_code=409,
-                detail={"code": "CATEGORY_ALREADY_EXISTS", "message": "Category already exists."},
-            )
+    except DuplicateCategoryError:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "CATEGORY_ALREADY_EXISTS", "message": "Category already exists."},
+        )
+    except DomainError as exc:
         raise HTTPException(status_code=400, detail={"code": "BAD_REQUEST", "message": str(exc)})
     return cat
 
@@ -62,12 +68,12 @@ def patch_category(
 ):
     try:
         cat = update_category(db, current_user, category_id, name=body.name)
-    except ValueError as exc:
-        if "duplicate_category" in str(exc):
-            raise HTTPException(
-                status_code=409,
-                detail={"code": "CATEGORY_ALREADY_EXISTS", "message": "Category already exists."},
-            )
+    except DuplicateCategoryError:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "CATEGORY_ALREADY_EXISTS", "message": "Category already exists."},
+        )
+    except NotFoundError:
         raise HTTPException(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "Category not found."},
@@ -83,12 +89,12 @@ def delete_category_endpoint(
 ):
     try:
         delete_category(db, current_user, category_id)
-    except ValueError as exc:
-        if "category_in_use" in str(exc):
-            raise HTTPException(
-                status_code=409,
-                detail={"code": "CATEGORY_IN_USE", "message": "Category masih digunakan oleh transaksi."},
-            )
+    except CategoryInUseError:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "CATEGORY_IN_USE", "message": "Category masih digunakan oleh transaksi."},
+        )
+    except NotFoundError:
         raise HTTPException(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "Category not found."},

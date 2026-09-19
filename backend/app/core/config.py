@@ -23,5 +23,13 @@ class Settings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def _check_production_transport(self) -> "Settings":
+        if self.app_env == "production" and not self.https_only:
+            raise ValueError(
+                "HTTPS_ONLY must be true in production so session cookies are never sent over HTTP."
+            )
+        return self
+
 
 settings = Settings()

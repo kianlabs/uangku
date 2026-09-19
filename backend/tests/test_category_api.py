@@ -9,9 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.core import deps
 from app.core.config import settings
-from app.models import Base
 from app.main import app
-from app.models import Category, Transaction, User  # noqa: F401
+from app.models import Base, Category, Transaction, User  # noqa: F401
 from app.models.category import Category as CatModel
 from app.models.transaction import Transaction as TxModel
 

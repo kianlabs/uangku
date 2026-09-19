@@ -7,8 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import Base
-from app.models import Category, Transaction, User  # noqa: F401
+from app.models import Base, Category, Transaction, User  # noqa: F401
 from app.services.auth import register_user
 from app.services.category import create_category
 from app.services.dashboard import _parse_month, get_dashboard_summary
