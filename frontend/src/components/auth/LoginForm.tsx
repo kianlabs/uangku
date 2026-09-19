@@ -51,7 +51,7 @@ export function LoginForm() {
           setServerError(err.message || "Gagal masuk.");
         }
       } else {
-        setServerError("Gagal masuk. Coba lagi.");
+        setServerError(err instanceof ApiResponseError && err.message ? err.message : "Gagal masuk. Coba lagi.");
       }
     } finally {
       setIsLoading(false);

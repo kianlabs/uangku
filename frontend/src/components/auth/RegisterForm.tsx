@@ -56,7 +56,7 @@ export function RegisterForm() {
           setServerError(err.message || "Gagal mendaftar.");
         }
       } else {
-        setServerError("Gagal mendaftar. Coba lagi.");
+        setServerError(err instanceof ApiResponseError && err.message ? err.message : "Gagal mendaftar. Coba lagi.");
       }
     } finally {
       setIsLoading(false);
