@@ -21,7 +21,7 @@ export function FAB() {
       aria-label="Tambah transaksi"
       className={[
         "fixed right-4 z-50 flex items-center justify-center",
-        "w-14 h-14 rounded-[18px] bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
+        "w-14 h-14 rounded-xl bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
         "hover:bg-accent/90 active:scale-95 transition-all select-none",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
       ].join(" ")}
