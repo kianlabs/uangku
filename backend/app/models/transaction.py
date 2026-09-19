@@ -5,7 +5,15 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models import Base
@@ -17,10 +25,11 @@ if TYPE_CHECKING:
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (CheckConstraint("amount > 0", name="ck_transaction_amount_positive"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
-    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("categories.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
     type: Mapped[str] = mapped_column(String(10), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(19, 4), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)

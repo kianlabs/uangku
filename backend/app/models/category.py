@@ -19,7 +19,7 @@ class Category(Base):
     __table_args__ = (UniqueConstraint("user_id", "name", "type", name="uq_category_user_name_type"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[str] = mapped_column(String(10), nullable=False)
     created_at: Mapped[datetime] = mapped_column(

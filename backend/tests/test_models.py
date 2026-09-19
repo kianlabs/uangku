@@ -156,3 +156,86 @@ def test_transaction_references_user_and_category(session):
     session.flush()
     assert tx.user_id == user.id
     assert tx.category_id == cat.id
+
+
+# --- Constraints ---
+
+def test_transaction_amount_positive_check_constraint(session):
+    """Verify CHECK constraint blocks negative or zero amounts at DB level."""
+    user = make_user(session)
+    cat = make_category(session, user, "Test", "expense")
+    
+    # Attempt to insert negative amount via raw SQL
+    with pytest.raises(IntegrityError):
+        session.connection().exec_driver_sql(
+            "INSERT INTO transactions (id, user_id, category_id, type, amount, transaction_date, created_at, updated_at) "
+            "VALUES (%s, %s, %s, 'expense', -100, CURRENT_DATE, NOW(), NOW())",
+            (uuid.uuid4(), user.id, cat.id),
+        )
+        session.commit()
+
+
+def test_transaction_amount_zero_check_constraint(session):
+    """Verify CHECK constraint blocks zero amounts at DB level."""
+    user = make_user(session)
+    cat = make_category(session, user, "Test", "expense")
+    
+    with pytest.raises(IntegrityError):
+        session.connection().exec_driver_sql(
+            "INSERT INTO transactions (id, user_id, category_id, type, amount, transaction_date, created_at, updated_at) "
+            "VALUES (%s, %s, %s, 'expense', 0, CURRENT_DATE, NOW(), NOW())",
+            (uuid.uuid4(), user.id, cat.id),
+        )
+        session.commit()
+
+
+def test_category_user_fk_ondelete_restrict(session):
+    """Verify FK on categories.user_id has ondelete=RESTRICT."""
+    user = make_user(session)
+    make_category(session, user, "Restricted", "expense")
+    session.flush()
+    
+    # Attempt to delete user with existing category should fail
+    session.delete(user)
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
+def test_transaction_user_fk_ondelete_restrict(session):
+    """Verify FK on transactions.user_id has ondelete=RESTRICT."""
+    user = make_user(session)
+    cat = make_category(session, user, "Income", "income")
+    tx = Transaction(
+        user_id=user.id,
+        category_id=cat.id,
+        type="income",
+        amount=Decimal(1000),
+        transaction_date=date(2026, 9, 19),
+    )
+    session.add(tx)
+    session.flush()
+    
+    # Attempt to delete user with existing transaction should fail
+    session.delete(user)
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
+def test_transaction_category_fk_ondelete_restrict(session):
+    """Verify FK on transactions.category_id has ondelete=RESTRICT."""
+    user = make_user(session)
+    cat = make_category(session, user, "ToDelete", "expense")
+    tx = Transaction(
+        user_id=user.id,
+        category_id=cat.id,
+        type="expense",
+        amount=Decimal(500),
+        transaction_date=date(2026, 9, 19),
+    )
+    session.add(tx)
+    session.flush()
+    
+    # Attempt to delete category with existing transaction should fail
+    session.delete(cat)
+    with pytest.raises(IntegrityError):
+        session.commit()
