@@ -66,7 +66,7 @@ export function LoginForm() {
       </div>
 
       {serverError && (
-        <div className="rounded-xl bg-surface border border-danger px-4 py-3">
+        <div role="alert" className="rounded-xl bg-surface border border-danger px-4 py-3">
           <p className="text-sm text-danger">{serverError}</p>
         </div>
       )}
@@ -101,13 +101,13 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full h-12 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {isLoading ? "Masuk..." : "Masuk"}
         </button>
         <p className="text-sm text-center text-muted">
           Belum punya akun?{" "}
-          <Link href="/daftar" className="text-accent font-medium hover:underline">
+          <Link href="/daftar" className="text-accent font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded">
             Daftar
           </Link>
         </p>

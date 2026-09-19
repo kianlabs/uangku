@@ -11,7 +11,7 @@ export default function AuthLayout({
         <Link
           href="/"
           aria-label="Kembali ke halaman utama"
-          className="inline-flex items-center gap-2 text-sm text-muted hover:text-text transition-colors min-h-[44px]"
+          className="inline-flex items-center gap-2 text-sm text-muted hover:text-text transition-colors min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded"
         >
           <svg
             aria-hidden="true"
