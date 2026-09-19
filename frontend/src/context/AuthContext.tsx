@@ -39,19 +39,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const unauthorizedRef = useRef(false);
+
   useEffect(() => {
     function handleUnauthorized() {
+      // Guard: prevent re-triggering while cleanup is in flight
+      if (unauthorizedRef.current) return;
+      unauthorizedRef.current = true;
+
       setUser(null);
-      if (!["/masuk", "/daftar"].includes(window.location.pathname)) {
-        router.push("/masuk");
+
+      // Already on auth page — don't redirect again
+      if (["/masuk", "/daftar"].includes(window.location.pathname)) {
+        return;
       }
+
+      // Best-effort logout: clear session server-side via Set-Cookie.
+      // Ignore all errors — session is already invalid (401 triggered this).
+      logout().catch(() => {
+        // Intentional: session invalid, error expected
+      });
+
+      // Hard redirect required to break infinite loop:
+      // stale session cookie still present in proxy after unauthorized event.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/masuk";
     }
 
     window.addEventListener("uangku:unauthorized", handleUnauthorized);
     return () => {
       window.removeEventListener("uangku:unauthorized", handleUnauthorized);
     };
-  }, [router]);
+  }, []);
 
   const loginUser = useCallback(async (email: string, password: string) => {
     const u = await login(email, password);

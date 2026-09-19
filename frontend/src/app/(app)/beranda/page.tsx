@@ -12,6 +12,9 @@ import { getWeekExpense, generateWeeklyReflection } from "@/lib/reflection";
 import { listTransactions } from "@/lib/transactions";
 import type { DashboardSummary, RecentTransactionItem, Transaction } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
+import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
+import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
+import { getBudgetWarningData } from "@/lib/budget-helper";
 
 export default function BerandaPage() {
   const now = new Date();
@@ -95,14 +98,16 @@ export default function BerandaPage() {
   }));
   const streak = calculateStreak(transactionHistory.map((tx) => tx.transaction_date));
   const weeklyExpense = getWeekExpense(metricTransactions);
+  const budgetWarning = getBudgetWarningData(data.expense_by_category);
+
   return (
-    <div className="flex flex-col gap-8 pb-4">
+    <div className="flex flex-col gap-6 pb-4">
       {/* Period selector */}
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
           aria-label="Bulan sebelumnya"
-          className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-muted active:scale-95 transition-all"
+          className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
         >
           <svg
             aria-hidden="true"
@@ -118,7 +123,7 @@ export default function BerandaPage() {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <span className="text-base font-semibold text-text tabular-nums">
+        <span className="text-sm font-semibold text-text">
           {new Date(month + "-01").toLocaleDateString("id-ID", {
             month: "long",
             year: "numeric",
@@ -128,7 +133,7 @@ export default function BerandaPage() {
           onClick={nextMonth}
           disabled={isCurrentMonth}
           aria-label="Bulan berikutnya"
-          className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-muted active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-muted active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
         >
           <svg
             aria-hidden="true"
@@ -147,19 +152,19 @@ export default function BerandaPage() {
       </div>
 
       {/* Balance - focal point */}
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-muted">Saldo keseluruhan</span>
-        <span className="text-4xl leading-none font-bold text-text tabular-nums tracking-tight">
+      <div className="flex flex-col gap-3">
+        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Saldo keseluruhan</span>
+        <span className="text-5xl leading-tight font-bold text-text tabular-nums">
           {formatRupiah(data.balance)}
         </span>
-        <p className="text-xs text-muted">Seluruh waktu hingga bulan ini.</p>
+        <p className="text-xs text-muted leading-relaxed">Seluruh waktu hingga bulan ini.</p>
       </div>
 
       {/* Safe to Spend Today */}
       {isCurrentMonth && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted">Aman dipakai hari ini</span>
-          <span className="text-3xl leading-none font-bold text-text tabular-nums tracking-tight">
+          <span className="text-xs font-semibold text-muted uppercase tracking-wide">Aman dipakai hari ini</span>
+          <span className="text-3xl leading-tight font-bold text-text tabular-nums">
             {(() => {
               const now = new Date();
               const mandatory = data.expense_by_category.find((c) => c.category_name === "Tagihan")?.amount || "0";
@@ -174,16 +179,16 @@ export default function BerandaPage() {
               return amount > 0 ? formatRupiah(amount.toFixed(2)) : "Rp 0";
             })()}
           </span>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted leading-relaxed">
             (pemasukan − pengeluaran − tagihan) / sisa hari
           </p>
         </div>
       )}
 
       {/* Income/Expense summary */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-1.5 text-income">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-income font-semibold text-sm">
             <svg
               aria-hidden="true"
               width="16"
@@ -197,13 +202,14 @@ export default function BerandaPage() {
             >
               <path d="M12 19V5M5 12l7-7 7 7" />
             </svg>
+            <span>Pemasukan</span>
           </div>
-          <span className="text-xl font-bold tabular-nums text-income">
+          <span className="text-xl sm:text-2xl font-bold tabular-nums text-income whitespace-nowrap">
             + {formatRupiah(data.monthly_income)}
           </span>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-1.5 text-expense">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-expense font-semibold text-sm">
             <svg
               aria-hidden="true"
               width="16"
@@ -217,13 +223,13 @@ export default function BerandaPage() {
             >
               <path d="M12 5v14M19 12l-7 7-7-7" />
             </svg>
+            <span>Pengeluaran</span>
           </div>
-          <span className="text-xl font-bold tabular-nums text-expense">
+          <span className="text-xl sm:text-2xl font-bold tabular-nums text-expense whitespace-nowrap">
             - {formatRupiah(data.monthly_expense)}
           </span>
         </div>
       </div>
-
       {/* Streak */}
       {streak > 0 && (
         <div className="flex items-center gap-2 text-sm">
@@ -242,39 +248,17 @@ export default function BerandaPage() {
         </div>
       )}
 
-      {/* Spending breakdown */}
-      {hasSpending && (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold text-text">Pengeluaran terbesar</h2>
-          <div className="flex flex-col gap-3">
-            {data.expense_by_category.slice(0, 5).map((item) => {
-              const monthlyExpense = parseFloat(data.monthly_expense);
-              const amount = parseFloat(item.amount);
-              const pct =
-                Number.isFinite(monthlyExpense) && monthlyExpense > 0 && Number.isFinite(amount)
-                  ? (amount / monthlyExpense) * 100
-                  : 0;
-              return (
-                <div key={item.category_name} className="flex flex-col gap-1.5">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-text">{item.category_name}</span>
-                    <span className="text-sm font-semibold text-text tabular-nums">
-                      {formatRupiah(item.amount)}
-                    </span>
-                  </div>
-                  <div className="relative h-1.5 bg-surface-muted rounded-full overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-expense rounded-full"
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted tabular-nums">{pct.toFixed(0)}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* Budget Warning Card */}
+      {budgetWarning && (
+        <BudgetWarning
+          categoryName={budgetWarning.categoryName}
+          percent={budgetWarning.percent}
+          remainingText={budgetWarning.remainingText}
+        />
       )}
+
+      {/* Spending Donut Chart */}
+      {hasSpending && <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />}
 
       {/* Recent transactions */}
       {hasTransactions ? (

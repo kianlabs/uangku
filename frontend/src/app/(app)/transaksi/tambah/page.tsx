@@ -411,23 +411,37 @@ export default function TambahTransaksiPage() {
             )}
           </div>
 
-          {/* Amount */}
-          <div className="flex flex-col gap-1.5">
-            <Input
-              label="Nominal"
-              type="text"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => {
-                // only allow digits
-                setAmount(e.target.value.replace(/\D/g, ""));
-              }}
-              error={errors.amount}
-              placeholder="0"
-              autoComplete="off"
-            />
+          {/* Amount - focal point */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="amount" className="text-xs font-semibold text-muted uppercase tracking-wide">
+              Nominal
+            </label>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-semibold text-muted">Rp</span>
+              <input
+                id="amount"
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value.replace(/\D/g, ""));
+                }}
+                placeholder="0"
+                autoComplete="off"
+                className="flex-1 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 focus:outline-none"
+                aria-invalid={errors.amount ? "true" : undefined}
+                aria-describedby={errors.amount ? "amount-error" : amountPreview ? "amount-preview" : undefined}
+              />
+            </div>
             {amountPreview && !errors.amount && (
-              <p className="text-sm text-muted tabular-nums">{amountPreview}</p>
+              <p id="amount-preview" className="text-sm text-muted tabular-nums">
+                {amountPreview}
+              </p>
+            )}
+            {errors.amount && (
+              <p id="amount-error" role="alert" className="text-sm text-danger">
+                {errors.amount}
+              </p>
             )}
           </div>
 

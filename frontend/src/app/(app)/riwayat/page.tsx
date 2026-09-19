@@ -282,9 +282,9 @@ function TxRow({ tx }: { tx: Transaction }) {
   return (
     <Link
       href={`/transaksi/${tx.id}`}
-      className="group flex items-center gap-3 py-3 hover:bg-surface-muted/50 transition-colors"
+      className="group flex items-center gap-3 py-4 px-1 hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
     >
-      <div className="w-10 h-10 rounded-lg bg-surface-muted flex items-center justify-center shrink-0 text-muted group-hover:text-text transition-colors">
+      <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-muted group-hover:text-text transition-colors">
         {isIncome ? (
           <svg
             aria-hidden="true"
@@ -315,28 +315,26 @@ function TxRow({ tx }: { tx: Transaction }) {
           </svg>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-text truncate">
-            {tx.description || tx.category.name}
-          </p>
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <p className="text-sm font-semibold text-text truncate">
+          {tx.description || tx.category.name}
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-xs text-muted">{tx.category.name}</p>
           {source && (
-            <span className="text-xs text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
+            <span className="text-[11px] text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
               {source}
             </span>
           )}
           {debt && (
-            <span className="text-xs text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
+            <span className="text-[11px] text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
               {debt.tag === "utang" ? "Utang" : "Piutang"}
               {debt.settled && " (lunas)"}
             </span>
           )}
         </div>
-        {tx.description && (
-          <p className="text-xs text-muted truncate mt-0.5">{tx.category.name}</p>
-        )}
       </div>
-      <div className="text-right shrink-0">
+      <div className="text-right shrink-0 flex flex-col gap-0.5 items-end">
         <p
           className={`text-sm font-bold tabular-nums ${
             isIncome ? "text-income" : "text-expense"
@@ -344,7 +342,7 @@ function TxRow({ tx }: { tx: Transaction }) {
         >
           {isIncome ? "+" : "-"} {formatRupiah(tx.amount)}
         </p>
-        <p className="text-[11px] text-muted mt-0.5">{formatDate(tx.transaction_date)}</p>
+        <p className="text-[11px] text-muted">{formatDate(tx.transaction_date)}</p>
       </div>
     </Link>
   );

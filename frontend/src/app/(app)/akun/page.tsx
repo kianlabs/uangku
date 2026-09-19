@@ -37,17 +37,17 @@ export default function AkunPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-1">
-        <h1 className="text-lg font-semibold text-text">Akun</h1>
+        <h1 className="text-2xl font-bold text-text">Akun</h1>
         {user && <p className="text-sm text-muted">{user.email}</p>}
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-text uppercase tracking-wide">Pengaturan</h2>
-        <div className="flex flex-col gap-3 py-3 border-b border-border">
+        <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">Pengaturan</h2>
+        <div className="flex flex-col gap-3 py-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <span className="text-base text-text">Tanggal gajian</span>
+            <span className="text-base font-medium text-text">Tanggal gajian</span>
             {editingPayday ? (
               <div className="flex items-center gap-2">
                 <input
@@ -56,11 +56,11 @@ export default function AkunPage() {
                   max="31"
                   value={payday}
                   onChange={(e) => setPaydayState(parseInt(e.target.value) || 1)}
-                  className="w-16 h-9 px-2 text-center rounded-lg border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-16 h-10 px-2 text-center rounded-lg border border-border bg-surface text-text font-semibold focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
                 />
                 <button
                   onClick={() => handlePaydaySave(payday)}
-                  className="px-3 h-9 rounded-lg bg-accent text-accent-ink text-sm font-medium hover:bg-accent/90 transition-colors"
+                  className="px-4 h-10 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all"
                 >
                   Simpan
                 </button>
@@ -70,7 +70,7 @@ export default function AkunPage() {
                     setPaydayState(getPayday());
                     setPaydayError(null);
                   }}
-                  className="px-3 h-9 rounded-lg bg-surface border border-border text-sm font-medium text-text hover:bg-surface-muted transition-colors"
+                  className="px-4 h-10 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all"
                 >
                   Batal
                 </button>
@@ -78,10 +78,10 @@ export default function AkunPage() {
             ) : (
               <button
                 onClick={() => setEditingPayday(true)}
-                className="flex items-center gap-2 text-base text-accent hover:underline"
+                className="flex items-center gap-2 text-base font-semibold text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded"
               >
-                <span className="font-semibold">{payday}</span>
-                <span className="text-sm">Edit</span>
+                <span>{payday}</span>
+                <span className="text-xs">Edit</span>
               </button>
             )}
           </div>
@@ -94,13 +94,13 @@ export default function AkunPage() {
       <div className="flex flex-col divide-y divide-border">
         <Link
           href="/akun/kategori"
-          className="flex items-center justify-between py-4 text-base text-text hover:opacity-70 active:opacity-50 transition-opacity"
+          className="flex items-center justify-between py-4 text-base font-medium text-text hover:bg-surface-muted/50 active:opacity-70 transition-colors px-2 -mx-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
         >
-          <span className="font-medium">Kategori</span>
+          <span>Kategori</span>
           <svg
             aria-hidden="true"
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -114,13 +114,13 @@ export default function AkunPage() {
         </Link>
         <Link
           href="/akun/export-data"
-          className="flex items-center justify-between py-4 text-base text-text hover:opacity-70 active:opacity-50 transition-opacity"
+          className="flex items-center justify-between py-4 text-base font-medium text-text hover:bg-surface-muted/50 active:opacity-70 transition-colors px-2 -mx-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
         >
-          <span className="font-medium">Export</span>
+          <span>Export</span>
           <svg
             aria-hidden="true"
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -137,7 +137,7 @@ export default function AkunPage() {
       <button
         onClick={handleLogout}
         disabled={isLoading}
-        className="w-full h-12 px-5 rounded-xl text-base font-semibold text-text bg-transparent hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full h-12 px-5 rounded-xl text-base font-semibold text-white bg-danger hover:bg-danger/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
       >
         {isLoading ? "Keluar..." : "Keluar"}
       </button>
