@@ -3,7 +3,7 @@
 import { useEffect, useState, createElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, MotionConfig } from "framer-motion";
+import { motion, MotionConfig } from "motion/react";
 import { ApiResponseError } from "@/lib/api";
 import { getDashboardSummary } from "@/lib/dashboard";
 import { calculateSafeToSpend } from "@/lib/safe-to-spend";

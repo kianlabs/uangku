@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 interface MonthNavigatorProps {
   month: string;
   isCurrentMonth: boolean;
