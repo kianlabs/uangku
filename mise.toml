@@ -20,8 +20,12 @@ run = [{ tasks = ["dev:frontend", "dev:backend"] }]
 dir = "backend"
 run = "uv run pytest"
 
+[tasks."test:frontend"]
+dir = "frontend"
+run = "npm test"
+
 [tasks.test]
-run = [{ task = "test:backend" }]
+run = [{ tasks = ["test:backend", "test:frontend"] }]
 
 [tasks."lint:frontend"]
 dir = "frontend"
@@ -40,6 +44,11 @@ run = "npm run build"
 
 [tasks.build]
 run = [{ task = "build:frontend" }]
+
+[tasks."test:e2e"]
+description = "Run Playwright E2E tests (requires dev server running)"
+dir = "frontend"
+run = "npx playwright test"
 
 [tasks.orchestra]
 description = "Herdr parallel agent dispatcher (up/next/status/wait/collect/prompt/down)"

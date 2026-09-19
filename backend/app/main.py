@@ -9,6 +9,7 @@ from app.api.v1.categories import router as categories_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.export import router as export_router
 from app.api.v1.transactions import router as transactions_router
+from app.api.v1.user import router as user_router
 from app.core.config import settings
 from app.core.rate_limit import limiter
 
@@ -85,6 +86,7 @@ app.include_router(categories_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(transactions_router, prefix="/api/v1")
 app.include_router(export_router, prefix="/api/v1")
+app.include_router(user_router, prefix="/api/v1")
 
 
 @app.get("/health")

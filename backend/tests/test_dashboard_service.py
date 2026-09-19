@@ -3,14 +3,19 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models import Base, Category, Transaction, User  # noqa: F401
 from app.services.auth import register_user
 from app.services.category import create_category
-from app.services.dashboard import _parse_month, get_dashboard_summary
+from app.services.dashboard import (
+    _days_until_next_payday,
+    _parse_month,
+    get_dashboard_summary,
+    get_user_metrics,
+)
 from app.services.transaction import create_transaction
 
 
@@ -232,3 +237,158 @@ def test_recent_transactions_has_category_name(db, user, expense_cat):
     for tx in result["recent_transactions"]:
         assert "category_name" in tx
         assert isinstance(tx["category_name"], str)
+
+
+# ===========================================================================
+# get_user_metrics
+# ===========================================================================
+
+
+# --- _days_until_next_payday ---
+
+def test_payday_future_same_month():
+    # today=5, payday=25 → 20 days
+    assert _days_until_next_payday(date(2026, 9, 5), 25) == 20
+
+
+def test_payday_is_today():
+    # payday == today → next occurrence is next month, but treated as "today is payday"
+    # per implementation: next_pay <= today → move to next month
+    result = _days_until_next_payday(date(2026, 9, 25), 25)
+    # next payday = 2026-10-25 → 30 days
+    assert result == 30
+
+
+def test_payday_already_passed():
+    # today=28, payday=25 → next payday is next month's 25th
+    result = _days_until_next_payday(date(2026, 9, 28), 25)
+    # 2026-10-25 - 2026-09-28 = 27 days
+    assert result == 27
+
+
+def test_payday_clamps_to_feb_end():
+    # payday=31 in February → clamped to 28 (2027 is not leap)
+    result = _days_until_next_payday(date(2027, 2, 1), 31)
+    assert result == 27  # Feb 28 - Feb 1 = 27
+
+
+def test_payday_december_rollover():
+    # today=Dec 28, payday=25 → next payday = Jan 25
+    result = _days_until_next_payday(date(2026, 12, 28), 25)
+    assert result == 28  # Jan 25 - Dec 28 = 28
+
+
+# --- get_user_metrics ---
+
+@pytest.fixture(scope="module")
+def metrics_user(db):
+    return register_user(db, f"{uuid.uuid4()}@metrics.com", "pass")
+
+
+@pytest.fixture(scope="module")
+def metrics_expense_cat(db, metrics_user):
+    return db.scalar(
+        select(Category).where(Category.user_id == metrics_user.id, Category.name == "Makanan")
+    )
+
+
+@pytest.fixture(scope="module")
+def metrics_tagihan_cat(db, metrics_user):
+    return db.scalar(
+        select(Category).where(Category.user_id == metrics_user.id, Category.name == "Tagihan")
+    )
+
+
+@pytest.fixture(scope="module")
+def metrics_income_cat(db, metrics_user):
+    return db.scalar(
+        select(Category).where(Category.user_id == metrics_user.id, Category.name == "Gaji")
+    )
+
+
+def test_metrics_no_transactions(db, metrics_user):
+    today = date(2030, 1, 15)
+    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    assert result["transaction_dates"] == []
+    assert result["week_expense_total"] == Decimal(0)
+    assert result["week_top_category"] is None
+    assert result["days_left"] > 0
+
+
+def test_metrics_streak_dates_within_60_days(db, metrics_user, metrics_expense_cat):
+    today = date(2028, 3, 10)
+    # Transaction in window
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(10000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 3, 8))
+    # Transaction outside 60-day window — should NOT appear
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(10000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 1, 1))
+
+    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    dates = result["transaction_dates"]
+    assert "2028-03-08" in dates
+    assert "2028-01-01" not in dates
+
+
+def test_metrics_weekly_expense_aggregation(db, metrics_user, metrics_expense_cat):
+    today = date(2028, 5, 10)
+    # Within 7 days
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(50000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 5, 8))
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(30000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 5, 4))
+    # Outside 7 days — not counted
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(999999),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 4, 1))
+
+    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    assert result["week_expense_total"] >= Decimal(80000)
+    assert result["week_top_category"] == "Makanan"
+
+
+def test_metrics_weekly_excludes_income(db, metrics_user, metrics_income_cat, metrics_expense_cat):
+    today = date(2028, 6, 15)
+    create_transaction(db, metrics_user, type_="income", amount=Decimal(5000000),
+                       category_id=metrics_income_cat.id, transaction_date=date(2028, 6, 14))
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(10000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 6, 14))
+
+    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    assert result["week_expense_total"] < Decimal(100000)  # income not counted
+
+
+def test_metrics_safe_to_spend_with_income_and_tagihan(
+    db, metrics_user, metrics_income_cat, metrics_expense_cat, metrics_tagihan_cat
+):
+    today = date(2028, 7, 10)
+    # Income: 5,000,000
+    create_transaction(db, metrics_user, type_="income", amount=Decimal(5000000),
+                       category_id=metrics_income_cat.id, transaction_date=date(2028, 7, 1))
+    # Regular expense: 1,000,000
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(1000000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 7, 5))
+    # Tagihan (mandatory): 500,000
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(500000),
+                       category_id=metrics_tagihan_cat.id, transaction_date=date(2028, 7, 5))
+
+    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    # remaining_balance = income - ALL expense = 5,000,000 - 1,500,000 = 3,500,000
+    assert result["remaining_balance"] == Decimal(3500000)
+    # days_left = 25 - 10 = 15
+    assert result["days_left"] == 15
+    assert result["safe_to_spend"] == Decimal(3500000) / 15
+
+
+def test_metrics_safe_to_spend_zero_income(db, metrics_user, metrics_expense_cat):
+    today = date(2028, 8, 15)
+    result = get_user_metrics(db, metrics_user, payday=20, today=today)
+    # No income this month → remaining_balance negative or 0
+    assert result["days_left"] == 5  # 20 - 15
+
+
+def test_metrics_payday_default_is_1(db, metrics_user):
+    today = date(2028, 9, 10)
+    result = get_user_metrics(db, metrics_user, today=today)  # no payday arg → default 1
+    # Next payday is Oct 1
+    assert result["payday"] == 1
+    assert result["days_left"] == 21  # Oct 1 - Sep 10

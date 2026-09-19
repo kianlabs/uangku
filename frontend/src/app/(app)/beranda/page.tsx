@@ -5,22 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
 import { ApiResponseError } from "@/lib/api";
-import { getDashboardSummary } from "@/lib/dashboard";
-import { calculateSafeToSpend } from "@/lib/safe-to-spend";
-import { calculateStreak } from "@/lib/streak";
+import { getDashboardSummary, getDashboardMetrics } from "@/lib/dashboard";
 import { getCategoryIcon } from "@/lib/category-icons";
-import { getWeekExpense, generateWeeklyReflection } from "@/lib/reflection";
-import { listTransactions } from "@/lib/transactions";
+import { generateWeeklyReflection } from "@/lib/reflection";
+import { calculateStreak } from "@/lib/streak";
 import { getMe } from "@/lib/auth";
-import type { DashboardSummary, RecentTransactionItem, Transaction, User } from "@/lib/types";
+import { getPayday } from "@/lib/local-storage";
+import type { DashboardMetrics, DashboardSummary, RecentTransactionItem, User } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
-import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
 import { Header } from "@/components/dashboard/Header";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
 import { MonthNavigator } from "@/components/dashboard/MonthNavigator";
-import { getBudgetWarningData } from "@/lib/budget-helper";
 
 export default function BerandaPage() {
   const now = new Date();
@@ -29,7 +26,7 @@ export default function BerandaPage() {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const [data, setData] = useState<DashboardSummary | null>(null);
-  const [transactionHistory, setTransactionHistory] = useState<Transaction[]>([]);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
@@ -37,13 +34,18 @@ export default function BerandaPage() {
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
+    const payday = getPayday();
 
-    Promise.all([getMe(), getDashboardSummary(month, controller.signal), loadMetricTransactions()])
-      .then(([currentUser, summary, transactions]) => {
+    Promise.all([
+      getMe(),
+      getDashboardSummary(month, controller.signal),
+      getDashboardMetrics(payday, controller.signal),
+    ])
+      .then(([currentUser, summary, metricsData]) => {
         if (!cancelled) {
           setUser(currentUser);
           setData(summary);
-          setTransactionHistory(transactions);
+          setMetrics(metricsData);
           setIsLoading(false);
         }
       })
@@ -96,34 +98,22 @@ export default function BerandaPage() {
     );
   }
 
-  if (!data || !user) return null;
+  if (!data || !user || !metrics) return null;
 
   const hasTransactions = data.recent_transactions && data.recent_transactions.length > 0;
   const hasSpending = data.expense_by_category && data.expense_by_category.length > 0;
-  const metricTransactions = transactionHistory.map((tx) => ({
-    amount: tx.amount,
-    transaction_date: tx.transaction_date,
-    type: tx.type,
-    category_name: tx.category.name,
-  }));
-  const streak = calculateStreak(transactionHistory.map((tx) => tx.transaction_date));
-  const weeklyExpense = getWeekExpense(metricTransactions);
-  const budgetWarning = getBudgetWarningData(data.expense_by_category);
 
-  const mandatory = data.expense_by_category.find((c) => c.category_name === "Tagihan")?.amount || "0";
-  const today = new Date();
-  const { amount: safeToSpendAmount, daysLeft } = calculateSafeToSpend(
-    data.monthly_income,
-    data.monthly_expense,
-    mandatory,
-    today.getDate(),
-    today.getMonth() + 1,
-    today.getFullYear()
-  );
-  const remainingBalance = Math.max(
-    0,
-    parseFloat(data.monthly_income) - parseFloat(data.monthly_expense) - parseFloat(mandatory)
-  );
+  // Derived values — semua dari backend, tidak ada kalkulasi keuangan di frontend
+  const streak = calculateStreak(metrics.transaction_dates);
+  const weeklyReflection =
+    metrics.week_expense_total !== "0.00"
+      ? generateWeeklyReflection(
+          parseFloat(metrics.week_expense_total),
+          metrics.week_top_category
+            ? { name: metrics.week_top_category, amount: parseFloat(metrics.week_expense_total) }
+            : null
+        )
+      : null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -150,32 +140,22 @@ export default function BerandaPage() {
 
         {isCurrentMonth && (
           <SafeToSpendCard
-            safeToSpendAmount={safeToSpendAmount}
-            daysLeft={daysLeft}
-            remainingBalance={remainingBalance.toFixed(2)}
+            safeToSpendAmount={parseFloat(metrics.safe_to_spend)}
+            daysLeft={metrics.days_left}
+            remainingBalance={metrics.remaining_balance}
           />
         )}
 
-        {/* Analisis: breakdown kategori (chart) + ringkasan (budget warning, refleksi, streak) */}
+        {/* Analisis: breakdown kategori (chart) + ringkasan (refleksi, streak) */}
         <section aria-label="Analisis pengeluaran" className="flex flex-col gap-6">
           {hasSpending && (
             <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
           )}
 
-          {budgetWarning && (
-            <BudgetWarning
-              categoryName={budgetWarning.categoryName}
-              percent={budgetWarning.percent}
-              remainingText={budgetWarning.remainingText}
-            />
-          )}
-
-          {weeklyExpense.total > 0 && (
+          {weeklyReflection && (
             <div className="flex flex-col gap-2 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
               <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Refleksi Minggu Ini</span>
-              <p className="text-sm leading-relaxed text-slate-900">
-                {generateWeeklyReflection(weeklyExpense.total, weeklyExpense.topCategory)}
-              </p>
+              <p className="text-sm leading-relaxed text-slate-900">{weeklyReflection}</p>
             </div>
           )}
 
@@ -219,40 +199,6 @@ export default function BerandaPage() {
       </motion.div>
     </MotionConfig>
   );
-}
-
-async function loadMetricTransactions(): Promise<Transaction[]> {
-  const pageSize = 100;
-  const limit = 500;
-  const now = new Date();
-  const cutoff = localDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
-  const transactions: Transaction[] = [];
-
-  for (let page = 1; transactions.length < limit; page++) {
-    const response = await listTransactions({ page, page_size: pageSize });
-    transactions.push(...response.items);
-
-    const oldest = response.items.reduce<string | null>((min, tx) => {
-      const date = tx.transaction_date.slice(0, 10);
-      return min === null || date < min ? date : min;
-    }, null);
-
-    if (
-      response.items.length === 0 ||
-      page >= response.pagination.total_pages ||
-      (oldest !== null && oldest <= cutoff)
-    ) {
-      break;
-    }
-  }
-
-  return transactions.slice(0, limit);
-}
-
-function localDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate()
-  ).padStart(2, "0")}`;
 }
 
 function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {

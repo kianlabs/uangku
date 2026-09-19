@@ -49,3 +49,19 @@ class DashboardSummaryResponse(BaseModel):
     @field_serializer("balance", "monthly_income", "monthly_expense")
     def serialize_money(self, v: Decimal) -> str:
         return _fmt(v)
+
+
+class DashboardMetricsResponse(BaseModel):
+    """Response schema untuk GET /api/v1/dashboard/metrics."""
+
+    transaction_dates: list[str]   # "YYYY-MM-DD" strings untuk kalkulasi streak
+    week_expense_total: Decimal
+    week_top_category: str | None
+    safe_to_spend: Decimal
+    days_left: int
+    remaining_balance: Decimal
+    payday: int
+
+    @field_serializer("week_expense_total", "safe_to_spend", "remaining_balance")
+    def serialize_money(self, v: Decimal) -> str:
+        return _fmt(v)

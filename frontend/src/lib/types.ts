@@ -4,6 +4,13 @@ export interface User {
   created_at: string;
 }
 
+export interface UserPreferences {
+  payday?: number | null;
+  tx_sources?: Record<string, string> | null;
+  debt_tags?: Record<string, { tag: "utang" | "piutang"; settled: boolean }> | null;
+  templates?: Array<{ id: string; name: string; amount: number; category: string }> | null;
+}
+
 export interface ApiError {
   code: string;
   message: string;
@@ -73,4 +80,14 @@ export interface DashboardSummary {
   transaction_count: number;
   expense_by_category: ExpenseByCategoryItem[];
   recent_transactions: RecentTransactionItem[];
+}
+
+export interface DashboardMetrics {
+  transaction_dates: string[];
+  week_expense_total: string;
+  week_top_category: string | null;
+  safe_to_spend: string;
+  days_left: number;
+  remaining_balance: string;
+  payday: number;
 }

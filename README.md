@@ -46,9 +46,10 @@ The frontend proxies `/api/*` to the backend via Next.js rewrites
 
 ```sh
 mise run dev     # frontend + backend together
-mise run test    # backend pytest
+mise run test    # backend pytest + frontend vitest
 mise run lint    # backend ruff + frontend eslint
 mise run build   # frontend production build
+mise run test:e2e  # Playwright E2E (butuh dev server running)
 ```
 
 Direct equivalents:
@@ -56,6 +57,8 @@ Direct equivalents:
 ```sh
 cd backend && uv run pytest && uv run ruff check .
 cd frontend && npm test && npm run lint && npm run build
+cd frontend && npx playwright test        # E2E
+cd frontend && npx playwright install     # install browsers (first time)
 ```
 
 ## Environment variables
@@ -68,6 +71,7 @@ cd frontend && npm test && npm run lint && npm run build
 | `HTTPS_ONLY` | `false` | must be `true` in production (enforced) or session cookies go over HTTP |
 | `BACKEND_URL` | `http://localhost:8000` | frontend rewrite target (server-side only) |
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
+| `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting |
 
 ## Architecture
 
@@ -85,6 +89,7 @@ from the client are never trusted for ownership.
 ## Production notes
 
 - Set `APP_ENV=production`, a strong `SECRET_KEY`, and `HTTPS_ONLY=true`.
+- Set `TRUSTED_PROXY_IPS` to the IP(s) of your reverse proxy (e.g. Nginx/Cloudflare) so rate limiting correctly identifies individual clients behind the proxy. Without this, all users share the same rate-limit bucket.
 - Run `alembic upgrade head` on deploy; never edit applied migrations.
 - No rate limiting is built in — put login/register behind reverse-proxy
   rate limiting (e.g. nginx `limit_req`) in production.

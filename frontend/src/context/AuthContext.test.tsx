@@ -20,6 +20,16 @@ vi.mock("@/lib/auth", () => ({
   register: vi.fn(),
 }));
 
+// Mock preferences — getPreferences fire-and-forget, tidak boleh throw
+vi.mock("@/lib/preferences", () => ({
+  getPreferences: vi.fn().mockResolvedValue({ payday: null, tx_sources: null, debt_tags: null, templates: null }),
+}));
+
+// Mock seedLocalStorageFromPreferences — tidak perlu benar-benar seed di unit test
+vi.mock("@/lib/local-storage", () => ({
+  seedLocalStorageFromPreferences: vi.fn(),
+}));
+
 function AuthProbe() {
   const { user, isAuthenticated, loginUser, logoutUser } = useAuth();
   return (

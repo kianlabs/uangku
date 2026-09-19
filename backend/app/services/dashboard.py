@@ -1,7 +1,13 @@
+"""Service layer untuk dashboard aggregations.
+
+Berisi dua fungsi publik utama:
+- ``get_dashboard_summary`` — ringkasan bulanan (4 query)
+- ``get_user_metrics``      — data untuk streak, weekly reflection, safe-to-spend
+"""
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -135,4 +141,136 @@ def get_dashboard_summary(
         "transaction_count": transaction_count,
         "expense_by_category": expense_by_category,
         "recent_transactions": recent_transactions,
+    }
+
+
+# ---------------------------------------------------------------------------
+# User metrics (streak, weekly expense, safe-to-spend)
+# ---------------------------------------------------------------------------
+
+def _days_until_next_payday(today: date, payday: int) -> int:
+    """Return number of days from *today* (inclusive) until the next payday.
+
+    If payday is today, returns 1 (spend budget for today only).
+    If payday already passed this month, target is next month's payday.
+    Clamps the payday day to the last day of the target month to handle
+    months shorter than 31 days (e.g. payday=31 in February → Feb 28/29).
+    """
+    import calendar
+
+    def _clamp_day(year: int, month: int, day: int) -> date:
+        max_day = calendar.monthrange(year, month)[1]
+        return date(year, month, min(day, max_day))
+
+    next_pay = _clamp_day(today.year, today.month, payday)
+    if next_pay <= today:
+        # Move to next month
+        if today.month == 12:
+            next_pay = _clamp_day(today.year + 1, 1, payday)
+        else:
+            next_pay = _clamp_day(today.year, today.month + 1, payday)
+
+    return (next_pay - today).days
+
+
+def get_user_metrics(
+    db: Session,
+    user: User,
+    payday: int = 1,
+    today: date | None = None,
+) -> dict[str, Any]:
+    """Return computed metrics for the beranda dashboard.
+
+    Replaces the frontend ``loadMetricTransactions`` pagination loop.
+
+    Queries:
+    1. Distinct transaction_date for the last 60 days → streak input
+    2. Expense totals grouped by category for the last 7 days → weekly reflection
+    3. Current-month income / expense / tagihan totals → safe-to-spend
+
+    Args:
+        payday: Day of month the user gets paid (1-31). Used for safe-to-spend.
+        today:  Override today's date (for testing).
+    """
+    if today is None:
+        today = datetime.now(UTC).date()
+
+    cutoff_streak = today - timedelta(days=60)
+    cutoff_week = today - timedelta(days=6)   # last 7 days inclusive
+
+    # -- Query 1: distinct dates for streak (60-day window) --
+    date_rows = db.scalars(
+        select(Transaction.transaction_date)
+        .where(
+            Transaction.user_id == user.id,
+            Transaction.transaction_date >= cutoff_streak,
+            Transaction.transaction_date <= today,
+        )
+        .distinct()
+        .order_by(Transaction.transaction_date.desc())
+    ).all()
+    transaction_dates = [str(d) for d in date_rows]  # "YYYY-MM-DD"
+
+    # -- Query 2: weekly expense by category --
+    week_rows = db.execute(
+        select(
+            Category.name.label("category_name"),
+            func.sum(Transaction.amount).label("amount"),
+        )
+        .join(Category, Transaction.category_id == Category.id)
+        .where(
+            Transaction.user_id == user.id,
+            Transaction.type == "expense",
+            Transaction.transaction_date >= cutoff_week,
+            Transaction.transaction_date <= today,
+        )
+        .group_by(Category.name)
+        .order_by(func.sum(Transaction.amount).desc())
+    ).all()
+
+    week_expense_total = Decimal(0)
+    week_top_category: str | None = None
+    for row in week_rows:
+        amount = Decimal(str(row.amount))
+        week_expense_total += amount
+        if week_top_category is None:
+            week_top_category = row.category_name
+
+    # -- Query 3: current-month totals for safe-to-spend --
+    month_start = date(today.year, today.month, 1)
+    if today.month == 12:
+        month_end_exclusive = date(today.year + 1, 1, 1)
+    else:
+        month_end_exclusive = date(today.year, today.month + 1, 1)
+
+    monthly_row = db.execute(
+        select(
+            func.coalesce(
+                func.sum(Transaction.amount).filter(Transaction.type == "income"), 0
+            ).label("monthly_income"),
+            func.coalesce(
+                func.sum(Transaction.amount).filter(Transaction.type == "expense"), 0
+            ).label("monthly_expense"),
+        ).where(
+            Transaction.user_id == user.id,
+            Transaction.transaction_date >= month_start,
+            Transaction.transaction_date < month_end_exclusive,
+        )
+    ).one()
+
+    monthly_income = Decimal(str(monthly_row.monthly_income))
+    monthly_expense = Decimal(str(monthly_row.monthly_expense))
+
+    remaining_balance = monthly_income - monthly_expense
+    days_left = _days_until_next_payday(today, payday)
+    safe_to_spend = (remaining_balance / days_left) if days_left > 0 else Decimal(0)
+
+    return {
+        "transaction_dates": transaction_dates,
+        "week_expense_total": week_expense_total,
+        "week_top_category": week_top_category,
+        "safe_to_spend": safe_to_spend,
+        "days_left": days_left,
+        "remaining_balance": remaining_balance,
+        "payday": payday,
     }

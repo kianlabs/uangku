@@ -1,3 +1,15 @@
+/**
+ * local-storage.ts — LocalStorage helpers dengan backend sync.
+ *
+ * LocalStorage adalah cache lokal (instant read/write untuk UX).
+ * Backend adalah source of truth — setiap write di-sync via fire-and-forget PATCH.
+ *
+ * Hydration dari backend dilakukan di AuthContext setelah login/getMe
+ * via seedLocalStorageFromPreferences().
+ */
+
+import type { UserPreferences } from "./types";
+
 export interface TransactionSource {
   source: "Tunai" | "Bank" | "E-wallet";
 }
@@ -19,6 +31,45 @@ const DEBT_TAGS_KEY = "uangku_debt_tags";
 const PAYDAY_KEY = "uangku_payday";
 const TEMPLATES_KEY = "uangku_templates";
 
+// ---------------------------------------------------------------------------
+// Hydration — seed localStorage dari data backend (dipanggil di AuthContext)
+// ---------------------------------------------------------------------------
+
+export function seedLocalStorageFromPreferences(prefs: UserPreferences): void {
+  if (typeof window === "undefined") return;
+
+  if (prefs.payday != null) {
+    localStorage.setItem(PAYDAY_KEY, String(prefs.payday));
+  }
+  if (prefs.tx_sources != null) {
+    localStorage.setItem(SOURCES_KEY, JSON.stringify(prefs.tx_sources));
+  }
+  if (prefs.debt_tags != null) {
+    localStorage.setItem(DEBT_TAGS_KEY, JSON.stringify(prefs.debt_tags));
+  }
+  if (prefs.templates != null) {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(prefs.templates));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Internal: sync satu field ke backend (fire-and-forget)
+// ---------------------------------------------------------------------------
+
+function syncToBackend(partial: Partial<UserPreferences>): void {
+  // Dinamically import untuk avoid circular dependency & SSR issues.
+  // Fire-and-forget — error tidak perlu ditangani (localStorage tetap terupdate).
+  import("./preferences")
+    .then(({ updatePreferences }) => updatePreferences(partial))
+    .catch(() => {
+      // Intentional no-op: sync gagal tidak mengganggu UX
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Transaction sources
+// ---------------------------------------------------------------------------
+
 export function getTransactionSource(txId: string): string | null {
   if (typeof window === "undefined") return null;
   try {
@@ -34,21 +85,23 @@ export function getTransactionSource(txId: string): string | null {
   }
 }
 
-export function setTransactionSource(txId: string, source: string) {
+export function setTransactionSource(txId: string, source: string): void {
   if (typeof window === "undefined") return;
   try {
     const raw = localStorage.getItem(SOURCES_KEY) || "{}";
-    const data = JSON.parse(raw);
-    if (typeof data !== "object" || data === null) {
-      localStorage.setItem(SOURCES_KEY, JSON.stringify({ [txId]: source }));
-      return;
-    }
+    const data: Record<string, string> = JSON.parse(raw);
     data[txId] = source;
     localStorage.setItem(SOURCES_KEY, JSON.stringify(data));
+    syncToBackend({ tx_sources: data });
   } catch {
     localStorage.setItem(SOURCES_KEY, JSON.stringify({ [txId]: source }));
+    syncToBackend({ tx_sources: { [txId]: source } });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Debt tags
+// ---------------------------------------------------------------------------
 
 export function getDebtTag(txId: string): DebtTag | null {
   if (typeof window === "undefined") return null;
@@ -65,21 +118,23 @@ export function getDebtTag(txId: string): DebtTag | null {
   }
 }
 
-export function setDebtTag(txId: string, tag: DebtTag) {
+export function setDebtTag(txId: string, tag: DebtTag): void {
   if (typeof window === "undefined") return;
   try {
     const raw = localStorage.getItem(DEBT_TAGS_KEY) || "{}";
-    const data = JSON.parse(raw);
-    if (typeof data !== "object" || data === null) {
-      localStorage.setItem(DEBT_TAGS_KEY, JSON.stringify({ [txId]: tag }));
-      return;
-    }
+    const data: Record<string, DebtTag> = JSON.parse(raw);
     data[txId] = tag;
     localStorage.setItem(DEBT_TAGS_KEY, JSON.stringify(data));
+    syncToBackend({ debt_tags: data });
   } catch {
     localStorage.setItem(DEBT_TAGS_KEY, JSON.stringify({ [txId]: tag }));
+    syncToBackend({ debt_tags: { [txId]: tag } });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Payday
+// ---------------------------------------------------------------------------
 
 export function getPayday(): number {
   if (typeof window === "undefined") return 1;
@@ -91,10 +146,15 @@ export function getPayday(): number {
   }
 }
 
-export function setPayday(day: number) {
+export function setPayday(day: number): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(PAYDAY_KEY, day.toString());
+  syncToBackend({ payday: day });
 }
+
+// ---------------------------------------------------------------------------
+// Subscription templates
+// ---------------------------------------------------------------------------
 
 export function getTemplates(): SubscriptionTemplate[] {
   if (typeof window === "undefined") return [];
@@ -117,7 +177,8 @@ export function getTemplates(): SubscriptionTemplate[] {
   }
 }
 
-export function setTemplates(templates: SubscriptionTemplate[]) {
+export function setTemplates(templates: SubscriptionTemplate[]): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  syncToBackend({ templates });
 }

@@ -11,6 +11,17 @@ class Settings(BaseSettings):
     https_only: bool = False
     app_env: str = "development"
     backend_url: str = ""
+    # Comma-separated list of trusted reverse-proxy IPs (e.g. "10.0.0.1,10.0.0.2").
+    # When set, X-Forwarded-For is trusted only for requests coming from these IPs.
+    # Leave empty in local dev (rate-limiting falls back to request.client.host).
+    trusted_proxy_ips: str = ""
+
+    @property
+    def trusted_proxy_set(self) -> frozenset[str]:
+        """Return parsed set of trusted proxy IPs."""
+        if not self.trusted_proxy_ips:
+            return frozenset()
+        return frozenset(ip.strip() for ip in self.trusted_proxy_ips.split(",") if ip.strip())
 
     @model_validator(mode="after")
     def _check_production_secret(self) -> "Settings":

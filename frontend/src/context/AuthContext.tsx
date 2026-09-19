@@ -10,6 +10,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { getMe, login, logout, register } from "@/lib/auth";
+import { getPreferences } from "@/lib/preferences";
+import { seedLocalStorageFromPreferences } from "@/lib/local-storage";
 import type { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -34,7 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initialized.current = true;
 
     getMe()
-      .then(setUser)
+      .then((currentUser) => {
+        setUser(currentUser);
+        // Hydrate localStorage dari backend preferences (fire-and-forget — tidak block render)
+        getPreferences()
+          .then((prefs) => seedLocalStorageFromPreferences(prefs))
+          .catch(() => {
+            // Preferences gagal diambil — tidak fatal, localStorage cache tetap dipakai
+          });
+      })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
@@ -75,11 +85,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginUser = useCallback(async (email: string, password: string) => {
     const u = await login(email, password);
     setUser(u);
+    // Hydrate localStorage dari backend setelah login
+    getPreferences()
+      .then((prefs) => seedLocalStorageFromPreferences(prefs))
+      .catch(() => {});
   }, []);
 
   const registerUser = useCallback(async (email: string, password: string) => {
     const u = await register(email, password);
     setUser(u);
+    // Preferences kosong untuk user baru — tidak perlu hydrate, localStorage sudah default
   }, []);
 
   const logoutUser = useCallback(async () => {

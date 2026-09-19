@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
 from app.core.errors import DomainError, InvalidMonthError
 from app.models.user import User
-from app.schemas.dashboard import DashboardSummaryResponse
-from app.services.dashboard import get_dashboard_summary
+from app.schemas.dashboard import DashboardMetricsResponse, DashboardSummaryResponse
+from app.services.dashboard import get_dashboard_summary, get_user_metrics
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -31,3 +31,20 @@ def dashboard_summary(
             detail={"code": "VALIDATION_ERROR", "message": str(exc)},
         )
     return DashboardSummaryResponse(**data)
+
+
+@router.get("/metrics", response_model=DashboardMetricsResponse)
+def dashboard_metrics(
+    payday: int = Query(1, ge=1, le=31),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return streak dates, weekly expense, and safe-to-spend in one request.
+
+    Replaces the N-page ``loadMetricTransactions`` loop in the frontend.
+
+    Query params:
+        payday (int, 1-31): Day of month the user gets paid. Default 1.
+    """
+    data = get_user_metrics(db, current_user, payday=payday)
+    return DashboardMetricsResponse(**data)
