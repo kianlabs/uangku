@@ -3,6 +3,7 @@
 import { useEffect, useState, createElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, MotionConfig } from "framer-motion";
 import { ApiResponseError } from "@/lib/api";
 import { getDashboardSummary } from "@/lib/dashboard";
 import { calculateSafeToSpend } from "@/lib/safe-to-spend";
@@ -10,29 +11,37 @@ import { calculateStreak } from "@/lib/streak";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { getWeekExpense, generateWeeklyReflection } from "@/lib/reflection";
 import { listTransactions } from "@/lib/transactions";
-import type { DashboardSummary, RecentTransactionItem, Transaction } from "@/lib/types";
+import { getMe } from "@/lib/auth";
+import type { DashboardSummary, RecentTransactionItem, Transaction, User } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
+import { Header } from "@/components/dashboard/Header";
+import { BalanceCard } from "@/components/dashboard/BalanceCard";
+import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
+import { MonthNavigator } from "@/components/dashboard/MonthNavigator";
 import { getBudgetWarningData } from "@/lib/budget-helper";
 
 export default function BerandaPage() {
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [month, setMonth] = useState(currentMonth);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [transactionHistory, setTransactionHistory] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
 
-    Promise.all([getDashboardSummary(month, controller.signal), loadMetricTransactions()])
-      .then(([summary, transactions]) => {
+    Promise.all([getMe(), getDashboardSummary(month, controller.signal), loadMetricTransactions()])
+      .then(([currentUser, summary, transactions]) => {
         if (!cancelled) {
+          setUser(currentUser);
           setData(summary);
           setTransactionHistory(transactions);
           setIsLoading(false);
@@ -75,18 +84,19 @@ export default function BerandaPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
-        <p className="text-base text-muted text-center">{error}</p>
-        <button
+        <p className="text-base text-slate-500 text-center">{error}</p>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           onClick={() => setFetchKey((k) => k + 1)}
-          className="px-5 h-11 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all"
+          className="px-5 h-11 rounded-xl bg-white border border-slate-200 text-base font-semibold text-slate-900 hover:bg-slate-50 transition-all"
         >
           Coba lagi
-        </button>
+        </motion.button>
       </div>
     );
   }
 
-  if (!data) return null;
+  if (!data || !user) return null;
 
   const hasTransactions = data.recent_transactions && data.recent_transactions.length > 0;
   const hasSpending = data.expense_by_category && data.expense_by_category.length > 0;
@@ -100,200 +110,114 @@ export default function BerandaPage() {
   const weeklyExpense = getWeekExpense(metricTransactions);
   const budgetWarning = getBudgetWarningData(data.expense_by_category);
 
+  const mandatory = data.expense_by_category.find((c) => c.category_name === "Tagihan")?.amount || "0";
+  const today = new Date();
+  const { amount: safeToSpendAmount, daysLeft } = calculateSafeToSpend(
+    data.monthly_income,
+    data.monthly_expense,
+    mandatory,
+    today.getDate(),
+    today.getMonth() + 1,
+    today.getFullYear()
+  );
+  const remainingBalance = Math.max(
+    0,
+    parseFloat(data.monthly_income) - parseFloat(data.monthly_expense) - parseFloat(mandatory)
+  );
+
   return (
-    <div className="flex flex-col gap-6 pb-4">
-    {/* 1. Summary Section: Period + Balance + Safe-to-spend (focal point) */}
-    <section className="flex flex-col gap-6">
-      {/* Period selector */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={prevMonth}
-          aria-label="Bulan sebelumnya"
-          className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
-        >
-          <svg
-            aria-hidden="true"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-        <span className="text-sm font-semibold text-text">
-          {new Date(month + "-01").toLocaleDateString("id-ID", {
-            month: "long",
-            year: "numeric",
-          })}
-        </span>
-        <button
-          onClick={nextMonth}
-          disabled={isCurrentMonth}
-          aria-label="Bulan berikutnya"
-          className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-muted active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
-        >
-          <svg
-            aria-hidden="true"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      </div>
+    <MotionConfig reducedMotion="user">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="flex flex-col gap-6 pb-4"
+      >
+        <Header userName={user.email.split("@")[0] || user.email} currentDate={now} />
 
-      {/* Balance - focal point */}
-      <div className="flex flex-col gap-3">
-        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Saldo keseluruhan</span>
-        <span className="text-5xl leading-tight font-bold text-text tabular-nums">
-          {formatRupiah(data.balance)}
-        </span>
-        <p className="text-xs text-muted leading-relaxed">Seluruh waktu hingga bulan ini.</p>
-      </div>
-
-      {/* Safe to Spend Today */}
-      {isCurrentMonth && (
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold text-muted uppercase tracking-wide">Aman dipakai hari ini</span>
-          <span className="text-3xl leading-tight font-bold text-text tabular-nums">
-            {(() => {
-              const now = new Date();
-              const mandatory = data.expense_by_category.find((c) => c.category_name === "Tagihan")?.amount || "0";
-              const { amount } = calculateSafeToSpend(
-                data.monthly_income,
-                data.monthly_expense,
-                mandatory,
-                now.getDate(),
-                now.getMonth() + 1,
-                now.getFullYear()
-              );
-              return amount > 0 ? formatRupiah(amount.toFixed(2)) : "Rp 0";
-            })()}
-          </span>
-          <p className="text-xs text-muted leading-relaxed">
-            (pemasukan − pengeluaran − tagihan) / sisa hari
-          </p>
-        </div>
-      )}
-    </section>
-    {/* Ringkasan: income/expense summary (+/- jelas) */}
-    <section aria-label="Ringkasan pemasukan dan pengeluaran" className="grid grid-cols-2 gap-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-1.5 text-income font-semibold text-sm">
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-          <span>Pemasukan</span>
-        </div>
-        <span className="text-xl sm:text-2xl font-bold tabular-nums text-income whitespace-nowrap">
-          + {formatRupiah(data.monthly_income)}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-1.5 text-expense font-semibold text-sm">
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 5v14M19 12l-7 7-7-7" />
-          </svg>
-          <span>Pengeluaran</span>
-        </div>
-        <span className="text-xl sm:text-2xl font-bold tabular-nums text-expense whitespace-nowrap">
-          - {formatRupiah(data.monthly_expense)}
-        </span>
-      </div>
-    </section>
-
-    {/* Analisis: breakdown kategori (chart) + ringkasan (budget warning, refleksi, streak) */}
-    <section aria-label="Analisis pengeluaran" className="flex flex-col gap-6">
-      {hasSpending && (
-        <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
-      )}
-
-      {budgetWarning && (
-        <BudgetWarning
-          categoryName={budgetWarning.categoryName}
-          percent={budgetWarning.percent}
-          remainingText={budgetWarning.remainingText}
+        <MonthNavigator
+          month={month}
+          isCurrentMonth={isCurrentMonth}
+          onPrevMonth={prevMonth}
+          onNextMonth={nextMonth}
         />
-      )}
 
-      {weeklyExpense.total > 0 && (
-        <div className="flex flex-col gap-2 p-4 rounded-xl border border-border bg-surface">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Refleksi Minggu Ini</span>
-          <p className="text-sm text-text">
-            {generateWeeklyReflection(weeklyExpense.total, weeklyExpense.topCategory)}
-          </p>
-        </div>
-      )}
+        <BalanceCard
+          balance={data.balance}
+          monthly_income={data.monthly_income}
+          monthly_expense={data.monthly_expense}
+        />
 
-      {streak > 0 && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted">Catat harian:</span>
-          <span className="font-semibold text-text">{streak} hari berturut-turut</span>
-        </div>
-      )}
-    </section>
+        {isCurrentMonth && (
+          <SafeToSpendCard
+            safeToSpendAmount={safeToSpendAmount}
+            daysLeft={daysLeft}
+            remainingBalance={remainingBalance.toFixed(2)}
+          />
+        )}
 
-    {/* 5. Activity Section: Recent Transactions */}
-    {hasTransactions ? (
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-text">Transaksi terbaru</h2>
-          <Link href="/riwayat" className="text-sm font-medium text-accent hover:underline">
-            Lihat semua
-          </Link>
-        </div>
-        <div className="flex flex-col divide-y divide-border">
-          {data.recent_transactions.slice(0, 5).map((tx) => (
-            <RecentTxRow key={tx.id} tx={tx} />
-          ))}
-        </div>
-      </section>
-    ) : (
-      <section className="flex flex-col items-center gap-4 py-12">
-        <p className="text-base text-muted text-center max-w-xs">
-          Belum ada transaksi. Catat pengeluaran atau pemasukan pertamamu untuk mulai melihat
-          kondisi keuangan.
-        </p>
-        <Link
-          href="/transaksi/tambah"
-          className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
-        >
-          Tambah transaksi
-        </Link>
-      </section>
-    )}
-    </div>
+        {/* Analisis: breakdown kategori (chart) + ringkasan (budget warning, refleksi, streak) */}
+        <section aria-label="Analisis pengeluaran" className="flex flex-col gap-6">
+          {hasSpending && (
+            <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
+          )}
+
+          {budgetWarning && (
+            <BudgetWarning
+              categoryName={budgetWarning.categoryName}
+              percent={budgetWarning.percent}
+              remainingText={budgetWarning.remainingText}
+            />
+          )}
+
+          {weeklyExpense.total > 0 && (
+            <div className="flex flex-col gap-2 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Refleksi Minggu Ini</span>
+              <p className="text-sm leading-relaxed text-slate-900">
+                {generateWeeklyReflection(weeklyExpense.total, weeklyExpense.topCategory)}
+              </p>
+            </div>
+          )}
+
+          {streak > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-slate-500">Catat harian:</span>
+              <span className="font-semibold text-slate-900">{streak} hari berturut-turut</span>
+            </div>
+          )}
+        </section>
+
+        {/* Activity: Recent Transactions */}
+        {hasTransactions ? (
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900">Transaksi terbaru</h2>
+              <Link href="/riwayat" className="text-sm font-medium text-emerald-600 hover:underline">
+                Lihat semua
+              </Link>
+            </div>
+            <div className="flex flex-col divide-y divide-slate-100">
+              {data.recent_transactions.slice(0, 5).map((tx) => (
+                <RecentTxRow key={tx.id} tx={tx} />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="flex flex-col items-center gap-4 py-12">
+            <p className="text-base text-slate-500 text-center max-w-xs">
+              Belum ada transaksi. Catat pengeluaran atau pemasukan pertamamu untuk mulai melihat
+              kondisi keuangan.
+            </p>
+            <Link
+              href="/transaksi/tambah"
+              className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-emerald-600 text-white text-base font-semibold hover:bg-emerald-700 transition-all"
+            >
+              Tambah transaksi
+            </Link>
+          </section>
+        )}
+      </motion.div>
+    </MotionConfig>
   );
 }
 
@@ -336,19 +260,19 @@ function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
   return (
     <Link
       href={`/transaksi/${tx.id}`}
-      className="flex items-center gap-3 py-3 hover:bg-surface-muted active:bg-surface-muted transition-colors -mx-4 px-4"
+      className="flex items-center gap-3 py-3 hover:bg-slate-50 active:bg-slate-50 transition-colors -mx-4 px-4"
     >
-      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-muted shrink-0">
-        {createElement(getCategoryIcon(tx.category_name), { className: "w-5 h-5 text-text", "aria-hidden": true })}
+      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 shrink-0">
+        {createElement(getCategoryIcon(tx.category_name), { className: "w-5 h-5 text-slate-900", "aria-hidden": true })}
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <span className="text-base font-medium text-text truncate">{tx.category_name}</span>
-        {tx.description && <span className="text-sm text-muted truncate">{tx.description}</span>}
-        <span className="text-xs text-muted">{formatDate(tx.transaction_date)}</span>
+        <span className="text-base font-medium text-slate-900 truncate">{tx.category_name}</span>
+        {tx.description && <span className="text-sm text-slate-500 truncate">{tx.description}</span>}
+        <span className="text-xs text-slate-400">{formatDate(tx.transaction_date)}</span>
       </div>
       <span
         className={`text-base font-bold tabular-nums shrink-0 ${
-          isIncome ? "text-income" : "text-expense"
+          isIncome ? "text-emerald-600" : "text-rose-600"
         }`}
       >
         {isIncome ? "+ " : "- "}
@@ -358,42 +282,58 @@ function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
   );
 }
 
+function ShimmerBlock({ className }: { className: string }) {
+  return (
+    <div className={`relative overflow-hidden rounded bg-slate-100 ${className}`}>
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+    </div>
+  );
+}
+
 function LoadingSkeleton() {
   return (
-    <div className="flex flex-col gap-8 pb-4">
+    <div className="flex flex-col gap-8 pb-4" role="status" aria-label="Memuat data beranda">
+      <style>{`@keyframes shimmer { 100% { transform: translateX(100%); } }`}</style>
       <div className="flex items-center justify-between">
-        <div className="w-9 h-9 bg-surface-muted rounded-lg animate-pulse" />
-        <div className="w-32 h-6 bg-surface-muted rounded animate-pulse" />
-        <div className="w-9 h-9 bg-surface-muted rounded-lg animate-pulse" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="w-16 h-5 bg-surface-muted rounded animate-pulse" />
-        <div className="w-56 h-12 bg-surface-muted rounded animate-pulse" />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <div className="w-24 h-5 bg-surface-muted rounded animate-pulse" />
-          <div className="w-32 h-7 bg-surface-muted rounded animate-pulse" />
+          <ShimmerBlock className="w-36 h-6" />
+          <ShimmerBlock className="w-48 h-4" />
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="w-24 h-5 bg-surface-muted rounded animate-pulse" />
-          <div className="w-32 h-7 bg-surface-muted rounded animate-pulse" />
+        <div className="flex gap-3">
+          <ShimmerBlock className="w-10 h-10 rounded-lg" />
+          <ShimmerBlock className="w-10 h-10 rounded-lg" />
         </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <ShimmerBlock className="w-10 h-10 rounded-lg" />
+        <ShimmerBlock className="w-32 h-6" />
+        <ShimmerBlock className="w-10 h-10 rounded-lg" />
+      </div>
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6 flex flex-col gap-4">
+        <ShimmerBlock className="w-24 h-4" />
+        <ShimmerBlock className="w-56 h-9" />
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+          <ShimmerBlock className="w-28 h-7" />
+          <ShimmerBlock className="w-28 h-7" />
+        </div>
+      </div>
+      <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 p-6 flex flex-col gap-4">
+        <ShimmerBlock className="w-44 h-5" />
+        <ShimmerBlock className="w-48 h-8" />
+        <ShimmerBlock className="w-32 h-5" />
       </div>
       <div className="flex flex-col gap-3">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex items-center gap-3 py-3">
-            <div className="w-10 h-10 bg-surface-muted rounded-xl animate-pulse" />
+            <ShimmerBlock className="w-10 h-10 rounded-xl" />
             <div className="flex-1 flex flex-col gap-1.5">
-              <div className="w-24 h-4 bg-surface-muted rounded animate-pulse" />
-              <div className="w-32 h-3 bg-surface-muted rounded animate-pulse" />
+              <ShimmerBlock className="w-24 h-4" />
+              <ShimmerBlock className="w-32 h-3" />
             </div>
-            <div className="w-20 h-5 bg-surface-muted rounded animate-pulse" />
+            <ShimmerBlock className="w-20 h-5" />
           </div>
         ))}
       </div>
     </div>
   );
 }
-
-
