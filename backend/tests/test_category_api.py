@@ -97,6 +97,30 @@ def test_list_filter_invalid_type_422(client):
     assert r.status_code == 422
 
 
+def test_list_response_contract_wrapped_items(client):
+    """Kontrak dengan frontend (frontend/src/lib/categories.ts): GET
+    /api/v1/categories harus mengembalikan objek {"items": [...]},
+    bukan array polos. Pengaman regresi bentuk respons."""
+    client.post("/api/v1/categories", json={"name": "ContractGuard", "type": "expense"})
+    r = client.get("/api/v1/categories")
+    assert r.status_code == 200
+    body = r.json()
+    assert isinstance(body, dict), "kontrak: respons harus objek {\"items\": [...]}, bukan array"
+    assert "items" in body
+    assert isinstance(body["items"], list)
+    names = [i["name"] for i in body["items"]]
+    assert "ContractGuard" in names
+    for item in body["items"]:
+        assert {"id", "name", "type"} <= set(item.keys())
+
+
+def test_list_response_contract_wrapped_with_filter(client):
+    r = client.get("/api/v1/categories?type=expense")
+    assert r.status_code == 200
+    body = r.json()
+    assert isinstance(body, dict) and isinstance(body.get("items"), list)
+
+
 # --- create ---
 
 def test_create_category_201(client):

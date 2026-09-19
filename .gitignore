@@ -22,3 +22,11 @@ out/
 .DS_Store
 .vscode/
 .idea/
+
+# Orchestra (Herdr dispatcher state)
+.orchestra/
+orchestra.example.json
+scripts/orchestra.sh
+
+# Hermes (agent plans)
+.hermes/
