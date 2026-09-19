@@ -36,8 +36,8 @@ export default function TambahTransaksiPage() {
   const [templates, setTemplatesState] = useState<SubscriptionTemplate[]>(getTemplates);
   const [newTemplate, setNewTemplate] = useState({ name: "", amount: "", category: "" });
   const [showTemplateForm, setShowTemplateForm] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // ponytail: fetch error state co-located with categories, no fancy retry hook until needed more than twice
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCatLoading, setIsCatLoading] = useState(true);
   const [catError, setCatError] = useState(false);
@@ -48,7 +48,6 @@ export default function TambahTransaksiPage() {
   }>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
 
   useEffect(() => {
     let cancelled = false;
@@ -192,6 +191,7 @@ export default function TambahTransaksiPage() {
     setTemplates(updated);
     setTemplatesState(updated);
   }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(null);
@@ -307,110 +307,6 @@ export default function TambahTransaksiPage() {
             </div>
           </div>
 
-          {/* Quick Add */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="quickAdd" className="text-sm font-medium text-text">
-              Input Cepat
-              <span className="text-muted font-normal"> (opsional)</span>
-            </label>
-            <input
-              id="quickAdd"
-              type="text"
-              value={quickAdd}
-              onChange={(e) => handleQuickAdd(e.target.value)}
-              placeholder="kopi 20rb"
-              className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
-            />
-            <span className="text-xs text-muted">Format: deskripsi + angka + rb/ribu/k/jt/juta</span>
-          </div>
-
-          {/* Template one-tap */}
-          <div className="flex flex-col gap-3">
-            <span className="text-sm font-medium text-text">Template Cepat</span>
-            <div className="flex flex-wrap gap-2">
-              {templates.map((t) => (
-                <div key={t.id} className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateClick(t)}
-                    disabled={isSubmitting}
-                    className="px-4 h-9 rounded-full bg-surface-muted text-text text-sm font-medium hover:bg-surface-muted/80 active:scale-95 transition-all disabled:opacity-40"
-                  >
-                    {t.name}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteTemplate(t.id)}
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-muted hover:bg-surface-muted hover:text-text transition-colors"
-                    aria-label={`Hapus ${t.name}`}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              {!showTemplateForm && (
-                <button
-                  type="button"
-                  onClick={() => setShowTemplateForm(true)}
-                  className="px-4 h-9 rounded-full border border-dashed border-border text-muted text-sm font-medium hover:border-text hover:text-text transition-colors"
-                >
-                  + Tambah
-                </button>
-              )}
-            </div>
-            {showTemplateForm && (
-              <div className="flex flex-col gap-2 p-3 rounded-xl bg-surface-muted border border-border">
-                <input
-                  type="text"
-                  placeholder="Nama template"
-                  value={newTemplate.name}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                  className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Nominal"
-                  value={newTemplate.amount}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, amount: e.target.value.replace(/\D/g, "") })}
-                  className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-                <select
-                  value={newTemplate.category}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                  className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
-                >
-                  <option value="">Pilih kategori</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleAddTemplate}
-                    disabled={!newTemplate.name || !newTemplate.amount || !newTemplate.category}
-                    className="flex-1 h-9 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Simpan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTemplateForm(false);
-                      setNewTemplate({ name: "", amount: "", category: "" });
-                    }}
-                    className="px-4 h-9 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all"
-                  >
-                    Batal
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Amount - focal point */}
           <div className="flex flex-col gap-2">
             <label htmlFor="amount" className="text-xs font-semibold text-muted uppercase tracking-wide">
@@ -511,58 +407,193 @@ export default function TambahTransaksiPage() {
             autoComplete="off"
           />
 
-          {/* Source */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="source" className="text-sm font-medium text-text">
-              Sumber
-              <span className="text-muted font-normal"> (opsional)</span>
-            </label>
-            <select
-              id="source"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+          {/* Advanced options - collapsible */}
+          <div className="flex flex-col gap-3 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              aria-expanded={showAdvanced}
+              className="flex items-center justify-between p-2 -mx-2 text-sm font-medium text-text hover:bg-surface-muted rounded-lg transition-colors"
             >
-              <option value="">Tidak ditentukan</option>
-              <option value="Tunai">Tunai</option>
-              <option value="Bank">Bank</option>
-              <option value="E-wallet">E-wallet</option>
-            </select>
+              <span>Opsi Lanjutan (Quick-add, Template, Sumber, Kasbon)</span>
+              <svg
+                aria-hidden="true"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showAdvanced && (
+              <div className="flex flex-col gap-4 pt-2">
+                {/* Quick Add */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="quickAdd" className="text-sm font-medium text-text">
+                    Input Cepat
+                    <span className="text-muted font-normal"> (opsional)</span>
+                  </label>
+                  <input
+                    id="quickAdd"
+                    type="text"
+                    value={quickAdd}
+                    onChange={(e) => handleQuickAdd(e.target.value)}
+                    placeholder="kopi 20rb"
+                    className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+                  />
+                  <span className="text-xs text-muted">Format: deskripsi + angka + rb/ribu/k/jt/juta</span>
+                </div>
+
+                {/* Template one-tap */}
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm font-medium text-text">Template Cepat</span>
+                  <div className="flex flex-wrap gap-2">
+                    {templates.map((t) => (
+                      <div key={t.id} className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleTemplateClick(t)}
+                          disabled={isSubmitting}
+                          className="px-4 h-9 rounded-full bg-surface-muted text-text text-sm font-medium hover:bg-surface-muted/80 active:scale-95 transition-all disabled:opacity-40"
+                        >
+                          {t.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTemplate(t.id)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-muted hover:bg-surface-muted hover:text-text transition-colors"
+                          aria-label={`Hapus ${t.name}`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    {!showTemplateForm && (
+                      <button
+                        type="button"
+                        onClick={() => setShowTemplateForm(true)}
+                        className="px-4 h-9 rounded-full border border-dashed border-border text-muted text-sm font-medium hover:border-text hover:text-text transition-colors"
+                      >
+                        + Tambah
+                      </button>
+                    )}
+                  </div>
+                  {showTemplateForm && (
+                    <div className="flex flex-col gap-2 p-3 rounded-xl bg-surface-muted border border-border">
+                      <input
+                        type="text"
+                        placeholder="Nama template"
+                        value={newTemplate.name}
+                        onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Nominal"
+                        value={newTemplate.amount}
+                        onChange={(e) => setNewTemplate({ ...newTemplate, amount: e.target.value.replace(/\D/g, "") })}
+                        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                      />
+                      <select
+                        value={newTemplate.category}
+                        onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
+                        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                      >
+                        <option value="">Pilih kategori</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleAddTemplate}
+                          disabled={!newTemplate.name || !newTemplate.amount || !newTemplate.category}
+                          className="flex-1 h-9 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Simpan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowTemplateForm(false);
+                            setNewTemplate({ name: "", amount: "", category: "" });
+                          }}
+                          className="px-4 h-9 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Source */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="source" className="text-sm font-medium text-text">
+                    Sumber
+                    <span className="text-muted font-normal"> (opsional)</span>
+                  </label>
+                  <select
+                    id="source"
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+                  >
+                    <option value="">Tidak ditentukan</option>
+                    <option value="Tunai">Tunai</option>
+                    <option value="Bank">Bank</option>
+                    <option value="E-wallet">E-wallet</option>
+                  </select>
+                </div>
+
+                {/* Debt Tag */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="debtTag" className="text-sm font-medium text-text">
+                    Kasbon
+                    <span className="text-muted font-normal"> (opsional)</span>
+                  </label>
+                  <select
+                    id="debtTag"
+                    value={debtTag}
+                    onChange={(e) => {
+                      const val = e.target.value as "" | "utang" | "piutang";
+                      setDebtTagState(val);
+                      if (!val) setDebtSettled(false);
+                    }}
+                    className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+                  >
+                    <option value="">Tidak ada</option>
+                    <option value="utang">Utang</option>
+                    <option value="piutang">Piutang</option>
+                  </select>
+                </div>
+
+                {debtTag && (
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={debtSettled}
+                      onChange={(e) => setDebtSettled(e.target.checked)}
+                      className="w-5 h-5 rounded border-2 border-border text-accent focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors"
+                    />
+                    <span className="text-base text-text">Sudah lunas</span>
+                  </label>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Debt Tag */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="debtTag" className="text-sm font-medium text-text">
-              Kasbon
-              <span className="text-muted font-normal"> (opsional)</span>
-            </label>
-            <select
-              id="debtTag"
-              value={debtTag}
-              onChange={(e) => {
-                const val = e.target.value as "" | "utang" | "piutang";
-                setDebtTagState(val);
-                if (!val) setDebtSettled(false);
-              }}
-              className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
-            >
-              <option value="">Tidak ada</option>
-              <option value="utang">Utang</option>
-              <option value="piutang">Piutang</option>
-            </select>
-          </div>
-
-          {debtTag && (
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={debtSettled}
-                onChange={(e) => setDebtSettled(e.target.checked)}
-                className="w-5 h-5 rounded border-2 border-border text-accent focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors"
-              />
-              <span className="text-base text-text">Sudah lunas</span>
-            </label>
-          )}
           {serverError && (
             <div
               role="alert"

@@ -62,7 +62,7 @@ export default function DetailTransaksiPage() {
           <Link
             href="/riwayat"
             aria-label="Kembali"
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
           >
             <svg
               aria-hidden="true"
@@ -81,7 +81,10 @@ export default function DetailTransaksiPage() {
           <h1 className="text-base font-semibold text-text">Detail Transaksi</h1>
         </header>
         <main className="flex-1 flex items-center justify-center px-4">
-          <p className="text-sm text-muted">Memuat…</p>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-text font-medium">Memuat…</p>
+          </div>
         </main>
       </div>
     );
@@ -94,7 +97,7 @@ export default function DetailTransaksiPage() {
           <Link
             href="/riwayat"
             aria-label="Kembali"
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
           >
             <svg
               aria-hidden="true"
@@ -113,7 +116,15 @@ export default function DetailTransaksiPage() {
           <h1 className="text-base font-semibold text-text">Detail Transaksi</h1>
         </header>
         <main className="flex-1 flex items-center justify-center px-4">
-          <p className="text-sm text-danger">{error || "Transaksi tidak ditemukan."}</p>
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-base font-medium text-danger text-center">{error || "Transaksi tidak ditemukan."}</p>
+            <Link
+              href="/riwayat"
+              className="px-5 h-11 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all inline-flex items-center justify-center"
+            >
+              Kembali ke Riwayat
+            </Link>
+          </div>
         </main>
       </div>
     );
@@ -125,7 +136,7 @@ export default function DetailTransaksiPage() {
         <Link
           href="/riwayat"
           aria-label="Kembali"
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
         >
           <svg
             aria-hidden="true"
@@ -146,13 +157,13 @@ export default function DetailTransaksiPage() {
 
       <main className="flex-1 w-full max-w-lg mx-auto px-4 py-6">
         <div className="flex flex-col gap-6">
-          {/* Amount */}
-          <div className="text-center py-6">
-            <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
+          {/* Amount — focal point */}
+          <div className="text-center py-4">
+            <p className="text-xs font-semibold text-text uppercase tracking-wide mb-3">
               {tx.type === "income" ? "Pemasukan" : "Pengeluaran"}
             </p>
             <p
-              className={`text-[2.5rem] font-bold tabular-nums leading-none ${
+              className={`text-5xl font-bold tabular-nums leading-none ${
                 tx.type === "income" ? "text-income" : "text-expense"
               }`}
             >
@@ -164,16 +175,16 @@ export default function DetailTransaksiPage() {
           {/* Details */}
           <div className="flex flex-col divide-y divide-border border-y border-border">
             <div className="flex items-center justify-between py-3.5">
-              <span className="text-sm text-muted">Kategori</span>
+              <span className="text-sm font-medium text-text">Kategori</span>
               <span className="text-sm font-medium text-text">{tx.category.name}</span>
             </div>
             <div className="flex items-center justify-between py-3.5">
-              <span className="text-sm text-muted">Tanggal</span>
+              <span className="text-sm font-medium text-text">Tanggal</span>
               <span className="text-sm font-medium text-text">{formatDate(tx.transaction_date)}</span>
             </div>
             {tx.description && (
               <div className="flex flex-col gap-1.5 py-3.5">
-                <span className="text-sm text-muted">Catatan</span>
+                <span className="text-sm font-medium text-text">Catatan</span>
                 <p className="text-sm text-text">{tx.description}</p>
               </div>
             )}
@@ -181,16 +192,18 @@ export default function DetailTransaksiPage() {
 
           {/* Actions */}
           {showDeleteConfirm ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-text">
-                Hapus transaksi {tx.type === "income" ? "pemasukan" : "pengeluaran"} {formatRupiah(tx.amount)}?
-              </p>
-              <div className="flex gap-2">
+            <div className="flex flex-col gap-4">
+              <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+                <p className="text-sm font-medium text-danger">
+                  Hapus {tx.type === "income" ? "pemasukan" : "pengeluaran"} {formatRupiah(tx.amount)}?
+                </p>
+              </div>
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="flex-1 h-12 rounded-xl bg-danger text-base font-semibold text-white hover:bg-danger/90 active:scale-[0.98] transition-all disabled:opacity-60"
+                  className="flex-1 h-12 rounded-xl bg-danger text-base font-semibold text-white hover:bg-danger/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isDeleting ? "Menghapus…" : "Hapus"}
                 </button>
@@ -201,17 +214,17 @@ export default function DetailTransaksiPage() {
                     setDeleteError(null);
                   }}
                   disabled={isDeleting}
-                  className="flex-1 h-12 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-60"
+                  className="flex-1 h-12 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Batal
                 </button>
               </div>
               {deleteError && (
-                <p className="text-sm text-danger">{deleteError}</p>
+                <p role="alert" className="text-sm font-medium text-danger text-center">{deleteError}</p>
               )}
             </div>
           ) : (
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3">
               <Link
                 href={`/transaksi/${id}/edit`}
                 className="flex-1 h-12 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all flex items-center justify-center"
@@ -221,7 +234,7 @@ export default function DetailTransaksiPage() {
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex-1 h-12 rounded-xl bg-danger text-base font-semibold text-white hover:bg-danger/90 active:scale-[0.98] transition-all disabled:opacity-60"
+                className="flex-1 h-12 rounded-xl bg-danger text-base font-semibold text-white hover:bg-danger/90 active:scale-[0.98] transition-all"
               >
                 Hapus
               </button>
@@ -232,4 +245,3 @@ export default function DetailTransaksiPage() {
     </div>
   );
 }
-

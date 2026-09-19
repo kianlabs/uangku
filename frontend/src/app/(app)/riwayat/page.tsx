@@ -21,6 +21,7 @@ export default function RiwayatPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   const hasActiveClientFilter = sourceFilter !== "all" || debtFilter !== "all";
 
@@ -43,8 +44,6 @@ export default function RiwayatPage() {
     return result;
   }, [items, sourceFilter, debtFilter]);
 
-  // ponytail: single fetch effect; setState only after await — satisfies react-hooks/set-state-in-effect.
-  // When a client-side filter is active, fetch ALL pages (cap 10 = 200 items) then filter locally.
   useEffect(() => {
     let cancelled = false;
     async function fetchPage() {
@@ -90,27 +89,21 @@ export default function RiwayatPage() {
 
   function handleFilterChange(f: FilterType) {
     setIsLoading(true);
-    setError(null);
     setFilter(f);
     setPage(1);
   }
 
   function handleSourceFilter(s: string) {
-    setIsLoading(true);
-    setError(null);
     setSourceFilter(s);
   }
 
   function handleDebtFilter(d: string) {
-    setIsLoading(true);
-    setError(null);
     setDebtFilter(d);
   }
 
   function handleResetFilter() {
     setSourceFilter("all");
     setDebtFilter("all");
-    setPage(1);
   }
 
   function handleRetry() {
@@ -133,10 +126,23 @@ export default function RiwayatPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold text-text">Riwayat</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-text">Riwayat</h1>
+        <button
+          type="button"
+          onClick={() => setShowFilters(!showFilters)}
+          aria-expanded={showFilters}
+          className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border border-border bg-surface text-sm font-medium text-text hover:bg-surface-muted transition-colors md:hidden"
+        >
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          Filter {hasActiveClientFilter || filter !== "all" ? "•" : ""}
+        </button>
+      </div>
 
-      {/* Filter chips - wrap on 375px mobile */}
-      <div className="flex flex-col gap-2">
+      {/* Filter chips - collapsible on mobile */}
+      <div className={`flex flex-col gap-3 ${showFilters ? "flex" : "hidden md:flex"}`}>
         <div className="flex flex-wrap gap-2">
           {(["all", "income", "expense"] as const).map((f) => (
             <button
@@ -164,7 +170,7 @@ export default function RiwayatPage() {
                   : "bg-surface-muted text-text hover:bg-surface-muted/80 active:scale-95"
               }`}
             >
-              {s === "all" ? "Semua" : s}
+              {s === "all" ? "Semua Sumber" : s}
             </button>
           ))}
         </div>
@@ -180,7 +186,7 @@ export default function RiwayatPage() {
                   : "bg-surface-muted text-text hover:bg-surface-muted/80 active:scale-95"
               }`}
             >
-              {d === "all" ? "Semua" : d === "utang" ? "Utang" : d === "piutang" ? "Piutang" : "Belum lunas"}
+              {d === "all" ? "Semua Kasbon" : d === "utang" ? "Utang" : d === "piutang" ? "Piutang" : "Belum lunas"}
             </button>
           ))}
         </div>
@@ -188,7 +194,7 @@ export default function RiwayatPage() {
         {hasActiveClientFilter && (
           <button
             onClick={handleResetFilter}
-            className="self-start px-4 h-9 rounded-full text-sm font-medium border border-border text-muted hover:text-text hover:border-text transition-colors"
+            className="self-start px-4 h-9 rounded-full text-sm font-medium border border-border text-text hover:bg-surface-muted transition-colors"
           >
             Reset filter
           </button>
@@ -199,7 +205,7 @@ export default function RiwayatPage() {
         <LoadingSkeleton />
       ) : error ? (
         <div className="flex flex-col items-center gap-4 py-16">
-          <p className="text-base text-muted text-center">{error}</p>
+          <p className="text-base text-text text-center">{error}</p>
           <button
             onClick={handleRetry}
             className="px-5 h-11 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all"
@@ -209,7 +215,7 @@ export default function RiwayatPage() {
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-16">
-          <p className="text-base text-muted text-center max-w-xs">
+          <p className="text-base text-text text-center max-w-xs">
             {hasActiveClientFilter
               ? "Tidak ada transaksi yang cocok dengan filter ini."
               : filter === "all"
@@ -250,7 +256,7 @@ export default function RiwayatPage() {
               >
                 Sebelumnya
               </button>
-              <span className="text-sm text-muted tabular-nums">
+              <span className="text-sm text-text font-medium tabular-nums">
                 {page} / {totalPages}
               </span>
               <button
@@ -264,8 +270,8 @@ export default function RiwayatPage() {
           )}
 
           {hasActiveClientFilter && (
-            <p className="text-xs text-muted text-center">
-              {filteredItems.length} transaksi
+            <p className="text-xs text-text font-medium text-center">
+              {filteredItems.length} transaksi ditampilkan
             </p>
           )}
         </>
@@ -284,7 +290,7 @@ function TxRow({ tx }: { tx: Transaction }) {
       href={`/transaksi/${tx.id}`}
       className="group flex items-center gap-3 py-4 px-1 hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
     >
-      <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-muted group-hover:text-text transition-colors">
+      <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-text transition-colors">
         {isIncome ? (
           <svg
             aria-hidden="true"
@@ -320,14 +326,14 @@ function TxRow({ tx }: { tx: Transaction }) {
           {tx.description || tx.category.name}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-xs text-muted">{tx.category.name}</p>
+          <span className="text-xs font-medium text-text">{tx.category.name}</span>
           {source && (
-            <span className="text-[11px] text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
+            <span className="text-[11px] font-medium text-text bg-surface-muted px-2 py-0.5 rounded shrink-0">
               {source}
             </span>
           )}
           {debt && (
-            <span className="text-[11px] text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
+            <span className="text-[11px] font-medium text-text bg-surface-muted px-2 py-0.5 rounded shrink-0">
               {debt.tag === "utang" ? "Utang" : "Piutang"}
               {debt.settled && " (lunas)"}
             </span>
@@ -342,7 +348,7 @@ function TxRow({ tx }: { tx: Transaction }) {
         >
           {isIncome ? "+" : "-"} {formatRupiah(tx.amount)}
         </p>
-        <p className="text-[11px] text-muted">{formatDate(tx.transaction_date)}</p>
+        <p className="text-[11px] font-medium text-text">{formatDate(tx.transaction_date)}</p>
       </div>
     </Link>
   );
