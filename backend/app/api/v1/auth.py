@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
 from app.core.errors import DomainError, EmailTakenError, InvalidCredentialsError
+from app.core.rate_limit import limiter
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, UserResponse
 from app.services.auth import authenticate_user, register_user
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", status_code=201)
+@limiter.limit("5/minute")
 def register(body: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     try:
         user = register_user(db, body.email, body.password)
@@ -28,6 +30,7 @@ def register(body: RegisterRequest, request: Request, db: Session = Depends(get_
 
 
 @router.post("/login")
+@limiter.limit("5/minute")
 def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     try:
         user = authenticate_user(db, body.email, body.password)
