@@ -10,9 +10,11 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Numeric,
     String,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,7 +27,11 @@ if TYPE_CHECKING:
 
 class Transaction(Base):
     __tablename__ = "transactions"
-    __table_args__ = (CheckConstraint("amount > 0", name="ck_transaction_amount_positive"),)
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="ck_transaction_amount_positive"),
+        Index("ix_transactions_user_date", "user_id", text("transaction_date DESC")),
+        Index("ix_transactions_category", "category_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)

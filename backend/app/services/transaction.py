@@ -157,7 +157,7 @@ def update_transaction(
 
     if amount is not None:
         if amount <= 0:
-            raise ValueError("amount must be greater than 0")
+            raise InvalidAmountError()
         tx.amount = amount
     if type_ is not None:
         tx.type = type_
