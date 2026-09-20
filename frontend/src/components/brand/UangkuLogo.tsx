@@ -9,6 +9,8 @@ interface UangkuLogoProps {
   animated?: boolean;
   className?: string;
   priority?: boolean;
+  /** Tampilan horizontal ringkas (mark + kata, tanpa tagline) untuk header. */
+  compact?: boolean;
 }
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -25,8 +27,32 @@ export function UangkuLogo({
   animated = true,
   className = "",
   priority = false,
+  compact = false,
 }: UangkuLogoProps) {
   const markHeight = Math.round((markWidth * 321) / 410);
+
+  if (compact) {
+    return (
+      <span className={`inline-flex items-center gap-2 ${className}`}>
+        <Image
+          src="/images/logo-uangku-mark.png"
+          alt=""
+          aria-hidden="true"
+          width={markWidth}
+          height={markHeight}
+          priority={priority}
+        />
+        <span role="img" aria-label="UangKu" className="text-xl font-bold leading-none tracking-tight">
+          <span aria-hidden="true" className="text-[#024691]">
+            Uang
+          </span>
+          <span aria-hidden="true" className="text-[#27865a]">
+            Ku
+          </span>
+        </span>
+      </span>
+    );
+  }
 
   return (
     <MotionConfig reducedMotion="user">

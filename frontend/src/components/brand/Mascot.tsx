@@ -45,45 +45,92 @@ export function Mascot({
   animated = true,
   mood = "happy",
 }: MascotProps) {
+  const loop = (duration: number) => ({
+    duration,
+    repeat: Infinity,
+    ease: EASE_IN_OUT,
+  });
+
   const motionProps = animated
     ? {
+        // Tiap mood punya sidik gerak sendiri — tidak ada yang sama persis.
         bob:
           mood === "celebrating"
             ? {
-                animate: { y: [0, -10, 0] },
-                transition: { duration: 1.9, repeat: Infinity, ease: EASE_IN_OUT },
+                animate: { y: [0, -10, 0], rotate: [0, -3, 3, 0] },
+                transition: loop(1.9),
               }
-            : mood === "sleepy"
+            : mood === "excited"
               ? {
-                  animate: { y: [0, -3, 0] },
-                  transition: { duration: 4.6, repeat: Infinity, ease: EASE_IN_OUT },
+                  animate: { y: [0, -8, 0], rotate: [0, -2, 2, 0] },
+                  transition: loop(1.6),
                 }
-              : {
-                  animate: { y: [0, -5, 0] },
-                  transition: { duration: 3.2, repeat: Infinity, ease: EASE_IN_OUT },
-                },
+              : mood === "worried"
+                ? {
+                    animate: { x: [0, -1.5, 1.5, 0], y: [0, -2, 0] },
+                    transition: loop(1.1),
+                  }
+                : mood === "thinking"
+                  ? {
+                      animate: { rotate: [-1.2, 1.2, -1.2] },
+                      transition: loop(5),
+                    }
+                  : mood === "sleepy"
+                    ? {
+                        animate: { y: [0, -3, 0], rotate: [0, 1.2, 0] },
+                        transition: loop(4.6),
+                      }
+                    : {
+                        animate: { y: [0, -5, 0] },
+                        transition: loop(3.2),
+                      },
         blink: {
           animate: { scaleY: [1, 1, 0.08, 1, 1] },
-          transition: { duration: 4.4, repeat: Infinity, ease: EASE_IN_OUT },
+          transition: loop(
+            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : 4.4
+          ),
         },
         wave: {
-          animate: { rotate: [0, -22, 10, 0] },
-          transition: { duration: 2.4, repeat: Infinity, ease: EASE_IN_OUT },
+          animate: {
+            rotate:
+              mood === "excited"
+                ? [0, -30, 14, 0]
+                : mood === "celebrating"
+                  ? [0, -26, 12, 0]
+                  : mood === "worried"
+                    ? [0, -14, 8, 0]
+                    : mood === "thinking"
+                      ? [0, -8, 4, 0]
+                      : [0, -22, 10, 0],
+          },
+          transition: loop(
+            mood === "excited" || mood === "worried"
+              ? 1.2
+              : mood === "celebrating"
+                ? 1.6
+                : mood === "thinking"
+                  ? 5
+                  : 2.4
+          ),
         },
         coin: {
           animate: { y: [0, -6, 0], rotate: [0, 8, 0] },
-          transition: { duration: 3.8, repeat: Infinity, ease: EASE_IN_OUT },
+          transition: loop(mood === "excited" ? 2.4 : mood === "sleepy" ? 5 : 3.8),
         },
         drip: {
           animate: { y: [0, 4, 0], opacity: [1, 0.7, 1] },
-          transition: { duration: 2, repeat: Infinity, ease: EASE_IN_OUT },
+          transition: loop(2),
         },
         floaty: {
           animate: { y: [0, -5, 0], opacity: [0.7, 1, 0.7] },
-          transition: { duration: 3, repeat: Infinity, ease: EASE_IN_OUT },
+          transition: loop(3.5),
+        },
+        confetti: {
+          animate: { y: [0, -8, 0], rotate: [0, 20, 0], opacity: [0.6, 1, 0.6] },
+          transition: loop(1.8),
         },
       }
-    : { bob: {}, blink: {}, wave: {}, coin: {}, drip: {}, floaty: {} };
+    : { bob: {}, blink: {}, wave: {}, coin: {}, drip: {}, floaty: {}, confetti: {} };
 
   const showBlush =
     mood === "happy" || mood === "excited" || mood === "celebrating";
@@ -138,7 +185,7 @@ export function Mascot({
 
           {/* konfeti */}
           {mood === "celebrating" && (
-            <motion.g {...motionProps.floaty} style={SVG_ORIGIN}>
+            <motion.g {...motionProps.confetti} style={SVG_ORIGIN}>
               <circle cx="28" cy="46" r="3.5" fill="#27865a" />
               <circle cx="136" cy="72" r="3" fill="#024691" />
               <circle cx="22" cy="108" r="3" fill="#f43f5e" />

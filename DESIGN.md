@@ -123,6 +123,20 @@ konteks. Implementasi: `frontend/src/components/brand/Mascot.tsx`
 - Jangan: loop cepat (<2s), bounce berlebihan, animasi yang menghalangi
   baca angka atau tombol.
 
+### Sidik Gerak per Mood
+
+Tiap mood punya kombinasi sumbu + tempo sendiri (tidak ada yang sama
+persis) — implementasi di `Mascot.tsx`:
+
+| Mood | Badan | Mata/tangan |
+|---|---|---|
+| `happy` | melayang 3.2s | kedip 4.4s, lambai 2.4s |
+| `excited` | hop miring 1.6s | lambai lebar 1.2s, koin cepat |
+| `thinking` | goyang rotasi 5s (nyaris diam) | kedip lambat 6s, lambai pelan |
+| `worried` | gemetar 1.1s | kedip cepat 2.2s, keringat menetes |
+| `sleepy` | turun miring lambat 4.6s | tanpa kedip/lambai, "Zzz" melayang |
+| `celebrating` | lompat miring 1.9s | lambai cepat, konfeti berputar |
+
 ### Aturan Penempatan
 
 - Satu Mochi per layar; ukuran 56–148px sesuai hierarki (hiasan kecil di
