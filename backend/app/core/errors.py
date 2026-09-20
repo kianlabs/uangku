@@ -57,3 +57,7 @@ class InvalidMonthError(DomainError):
 
 class InvalidAmountError(DomainError):
     marker = "amount must be greater than 0"
+
+
+class ExportTooLargeError(DomainError):
+    marker = "export_too_large"

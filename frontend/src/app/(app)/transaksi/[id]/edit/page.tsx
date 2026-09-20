@@ -12,8 +12,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { Category, TransactionDetail, TransactionType } from "@/lib/types";
 
-const today = todayLocalISO();
-
 function parseAmountInput(value: string): number {
   return value.includes(".") ? parseFloat(value) : parseFloat(value.replace(/\D/g, ""));
 }
@@ -22,6 +20,7 @@ export default function EditTransaksiPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const [today] = useState(() => todayLocalISO());
 
   const [original, setOriginal] = useState<TransactionDetail | null>(null);
   const [isLoadingTx, setIsLoadingTx] = useState(true);

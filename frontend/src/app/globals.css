@@ -1,24 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  /* Color tokens in OKLCH for perceptual uniformity */
-  --color-canvas: oklch(98.5% 0.004 85);
+  /* Color tokens in OKLCH - Modern Fintech Premium */
+  --color-canvas: oklch(98.8% 0.003 240);
   --color-surface: oklch(100% 0 0);
-  --color-surface-muted: oklch(95% 0.006 85);
-  --color-border: oklch(92% 0.006 85);
-  --color-text: oklch(15% 0.004 140);
-  --color-muted: oklch(43% 0.005 140);
-  --color-accent: oklch(35% 0.08 160);
+  --color-surface-muted: oklch(96.5% 0.004 240);
+  --color-border: oklch(91.5% 0.006 240);
+  --color-text: oklch(18% 0.015 240);
+  --color-muted: oklch(48% 0.015 240);
+  --color-accent: oklch(46% 0.13 160);
   --color-accent-ink: oklch(100% 0 0);
-  --color-income: oklch(28% 0.09 155);
-  --color-expense: oklch(42% 0.19 25);
-  --color-danger: oklch(42% 0.19 25);
+  --color-income: oklch(48% 0.14 155);
+  --color-expense: oklch(52% 0.19 25);
+  --color-danger: oklch(52% 0.19 25);
 
   --font-sans: var(--font-geist-sans);
 
   --radius-sm: 0.625rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -68,4 +69,10 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }

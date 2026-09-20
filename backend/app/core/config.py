@@ -25,13 +25,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_production_secret(self) -> "Settings":
-        if (
-            self.app_env == "production"
-            and self.secret_key == "change-me-in-production"
-        ):
-            raise ValueError(
-                "SECRET_KEY must be changed from the default value in production."
-            )
+        if self.app_env == "production":
+            if self.secret_key == "change-me-in-production":
+                raise ValueError(
+                    "SECRET_KEY must be changed from the default value in production."
+                )
+            if len(self.secret_key) < 32:
+                raise ValueError(
+                    "SECRET_KEY must be at least 32 characters in production."
+                )
         return self
 
     @model_validator(mode="after")

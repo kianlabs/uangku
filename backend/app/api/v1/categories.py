@@ -16,6 +16,7 @@ from app.models.user import User
 from app.schemas.category import (
     CategoryCreateRequest,
     CategoryDetailResponse,
+    CategoryListResponse,
     CategoryResponse,
     CategoryType,
     CategoryUpdatedResponse,
@@ -31,7 +32,7 @@ from app.services.category import (
 router = APIRouter(prefix="/categories", tags=["categories"])
 
 
-@router.get("")
+@router.get("", response_model=CategoryListResponse)
 def get_categories(
     type: CategoryType | None = Query(None),
     db: Session = Depends(get_db),
@@ -92,7 +93,7 @@ def delete_category_endpoint(
     except CategoryInUseError:
         raise HTTPException(
             status_code=409,
-            detail={"code": "CATEGORY_IN_USE", "message": "Category masih digunakan oleh transaksi."},
+            detail={"code": "CATEGORY_IN_USE", "message": "Category is still used by transactions."},
         )
     except NotFoundError:
         raise HTTPException(

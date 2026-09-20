@@ -79,6 +79,8 @@ def create_transaction(
     db.add(tx)
     db.commit()
     db.refresh(tx)
+    # Eager-load category to avoid extra lazy query in response serialization.
+    db.refresh(tx, attribute_names=["category"])
     return tx
 
 
@@ -104,6 +106,10 @@ def list_transactions(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> dict[str, Any]:
+    if page < 1:
+        raise ValueError("page must be >= 1")
+    if page_size < 1:
+        raise ValueError("page_size must be >= 1")
     stmt = select(Transaction).where(Transaction.user_id == user.id)
     stmt = _apply_transaction_filters(
         stmt,
@@ -189,7 +195,10 @@ def get_transactions_for_export(
     category_id: uuid.UUID | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    limit: int = 10000,
 ) -> list[Transaction]:
+    from app.core.errors import ExportTooLargeError
+
     stmt = select(Transaction).where(Transaction.user_id == user.id)
     stmt = _apply_transaction_filters(
         stmt,
@@ -202,5 +211,11 @@ def get_transactions_for_export(
         stmt
         .options(joinedload(Transaction.category))
         .order_by(Transaction.transaction_date.desc(), Transaction.created_at.desc())
+        .limit(limit + 1)
     )
-    return list(db.scalars(stmt).all())
+    rows = list(db.scalars(stmt).all())
+    if len(rows) > limit:
+        raise ExportTooLargeError(
+            f"Export exceeds {limit} rows. Narrow the date range or filters."
+        )
+    return rows

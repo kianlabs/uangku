@@ -4,18 +4,32 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 CategoryType = Literal["income", "expense"]
 
 
 class CategoryCreateRequest(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=100)
     type: CategoryType
+
+    @field_validator("name")
+    @classmethod
+    def name_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("name must not be blank")
+        return v.strip()
 
 
 class CategoryUpdateRequest(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("name")
+    @classmethod
+    def name_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("name must not be blank")
+        return v.strip()
 
 
 class CategoryResponse(BaseModel):
@@ -42,3 +56,7 @@ class CategoryUpdatedResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CategoryListResponse(BaseModel):
+    items: list[CategoryResponse]

@@ -45,22 +45,26 @@ export default function RiwayatPage() {
   }, [items, sourceFilter, debtFilter]);
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
     async function fetchPage() {
+      setError(null);
       try {
         if (sourceFilter !== "all" || debtFilter !== "all") {
           const allItems: Transaction[] = [];
           const MAX_PAGES = 10;
           for (let i = 1; i <= MAX_PAGES; i++) {
+            if (cancelled || controller.signal.aborted) break;
             const res = await listTransactions({
               page: i,
               page_size: PAGE_SIZE,
               type: filter === "all" ? undefined : filter,
+              signal: controller.signal,
             });
             allItems.push(...res.items);
             if (i >= res.pagination.total_pages) break;
           }
-          if (!cancelled) {
+          if (!cancelled && !controller.signal.aborted) {
             setItems(allItems);
             setTotalPages(1);
           }
@@ -69,21 +73,23 @@ export default function RiwayatPage() {
             page,
             page_size: PAGE_SIZE,
             type: filter === "all" ? undefined : filter,
+            signal: controller.signal,
           });
-          if (!cancelled) {
+          if (!cancelled && !controller.signal.aborted) {
             setItems(res.items);
             setTotalPages(res.pagination.total_pages);
           }
         }
       } catch {
-        if (!cancelled) setError("Gagal memuat transaksi.");
+        if (!cancelled && !controller.signal.aborted) setError("Gagal memuat transaksi.");
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled && !controller.signal.aborted) setIsLoading(false);
       }
     }
     fetchPage();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [page, filter, sourceFilter, debtFilter, reloadKey]);
 
@@ -94,10 +100,14 @@ export default function RiwayatPage() {
   }
 
   function handleSourceFilter(s: string) {
+    setIsLoading(true);
+    setPage(1);
     setSourceFilter(s);
   }
 
   function handleDebtFilter(d: string) {
+    setIsLoading(true);
+    setPage(1);
     setDebtFilter(d);
   }
 

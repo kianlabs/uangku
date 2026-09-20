@@ -85,8 +85,8 @@ export function BottomNav() {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={[
-                  "flex flex-col items-center justify-center h-full gap-1 transition-colors select-none min-h-[44px]",
-                  isActive ? "text-accent" : "text-muted hover:text-text",
+                  "flex flex-col items-center justify-center h-full gap-1 transition-colors select-none min-h-[44px] rounded-xl mx-2 my-1",
+                  isActive ? "text-accent bg-accent/10" : "text-muted hover:text-text",
                 ].join(" ")}
               >
                 {item.icon}

@@ -14,6 +14,7 @@ import { getPayday } from "@/lib/local-storage";
 import type { DashboardMetrics, DashboardSummary, RecentTransactionItem, User } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
+import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
 import { Header } from "@/components/dashboard/Header";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
@@ -109,9 +110,7 @@ export default function BerandaPage() {
     metrics.week_expense_total !== "0.00"
       ? generateWeeklyReflection(
           parseFloat(metrics.week_expense_total),
-          metrics.week_top_category
-            ? { name: metrics.week_top_category, amount: parseFloat(metrics.week_expense_total) }
-            : null
+          metrics.week_top_category ? { name: metrics.week_top_category } : null
         )
       : null;
 
@@ -143,6 +142,14 @@ export default function BerandaPage() {
             safeToSpendAmount={parseFloat(metrics.safe_to_spend)}
             daysLeft={metrics.days_left}
             remainingBalance={metrics.remaining_balance}
+          />
+        )}
+
+        {isCurrentMonth && parseFloat(data.monthly_income) > 0 && (
+          <BudgetWarning
+            spent={data.monthly_expense}
+            limit={data.monthly_income}
+            label="Pengeluaran vs pemasukan"
           />
         )}
 
@@ -239,7 +246,6 @@ function ShimmerBlock({ className }: { className: string }) {
 function LoadingSkeleton() {
   return (
     <div className="flex flex-col gap-8 pb-4" role="status" aria-label="Memuat data beranda">
-      <style>{`@keyframes shimmer { 100% { transform: translateX(100%); } }`}</style>
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <ShimmerBlock className="w-36 h-6" />

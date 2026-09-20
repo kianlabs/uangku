@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -69,9 +69,16 @@ def delete_category(db: Session, user: User, category_id: uuid.UUID) -> None:
     if not cat:
         raise NotFoundError()
     in_use = db.scalar(
-        select(Transaction).where(Transaction.category_id == category_id)
+        select(exists().where(
+            Transaction.category_id == category_id,
+            Transaction.user_id == user.id,
+        ))
     )
     if in_use:
         raise CategoryInUseError()
-    db.delete(cat)
-    db.commit()
+    try:
+        db.delete(cat)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise CategoryInUseError()

@@ -53,16 +53,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     function handleUnauthorized() {
+      // Already on auth page — don't redirect, allow future events.
+      if (["/masuk", "/daftar"].includes(window.location.pathname)) {
+        unauthorizedRef.current = false;
+        return;
+      }
       // Guard: prevent re-triggering while cleanup is in flight
       if (unauthorizedRef.current) return;
       unauthorizedRef.current = true;
 
       setUser(null);
-
-      // Already on auth page — don't redirect again
-      if (["/masuk", "/daftar"].includes(window.location.pathname)) {
-        return;
-      }
 
       // Best-effort logout: clear session server-side via Set-Cookie.
       // Ignore all errors — session is already invalid (401 triggered this).
@@ -72,8 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Hard redirect required to break infinite loop:
       // stale session cookie still present in proxy after unauthorized event.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = "/masuk";
+      // Preserve destination so login can redirect back via ?next=.
+      const next = `${window.location.pathname}${window.location.search}`;
+      const target =
+        next.startsWith("/") && !next.startsWith("//") && next !== "/"
+          ? `/masuk?next=${encodeURIComponent(next)}`
+          : "/masuk";
+      window.location.href = target;
     }
 
     window.addEventListener("uangku:unauthorized", handleUnauthorized);
@@ -84,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginUser = useCallback(async (email: string, password: string) => {
     const u = await login(email, password);
+    unauthorizedRef.current = false;
     setUser(u);
     // Hydrate localStorage dari backend setelah login
     getPreferences()
@@ -93,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const registerUser = useCallback(async (email: string, password: string) => {
     const u = await register(email, password);
+    unauthorizedRef.current = false;
     setUser(u);
     // Preferences kosong untuk user baru — tidak perlu hydrate, localStorage sudah default
   }, []);

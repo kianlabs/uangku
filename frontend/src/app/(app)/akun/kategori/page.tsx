@@ -142,7 +142,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pengeluaran</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {expenseItems.map((cat) => (
-              <CategoryRow key={cat.id + ':' + cat.name} category={cat} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pemasukan</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {incomeItems.map((cat) => (
-              <CategoryRow key={cat.id + ':' + cat.name} category={cat} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} onUpdate={load} />
             ))}
           </div>
         </div>

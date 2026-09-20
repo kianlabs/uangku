@@ -15,6 +15,14 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 
 ## 2. Color Palette & Theming (Tailwind CSS - Light Mode Only)
 
+> Catatan token: komponen dashboard (`BalanceCard`, `SafeToSpendCard`,
+> `SpendingDonut`, `BudgetWarning`, `Header`, `MonthNavigator`, halaman
+> `/beranda`) memakai palet slate/emerald di bawah persis seperti tertulis.
+> Token OKLCH di `frontend/src/app/globals.css` (`canvas`/`surface`/`accent`/...)
+> dipakai halaman non-dashboard (`riwayat`, `akun`, auth) dan dipetakan ke
+> warna yang sama secara visual (`accent` ≈ `emerald-600`). Jangan migrasi
+> massal satu ke lainnya tanpa review visual di browser.
+
 - **Background Utama:** `bg-slate-50` (putih keabuan sangat lembut)
 - **Card / Surface:** `bg-white` dengan border halus `border-slate-100` dan bayangan lembut `shadow-sm`
 - **Safe to Spend Card:** `bg-emerald-50/70` dengan border `border-emerald-100`

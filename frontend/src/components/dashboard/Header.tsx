@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Settings } from "lucide-react";
+import Link from "next/link";
+import { Settings } from "lucide-react";
 
 interface HeaderProps {
   userName: string;
@@ -25,18 +26,13 @@ export function Header({ userName, currentDate }: HeaderProps) {
         <p className="text-sm text-slate-500">{dateStr}</p>
       </div>
       <div className="flex items-center gap-3">
-        <button
-          aria-label="Notifikasi"
-          className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-100 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
-        >
-          <Bell className="w-5 h-5 text-slate-900" aria-hidden="true" />
-        </button>
-        <button
+        <Link
+          href="/akun"
           aria-label="Pengaturan"
           className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-100 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
         >
           <Settings className="w-5 h-5 text-slate-900" aria-hidden="true" />
-        </button>
+        </Link>
       </div>
     </header>
   );

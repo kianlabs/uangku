@@ -7,6 +7,7 @@ export interface ListTransactionsParams {
   type?: TransactionType;
   date_from?: string;
   date_to?: string;
+  signal?: AbortSignal;
 }
 
 export async function listTransactions(
@@ -19,7 +20,9 @@ export async function listTransactions(
   if (params.date_from) q.set("date_from", params.date_from);
   if (params.date_to) q.set("date_to", params.date_to);
   const qs = q.toString();
-  return apiFetch<TransactionListResponse>(`/api/v1/transactions${qs ? `?${qs}` : ""}`);
+  return apiFetch<TransactionListResponse>(`/api/v1/transactions${qs ? `?${qs}` : ""}`, {
+    signal: params.signal,
+  });
 }
 
 export interface CreateTransactionParams {
@@ -71,6 +74,9 @@ export async function exportTransactionsCsv(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("uangku:unauthorized"));
+    }
     let message = "Gagal mengekspor data. Coba lagi.";
     try {
       const data = await response.clone().json();

@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from app.schemas.category import CategoryType
 
@@ -13,7 +13,7 @@ class TransactionCreateRequest(BaseModel):
     type: CategoryType
     amount: Decimal
     category_id: uuid.UUID
-    description: str | None = None
+    description: str | None = Field(None, max_length=500)
     transaction_date: date
 
     @field_validator("amount")
@@ -28,7 +28,7 @@ class TransactionUpdateRequest(BaseModel):
     type: CategoryType | None = None
     amount: Decimal | None = None
     category_id: uuid.UUID | None = None
-    description: str | None = None
+    description: str | None = Field(None, max_length=500)
     transaction_date: date | None = None
 
     @field_validator("amount")

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
@@ -13,6 +13,7 @@ from app.core.errors import (
     NotFoundError,
     TypeMismatchError,
 )
+from app.core.rate_limit import limiter
 from app.models.user import User
 from app.schemas.category import CategoryType
 from app.schemas.transaction import (
@@ -38,7 +39,9 @@ _NON_NULLABLE_PATCH_FIELDS = {"type", "amount", "category_id", "transaction_date
 
 
 @router.get("", response_model=TransactionListResponse)
+@limiter.limit("60/minute")
 def get_transactions(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     type: CategoryType | None = Query(None),

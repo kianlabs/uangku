@@ -15,10 +15,12 @@ export default function ExportDataPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   async function handleExport() {
     setError(null);
+    setSuccess(null);
     setIsExporting(true);
     try {
       const { blob, filename } = await exportTransactionsCsv({
@@ -33,9 +35,11 @@ export default function ExportDataPage() {
       document.body.appendChild(a);
       a.click();
       a.remove();
+      setSuccess(`Berhasil mengunduh ${filename}.`);
+      // Revoke after 60s so large downloads aren't killed mid-save.
       setTimeout(() => {
         URL.revokeObjectURL(url);
-      }, 1000);
+      }, 60000);
     } catch (err) {
       if (err instanceof ApiResponseError) {
         setError(err.message);
@@ -91,6 +95,15 @@ export default function ExportDataPage() {
           className="rounded-xl bg-surface border border-danger px-4 py-3 text-sm text-danger"
         >
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          role="status"
+          className="rounded-xl bg-surface border border-border px-4 py-3 text-sm text-text"
+        >
+          {success}
         </div>
       )}
 

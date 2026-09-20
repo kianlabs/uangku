@@ -25,6 +25,7 @@ def register(body: RegisterRequest, request: Request, db: Session = Depends(get_
         )
     except DomainError as exc:
         raise HTTPException(status_code=400, detail={"code": "BAD_REQUEST", "message": str(exc)})
+    request.session.clear()
     request.session["user_id"] = str(user.id)
     return {"user": UserResponse.model_validate(user).model_dump(mode="json")}
 
@@ -39,6 +40,7 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
             status_code=401,
             detail={"code": "INVALID_CREDENTIALS", "message": "Invalid email or password."},
         )
+    request.session.clear()
     request.session["user_id"] = str(user.id)
     return {"user": UserResponse.model_validate(user).model_dump(mode="json")}
 

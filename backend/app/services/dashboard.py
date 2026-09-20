@@ -149,10 +149,11 @@ def get_dashboard_summary(
 # ---------------------------------------------------------------------------
 
 def _days_until_next_payday(today: date, payday: int) -> int:
-    """Return number of days from *today* (inclusive) until the next payday.
+    """Return number of days from *today* (exclusive) until the next payday.
 
-    If payday is today, returns 1 (spend budget for today only).
-    If payday already passed this month, target is next month's payday.
+    If payday is today, the target moves to next month's payday (e.g. ~30 days),
+    so the daily budget spreads over the full cycle. If payday already passed
+    this month, target is next month's payday.
     Clamps the payday day to the last day of the target month to handle
     months shorter than 31 days (e.g. payday=31 in February → Feb 28/29).
     """
@@ -192,6 +193,8 @@ def get_user_metrics(
         payday: Day of month the user gets paid (1-31). Used for safe-to-spend.
         today:  Override today's date (for testing).
     """
+    if not 1 <= payday <= 31:
+        raise ValueError("payday must be between 1 and 31")
     if today is None:
         today = datetime.now(UTC).date()
 
@@ -263,7 +266,9 @@ def get_user_metrics(
 
     remaining_balance = monthly_income - monthly_expense
     days_left = _days_until_next_payday(today, payday)
-    safe_to_spend = (remaining_balance / days_left) if days_left > 0 else Decimal(0)
+    # Clamp to zero: overspent months show Rp 0/day instead of a negative budget.
+    raw_safe = (remaining_balance / days_left) if days_left > 0 else Decimal(0)
+    safe_to_spend = raw_safe if raw_safe > 0 else Decimal(0)
 
     return {
         "transaction_dates": transaction_dates,

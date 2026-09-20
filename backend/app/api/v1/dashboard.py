@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
 from app.core.errors import DomainError, InvalidMonthError
+from app.core.rate_limit import limiter
 from app.models.user import User
 from app.schemas.dashboard import DashboardMetricsResponse, DashboardSummaryResponse
 from app.services.dashboard import get_dashboard_summary, get_user_metrics
@@ -13,7 +14,9 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
+@limiter.limit("60/minute")
 def dashboard_summary(
+    request: Request,
     month: str = Query(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -34,7 +37,9 @@ def dashboard_summary(
 
 
 @router.get("/metrics", response_model=DashboardMetricsResponse)
+@limiter.limit("60/minute")
 def dashboard_metrics(
+    request: Request,
     payday: int = Query(1, ge=1, le=31),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),

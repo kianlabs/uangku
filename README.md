@@ -67,9 +67,9 @@ cd frontend && npx playwright install     # install browsers (first time)
 |---|---|---|
 | `DATABASE_URL` | `postgresql+psycopg://.../uangku` | dev database |
 | `DATABASE_URL_TEST` | `postgresql+psycopg://.../uangku_test` | pytest database |
-| `SECRET_KEY` | random string, min 32 chars | **required in production** (`APP_ENV=production` refuses the default) |
+| `SECRET_KEY` | random string, min 32 chars | **required in production** (`APP_ENV=production` refuses default and enforces min 32 chars) |
 | `HTTPS_ONLY` | `false` | must be `true` in production (enforced) or session cookies go over HTTP |
-| `BACKEND_URL` | `http://localhost:8000` | frontend rewrite target (server-side only) |
+| `BACKEND_URL` | `http://localhost:8000` | frontend env (`frontend/.env.local`), rewrite target (server-side only) |
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
 | `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting |
 
@@ -91,8 +91,13 @@ from the client are never trusted for ownership.
 - Set `APP_ENV=production`, a strong `SECRET_KEY`, and `HTTPS_ONLY=true`.
 - Set `TRUSTED_PROXY_IPS` to the IP(s) of your reverse proxy (e.g. Nginx/Cloudflare) so rate limiting correctly identifies individual clients behind the proxy. Without this, all users share the same rate-limit bucket.
 - Run `alembic upgrade head` on deploy; never edit applied migrations.
-- No rate limiting is built in — put login/register behind reverse-proxy
-  rate limiting (e.g. nginx `limit_req`) in production.
+- Auth endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`) are rate-limited
+  in-app to 5 requests/minute per IP (SlowAPI); export to 30/minute and
+  dashboard/transaction-list to 60/minute. Storage is in-memory per process —
+  for multi-worker production, switch the limiter to Redis (see
+  `backend/app/core/rate_limit.py`). For defense in depth, also put
+  login/register behind reverse-proxy rate limiting (e.g. nginx `limit_req`)
+  in production.
 - Session cookies are `httpOnly`, `SameSite=lax`, and expire with the browser
   session; logout clears the server-side session.
 - See `docs/architecture.md` and `docs/erd.md` for deeper design docs.

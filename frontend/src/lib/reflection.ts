@@ -1,6 +1,6 @@
 export function generateWeeklyReflection(
   totalExpense: number,
-  topCategory: { name: string; amount: number } | null
+  topCategory: { name: string } | null
 ): string {
   if (totalExpense === 0) return "Belum ada pengeluaran minggu ini.";
   

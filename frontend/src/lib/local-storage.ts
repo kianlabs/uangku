@@ -41,13 +41,15 @@ export function seedLocalStorageFromPreferences(prefs: UserPreferences): void {
   if (prefs.payday != null) {
     localStorage.setItem(PAYDAY_KEY, String(prefs.payday));
   }
-  if (prefs.tx_sources != null) {
+  // Merge, don't blind-overwrite: empty objects/arrays from backend
+  // (new user) must not wipe local defaults (e.g. subscription templates).
+  if (prefs.tx_sources != null && Object.keys(prefs.tx_sources).length > 0) {
     localStorage.setItem(SOURCES_KEY, JSON.stringify(prefs.tx_sources));
   }
-  if (prefs.debt_tags != null) {
+  if (prefs.debt_tags != null && Object.keys(prefs.debt_tags).length > 0) {
     localStorage.setItem(DEBT_TAGS_KEY, JSON.stringify(prefs.debt_tags));
   }
-  if (prefs.templates != null) {
+  if (prefs.templates != null && prefs.templates.length > 0) {
     localStorage.setItem(TEMPLATES_KEY, JSON.stringify(prefs.templates));
   }
 }

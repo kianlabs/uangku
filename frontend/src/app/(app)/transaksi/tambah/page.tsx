@@ -14,14 +14,13 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { Category, TransactionType } from "@/lib/types";
 
-const today = todayLocalISO();
-
 function normalizeCategoryName(value: string): string {
   return value.trim().toLowerCase();
 }
 
 export default function TambahTransaksiPage() {
   const router = useRouter();
+  const [today] = useState(() => todayLocalISO());
 
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");

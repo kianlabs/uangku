@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ApiResponseError } from "@/lib/api";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { registerUser } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -45,7 +46,9 @@ export function RegisterForm() {
     setIsLoading(true);
     try {
       await registerUser(email, password);
-      router.push("/beranda");
+      const next = searchParams.get("next") || "/beranda";
+      const redirect = next.startsWith("/") && !next.startsWith("//") ? next : "/beranda";
+      router.push(redirect);
     } catch (err) {
       if (err instanceof ApiResponseError && err.fields) {
         const newErrors: typeof errors = {};

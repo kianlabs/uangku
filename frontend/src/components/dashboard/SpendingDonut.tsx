@@ -14,6 +14,7 @@ const PALETTE = [
   "oklch(55% 0.06 160)",
   "oklch(65% 0.05 160)",
   "oklch(75% 0.04 160)",
+  "oklch(82% 0.03 160)",
 ];
 
 // SVG murni (~30 baris path) — tanpa library chart eksternal.
@@ -42,13 +43,21 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
   const total = Number.parseFloat(monthlyExpense);
   if (!data.length || !Number.isFinite(total) || total <= 0) return null;
 
-  const top = data.slice(0, 5).map((c) => ({
+  const topItems = data.slice(0, 5);
+  const topSum = topItems.reduce((s, c) => s + Number.parseFloat(c.amount), 0);
+  const rest = total - topSum;
+
+  const entries = topItems.map((c) => ({
     name: c.category_name,
     amount: Number.parseFloat(c.amount),
     pct: (Number.parseFloat(c.amount) / total) * 100,
   }));
+  // Bucket remainder so slices always close the full 360°.
+  if (rest > 0.005 && data.length > 5) {
+    entries.push({ name: "Lainnya", amount: rest, pct: (rest / total) * 100 });
+  }
 
-  const slices = top.reduce<{ start: number; end: number; color: string; name: string; amount: number; pct: number }[]>(
+  const slices = entries.reduce<{ start: number; end: number; color: string; name: string; amount: number; pct: number }[]>(
     (acc, s, i) => {
       const start = acc.length > 0 ? acc[acc.length - 1].end : 0;
       const end = start + s.pct;

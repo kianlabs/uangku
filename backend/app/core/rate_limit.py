@@ -1,4 +1,4 @@
-"""Shared rate limiter for auth endpoints.
+"""Shared rate limiter for API endpoints.
 
 ``get_client_ip`` resolves the real client IP safely:
 - If the direct connection comes from a configured TRUSTED_PROXY_IP, the first
@@ -7,10 +7,19 @@
   ``request.client.host`` so an attacker cannot spoof the header by simply
   adding it to their own request.
 
+Limits: auth 5/minute (brute-force), export 30/minute (scraping/DoS),
+dashboard + transaction list 60/minute (scraping).
+
 Production setup:
   Set ``TRUSTED_PROXY_IPS`` env var to the IP(s) of your reverse proxy, e.g.
   ``TRUSTED_PROXY_IPS=10.0.0.1`` for a single Nginx instance.
   Multiple IPs are comma-separated: ``TRUSTED_PROXY_IPS=10.0.0.1,10.0.0.2``.
+
+Multi-worker note:
+  Default storage is in-memory per process (SlowAPI). For multi-worker
+  deployments (e.g. gunicorn -k uvicorn.workers with >1 worker), switch to
+  Redis storage so buckets are shared, e.g.
+  ``Limiter(key_func=get_client_ip, storage_uri="redis://localhost:6379")``.
 """
 
 from fastapi import Request

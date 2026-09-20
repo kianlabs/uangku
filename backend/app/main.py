@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1.auth import router as auth_router
@@ -30,6 +31,43 @@ def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "same-origin"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+
+class CsrfOriginMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        from app.core.csrf import is_csrf_allowed
+
+        host = request.headers.get("host", "")
+        origin = request.headers.get("origin")
+        referer = request.headers.get("referer")
+        if not is_csrf_allowed(
+            method=request.method, host=host, origin=origin, referer=referer
+        ):
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "error": {
+                        "code": "CSRF_FAILED",
+                        "message": "Cross-origin request rejected.",
+                    }
+                },
+            )
+        return await call_next(request)
+
+
+app.add_middleware(CsrfOriginMiddleware)
 
 app.add_middleware(
     SessionMiddleware,
