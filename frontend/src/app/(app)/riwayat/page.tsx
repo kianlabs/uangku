@@ -6,6 +6,7 @@ import { listTransactions } from "@/lib/transactions";
 import type { Transaction, TransactionType } from "@/lib/types";
 import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
 import { formatRupiah, formatDate } from "@/lib/format";
+import { Mascot } from "@/components/brand/Mascot";
 
 const PAGE_SIZE = 20;
 
@@ -225,9 +226,13 @@ export default function RiwayatPage() {
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-16">
+          <Mascot
+            size={110}
+            mood={hasActiveClientFilter || filter !== "all" ? "thinking" : "happy"}
+          />
           <p className="text-base text-text text-center max-w-xs">
             {hasActiveClientFilter
-              ? "Tidak ada transaksi yang cocok dengan filter ini."
+              ? "Hmm, tidak ada yang cocok. Coba ubah filternya ya?"
               : filter === "all"
                 ? "Belum ada transaksi."
                 : `Tidak ada transaksi ${filter === "income" ? "pemasukan" : "pengeluaran"}.`}

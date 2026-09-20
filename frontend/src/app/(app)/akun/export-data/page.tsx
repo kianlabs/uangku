@@ -7,6 +7,7 @@ import type { TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { Mascot } from "@/components/brand/Mascot";
 
 type FilterType = "all" | TransactionType;
 
@@ -101,9 +102,10 @@ export default function ExportDataPage() {
       {success && (
         <div
           role="status"
-          className="rounded-xl bg-surface border border-border px-4 py-3 text-sm text-text"
+          className="flex items-center gap-3 rounded-xl bg-surface border border-border px-4 py-3"
         >
-          {success}
+          <Mascot size={52} mood="celebrating" animated={false} />
+          <p className="text-sm text-text">{success}</p>
         </div>
       )}
 

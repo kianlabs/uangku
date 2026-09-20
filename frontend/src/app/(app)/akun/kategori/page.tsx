@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/categories";
+import { deleteBudget, listBudgets, upsertBudget } from "@/lib/budgets";
+import { formatRupiah } from "@/lib/format";
+import { Mascot } from "@/components/brand/Mascot";
 import type { Category, TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -10,6 +13,7 @@ import { ApiResponseError } from "@/lib/api";
 
 export default function KategoriPage() {
   const [items, setItems] = useState<Category[]>([]);
+  const [budgets, setBudgets] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -26,8 +30,11 @@ export default function KategoriPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await listCategories();
-      setItems(res.items);
+      const [cats, budgetRes] = await Promise.all([listCategories(), listBudgets()]);
+      setItems(cats.items);
+      const map: Record<string, string> = {};
+      for (const b of budgetRes.items) map[b.category_id] = b.amount;
+      setBudgets(map);
     } catch (err) {
       if (err instanceof ApiResponseError) {
         setError(err.message);
@@ -142,7 +149,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pengeluaran</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {expenseItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budgetAmount={budgets[cat.id]} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -153,14 +160,19 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pemasukan</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {incomeItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budgetAmount={budgets[cat.id]} onUpdate={load} />
             ))}
           </div>
         </div>
       )}
 
       {items.length === 0 && (
-        <p className="text-sm text-muted">Belum ada kategori.</p>
+        <div className="flex flex-col items-center gap-3 py-8">
+          <Mascot size={96} />
+          <p className="text-sm text-muted text-center">
+            Belum ada kategori. Tambah yang pertama yuk!
+          </p>
+        </div>
       )}
     </div>
   );
@@ -168,9 +180,11 @@ export default function KategoriPage() {
 
 function CategoryRow({
   category,
+  budgetAmount,
   onUpdate,
 }: {
   category: Category;
+  budgetAmount?: string;
   onUpdate: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -180,6 +194,10 @@ function CategoryRow({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [budgetInput, setBudgetInput] = useState(budgetAmount ?? "");
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
+  const [budgetError, setBudgetError] = useState<string | null>(null);
 
   async function handleRename() {
     if (!editName.trim()) {
@@ -229,6 +247,45 @@ function CategoryRow({
       setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleSaveBudget() {
+    const digits = budgetInput.replace(/\D/g, "");
+    const num = digits ? parseFloat(digits) : NaN;
+    if (!Number.isFinite(num) || num <= 0) {
+      setBudgetError("Nominal anggaran harus lebih dari 0.");
+      return;
+    }
+    setIsSavingBudget(true);
+    setBudgetError(null);
+    try {
+      await upsertBudget(category.id, String(num));
+      setShowBudgetForm(false);
+      onUpdate();
+    } catch (err) {
+      setBudgetError(
+        err instanceof ApiResponseError && err.message
+          ? err.message
+          : "Gagal menyimpan anggaran. Coba lagi."
+      );
+    } finally {
+      setIsSavingBudget(false);
+    }
+  }
+
+  async function handleDeleteBudget() {
+    setIsSavingBudget(true);
+    setBudgetError(null);
+    try {
+      await deleteBudget(category.id);
+      setBudgetInput("");
+      setShowBudgetForm(false);
+      onUpdate();
+    } catch {
+      setBudgetError("Gagal menghapus anggaran. Coba lagi.");
+    } finally {
+      setIsSavingBudget(false);
     }
   }
 
@@ -297,8 +354,25 @@ function CategoryRow({
   return (
     <div className="flex flex-col gap-2 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-base text-text">{category.name}</span>
+        <div className="flex flex-col">
+          <span className="text-base text-text">{category.name}</span>
+          {budgetAmount && (
+            <span className="text-xs text-muted tabular-nums">
+              Anggaran {formatRupiah(budgetAmount)}/bln
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setBudgetInput(budgetAmount ?? "");
+                setBudgetError(null);
+                setShowBudgetForm((v) => !v);
+              }}
+              className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[36px] flex items-center"
+            >
+              Anggaran
+            </button>
             <button
               onClick={() => setIsEditing(true)}
               className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[36px] flex items-center"
@@ -313,6 +387,47 @@ function CategoryRow({
             </button>
         </div>
       </div>
+      {showBudgetForm && (
+        <div className="flex flex-col gap-2 pt-1">
+          <Input
+            label="Anggaran per bulan (Rp)"
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            error={budgetError || undefined}
+            hint="Berlaku tiap bulan"
+            inputMode="numeric"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSaveBudget} loading={isSavingBudget} className="flex-1">
+              Simpan
+            </Button>
+            {budgetAmount && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDeleteBudget}
+                disabled={isSavingBudget}
+                className="flex-1 text-danger"
+              >
+                Hapus
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setShowBudgetForm(false);
+                setBudgetInput(budgetAmount ?? "");
+                setBudgetError(null);
+              }}
+              disabled={isSavingBudget}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+          </div>
+        </div>
+      )}
         {deleteError && (
           <p role="alert" className="text-sm text-danger">
             {deleteError}

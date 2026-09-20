@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiResponseError } from "@/lib/api";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { PasswordField } from "@/components/auth/PasswordField";
 
 export function LoginForm() {
   const router = useRouter();
@@ -59,7 +62,14 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <motion.form
+      onSubmit={handleSubmit}
+      noValidate
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-text">Masuk</h1>
         <p className="text-sm text-muted">Masuk ke akun untuk mulai mencatat keuangan.</p>
@@ -82,10 +92,10 @@ export function LoginForm() {
           }}
           error={errors.email}
           autoComplete="email"
+          enterKeyHint="next"
           placeholder="nama@email.com"
         />
-        <Input
-          type="password"
+        <PasswordField
           label="Password"
           value={password}
           onChange={(e) => {
@@ -94,17 +104,16 @@ export function LoginForm() {
           }}
           error={errors.password}
           autoComplete="current-password"
+          enterKeyHint="go"
         />
       </div>
 
       <div className="flex flex-col gap-4">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-12 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          {isLoading ? "Masuk..." : "Masuk"}
-        </button>
+        <motion.div whileTap={{ scale: 0.96 }}>
+          <Button type="submit" loading={isLoading} className="w-full">
+            Masuk
+          </Button>
+        </motion.div>
         <p className="text-sm text-center text-muted">
           Belum punya akun?{" "}
           <Link href="/daftar" className="text-accent font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded">
@@ -112,6 +121,6 @@ export function LoginForm() {
           </Link>
         </p>
       </div>
-    </form>
+    </motion.form>
   );
 }

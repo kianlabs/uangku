@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UangkuLogo } from "@/components/brand/UangkuLogo";
 
 export default function AuthLayout({
   children,
@@ -7,7 +8,7 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col bg-canvas">
-      <header className="flex items-center px-4 h-14 border-b border-border">
+      <header className="flex items-center px-4 h-14 border-b border-border bg-surface">
         <Link
           href="/"
           aria-label="Kembali ke halaman utama"
@@ -29,8 +30,13 @@ export default function AuthLayout({
           UangKu
         </Link>
       </header>
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm">{children}</div>
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm flex flex-col items-center gap-6">
+          <UangkuLogo markWidth={132} priority />
+          <div className="w-full rounded-2xl bg-surface border border-border shadow-sm p-6">
+            {children}
+          </div>
+        </div>
       </main>
     </div>
   );

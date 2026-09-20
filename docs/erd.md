@@ -2,11 +2,12 @@
 
 ## Overview
 
-UangKu v1 menggunakan tiga entity utama:
+UangKu v1 menggunakan empat entity utama:
 
 - User
 - Category
 - Transaction
+- Budget
 
 Setiap data keuangan harus dimiliki oleh user tertentu agar data antar pengguna tetap terisolasi.
 
@@ -19,6 +20,9 @@ Fields:
 - `id` — UUID, primary key
 - `email` — string, unique, required
 - `password_hash` — string, required
+- `preferences` — JSONB, required (default `{}`); kunci opsional:
+  `payday` (1–31), `onboarding_done` (bool, status tur Mochi),
+  `tx_sources`, `debt_tags`, `templates`
 - `created_at` — timestamp
 - `updated_at` — timestamp
 
@@ -26,6 +30,7 @@ Relationships:
 
 - satu User memiliki banyak Category
 - satu User memiliki banyak Transaction
+- satu User memiliki banyak Budget
 
 ## Category
 
@@ -75,12 +80,15 @@ Fields:
 erDiagram
     USERS ||--o{ CATEGORIES : owns
     USERS ||--o{ TRANSACTIONS : owns
+    USERS ||--o{ BUDGETS : owns
     CATEGORIES ||--o{ TRANSACTIONS : classifies
+    CATEGORIES ||--o| BUDGETS : limits
 
     USERS {
         uuid id PK
         string email UK
         string password_hash
+        jsonb preferences
         timestamp created_at
         timestamp updated_at
     }
@@ -102,6 +110,15 @@ erDiagram
         numeric amount
         string description
         date transaction_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BUDGETS {
+        uuid id PK
+        uuid user_id FK
+        uuid category_id FK
+        numeric amount
         timestamp created_at
         timestamp updated_at
     }
@@ -141,6 +158,25 @@ Contoh tidak valid:
 
 Untuk v1, delete category ditolak jika masih memiliki transaksi terkait.
 
+11. Kombinasi `user_id + category_id` pada Budget harus unik (satu anggaran
+    per kategori per user). `amount` harus lebih besar dari `0`.
+
+12. Budget ikut terhapus (CASCADE) jika kategorinya dihapus.
+
+## Budget
+
+Menyimpan batas belanja bulanan per kategori. Berlaku tiap bulan
+(recurring).
+
+Fields:
+
+- `id` — UUID, primary key
+- `user_id` — UUID, foreign key ke User (RESTRICT)
+- `category_id` — UUID, foreign key ke Category (CASCADE)
+- `amount` — numeric/decimal, required, harus > 0
+- `created_at` — timestamp
+- `updated_at` — timestamp
+
 ## Default Categories
 
 Saat akun baru dibuat, UangKu dapat membuat kategori default milik user tersebut.
@@ -169,7 +205,6 @@ Saat akun baru dibuat, UangKu dapat membuat kategori default milik user tersebut
 Belum masuk v1:
 
 - wallet/account
-- budget
 - recurring transaction
 - financial goal
 - shared account

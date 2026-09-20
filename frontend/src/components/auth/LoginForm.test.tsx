@@ -28,7 +28,7 @@ describe("LoginForm", () => {
   it("renders email and password inputs", () => {
     render(<LoginForm />);
     expect(screen.getByLabelText(/email/i)).toBeTruthy();
-    expect(screen.getByLabelText(/password/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^password$/i, { selector: "input" })).toBeTruthy();
   });
 
   it("shows validation error for invalid email format", async () => {
@@ -55,7 +55,7 @@ describe("LoginForm", () => {
     const user = userEvent.setup();
     render(<LoginForm />);
 
-    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.type(screen.getByLabelText(/^password$/i, { selector: "input" }), "password123");
     await user.click(screen.getByRole("button", { name: /masuk/i }));
 
     expect(screen.getByText(/email harus diisi/i)).toBeTruthy();
@@ -73,7 +73,7 @@ describe("LoginForm", () => {
     render(<LoginForm />);
 
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.type(screen.getByLabelText(/^password$/i, { selector: "input" }), "password123");
     await user.click(screen.getByRole("button", { name: /masuk/i }));
 
     await waitFor(() => {
@@ -91,7 +91,7 @@ describe("LoginForm", () => {
     render(<LoginForm />);
 
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.type(screen.getByLabelText(/^password$/i, { selector: "input" }), "password123");
     await user.click(screen.getByRole("button", { name: /masuk/i }));
 
     await waitFor(() => {
@@ -110,3 +110,4 @@ describe("LoginForm", () => {
     expect(screen.queryByText(/email harus diisi/i)).toBeNull();
   });
 });
+

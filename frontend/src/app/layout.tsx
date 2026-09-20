@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import { SplashScreen } from "@/components/brand/SplashScreen";
 import { RegisterSW } from "./register-sw";
 import "./globals.css";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-canvas text-text">
+        <SplashScreen />
         <AuthProvider>{children}</AuthProvider>
         <RegisterSW />
       </body>

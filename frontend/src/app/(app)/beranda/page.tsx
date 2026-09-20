@@ -6,15 +6,20 @@ import { useRouter } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
 import { ApiResponseError } from "@/lib/api";
 import { getDashboardSummary, getDashboardMetrics } from "@/lib/dashboard";
+import { listBudgets } from "@/lib/budgets";
+import { getPreferences } from "@/lib/preferences";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { generateWeeklyReflection } from "@/lib/reflection";
 import { calculateStreak } from "@/lib/streak";
 import { getMe } from "@/lib/auth";
 import { getPayday } from "@/lib/local-storage";
-import type { DashboardMetrics, DashboardSummary, RecentTransactionItem, User } from "@/lib/types";
+import type { Budget, DashboardMetrics, DashboardSummary, RecentTransactionItem, User, UserPreferences } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
+import { MochiTip } from "@/components/brand/MochiTip";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { Mascot } from "@/components/brand/Mascot";
 import { Header } from "@/components/dashboard/Header";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
@@ -28,6 +33,9 @@ export default function BerandaPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [prefs, setPrefs] = useState<UserPreferences | null>(null);
+  const [tourClosed, setTourClosed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
@@ -41,12 +49,16 @@ export default function BerandaPage() {
       getMe(),
       getDashboardSummary(month, controller.signal),
       getDashboardMetrics(payday, controller.signal),
+      listBudgets(month).catch(() => ({ items: [], month: null })),
+      getPreferences().catch(() => ({} as UserPreferences)),
     ])
-      .then(([currentUser, summary, metricsData]) => {
+      .then(([currentUser, summary, metricsData, budgetData, userPrefs]) => {
         if (!cancelled) {
           setUser(currentUser);
           setData(summary);
           setMetrics(metricsData);
+          setBudgets(budgetData.items);
+          setPrefs(userPrefs);
           setIsLoading(false);
         }
       })
@@ -101,6 +113,11 @@ export default function BerandaPage() {
 
   if (!data || !user || !metrics) return null;
 
+  const showTour =
+    !tourClosed && data.transaction_count === 0 && prefs?.onboarding_done !== true;
+
+  const blownBudget = budgets.find((b) => (b.percentage ?? 0) >= 90);
+
   const hasTransactions = data.recent_transactions && data.recent_transactions.length > 0;
   const hasSpending = data.expense_by_category && data.expense_by_category.length > 0;
 
@@ -116,6 +133,7 @@ export default function BerandaPage() {
 
   return (
     <MotionConfig reducedMotion="user">
+      {showTour && <OnboardingTour onDone={() => setTourClosed(true)} />}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -150,6 +168,30 @@ export default function BerandaPage() {
             spent={data.monthly_expense}
             limit={data.monthly_income}
             label="Pengeluaran vs pemasukan"
+          />
+        )}
+
+        {budgets.length > 0 && (
+          <section aria-label="Anggaran kategori" className="flex flex-col gap-3">
+            {budgets
+              .filter((b) => b.spent !== null)
+              .map((b) => (
+                <BudgetWarning
+                  key={b.category_id}
+                  spent={b.spent as string}
+                  limit={b.amount}
+                  label={`Anggaran ${b.category_name}`}
+                />
+              ))}
+          </section>
+        )}
+
+        {blownBudget && (
+          <MochiTip
+            mood="worried"
+            title="Ups, hampir jebol!"
+            message={`Kategori ${blownBudget.category_name} sudah ${Math.round(blownBudget.percentage ?? 0)}% dari anggaran. Rem dikit ya?`}
+            action={{ label: "Lihat riwayat", href: "/riwayat" }}
           />
         )}
 
@@ -191,8 +233,10 @@ export default function BerandaPage() {
           </section>
         ) : (
           <section className="flex flex-col items-center gap-4 py-12">
+            <Mascot size={128} />
             <p className="text-base text-slate-500 text-center max-w-xs">
-              Belum ada transaksi. Catat pengeluaran atau pemasukan pertamamu untuk mulai melihat
+              Halo! Aku Mochi, pemandumu. Belum ada transaksi — catat
+              pengeluaran atau pemasukan pertamamu untuk mulai melihat
               kondisi keuangan.
             </p>
             <Link

@@ -6,7 +6,6 @@ Berisi dua fungsi publik utama:
 """
 from __future__ import annotations
 
-import re
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -14,29 +13,10 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.errors import InvalidMonthError
+from app.core.month import parse_month as _parse_month
 from app.models.category import Category
 from app.models.transaction import Transaction
 from app.models.user import User
-
-
-def _parse_month(month_str: str) -> tuple[date, date]:
-    if not re.fullmatch(r"\d{4}-\d{2}", month_str):
-        raise InvalidMonthError()
-    try:
-        parts = month_str.split("-")
-        year, month = int(parts[0]), int(parts[1])
-        if not (1 <= month <= 12):
-            raise InvalidMonthError()
-        date_from = date(year, month, 1)
-    except (ValueError, OverflowError):
-        raise InvalidMonthError() from None
-
-    if month == 12:
-        date_to_exclusive = date(year + 1, 1, 1)
-    else:
-        date_to_exclusive = date(year, month + 1, 1)
-    return date_from, date_to_exclusive
 
 
 def get_dashboard_summary(

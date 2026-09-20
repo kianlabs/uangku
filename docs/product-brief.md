@@ -142,6 +142,49 @@ Filter berdasarkan:
 
 - CSV export
 
+### Budgets (simple)
+
+Anggaran belanja bulanan per kategori:
+
+- satu batas per kategori, berlaku tiap bulan (tidak perlu isi ulang)
+- progress pemakaian dengan peringatan 75% / 90%
+- diatur dari halaman Kategori, dipantau dari Beranda
+
+Ini bukan complex budgeting (tanpa rollover, tanpa multi-periode) — batas
+tersebut tetap di luar cakupan v1.
+
+### Onboarding & Mochi Agent
+
+Mochi adalah maskot pemandu UangKu yang berperan sebagai **agen keuangan
+pribadi**: menyambut, menjelaskan, dan mengingatkan — bukan sekadar dekorasi.
+
+Kepribadian:
+
+- ramah, ringkas, tidak menggurui
+- bicara Bahasa Indonesia santai
+- tidak pernah mengklaim sebagai AI penasihat keuangan
+
+Titik interaksi:
+
+- splash screen saat aplikasi dibuka
+- tur 3 langkah untuk user baru (selesai → langsung tambah transaksi)
+- empty state (beranda, riwayat, kategori) dengan ajakan bertindak jelas
+- tips kontekstual (misal kategori hampir jebol anggaran)
+- perayaan kecil saat user menyelesaikan sesuatu (misal export berhasil)
+
+Aturan produk:
+
+- Mochi tidak boleh memblokir aksi user; selalu bisa dilewati/ditutup
+- maksimal satu interupsi per sesi (tur hanya untuk user baru tanpa transaksi)
+- status tur (`onboarding_done`) tersimpan di backend agar lintas perangkat
+- seluruh animasi hormat prefers-reduced-motion
+
+Bukan Mochi:
+
+- chatbot / AI advisor (tidak ada klaim analisis cerdas)
+- notifikasi push atau pengingat otomatis
+- gamifikasi (poin, streak reward, level)
+
 ## Mobile UX
 
 Navigasi utama menggunakan bottom navigation.

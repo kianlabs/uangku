@@ -94,6 +94,9 @@ Frontend bertanggung jawab atas:
 - client-side validation dasar
 - menampilkan dashboard
 - visualisasi transaksi
+- maskot & panduan Mochi (agen interaktif: splash, tur onboarding,
+  empty state, tips kontekstual — komponen di `components/brand/`
+  dan `components/onboarding/`, lihat DESIGN.md §5)
 - PWA behavior
 - loading/error state
 - komunikasi dengan backend API
@@ -214,6 +217,8 @@ Contoh resource:
 /api/v1/categories
 /api/v1/dashboard
 /api/v1/export
+/api/v1/budgets
+/api/v1/user/preferences
 ```
 
 API contract detail akan ditulis terpisah sebelum implementation.

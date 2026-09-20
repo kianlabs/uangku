@@ -15,6 +15,8 @@ Personal finance tracking app for managing income and expenses.
 - Email registration/login with server-side sessions
 - Income & expense transactions (create, update, delete, filter, paginate)
 - Categories per type (income/expense) with ownership isolation
+- Monthly budgets per category with 75%/90% usage warnings
+- Onboarding tour + Mochi mascot guide (personal finance agent)
 - Dashboard monthly summary, CSV export with formula-injection sanitizing
 - Mobile-first UI with bottom navigation
 

@@ -6,6 +6,7 @@ export interface User {
 
 export interface UserPreferences {
   payday?: number | null;
+  onboarding_done?: boolean | null;
   tx_sources?: Record<string, string> | null;
   debt_tags?: Record<string, { tag: "utang" | "piutang"; settled: boolean }> | null;
   templates?: Array<{ id: string; name: string; amount: number; category: string }> | null;
@@ -90,4 +91,18 @@ export interface DashboardMetrics {
   days_left: number;
   remaining_balance: string;
   payday: number;
+}
+
+export interface Budget {
+  category_id: string;
+  category_name: string;
+  type: TransactionType;
+  amount: string;
+  spent: string | null;
+  percentage: number | null;
+}
+
+export interface BudgetListResponse {
+  items: Budget[];
+  month: string | null;
 }

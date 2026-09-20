@@ -79,3 +79,57 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 - **Interactive Buttons:** Setiap tombol interaktif memiliki properti `whileTap={{ scale: 0.96 }}`.
 - **Safe to Spend Counter:** Angka harian pada Safe to Spend disarankan memiliki animasi count-up saat halaman pertama kali dimuat.
 - **Skeleton Loading:** Tampilkan komponen *shimmer* bergelombang pada seluruh kartu saat data API sedang di-fetch.
+
+---
+
+## 5. Maskot Mochi — Agen Keuangan Pribadi
+
+Mochi (dompet biru + koin hijau "Rp") adalah wajah dan pemandu UangKu.
+Ia muncul di banyak titik aplikasi sebagai agen interaktif — menyapa,
+memandu, mengingatkan, merayakan — dengan gaya dan animasi berbeda per
+konteks. Implementasi: `frontend/src/components/brand/Mascot.tsx`
+(`mood`), `MochiTip.tsx` (gelembung tips), `OnboardingTour.tsx` (tur),
+`SplashScreen.tsx`.
+
+### Anatomi & Warna Brand
+
+- Badan dompet: biru `#024691` (tutup `#1259ad`), kaki `#0b1f3a`
+- Koin + aksen: hijau `#27865a`; pipi `#f9a8d4`; keringat `#93c5fd`
+- Wordmark pendamping: "Uang" `#024691` + "Ku" `#27865a`, tagline `#798787`
+- Wajah selalu sederhana: mata + mulut + opsional pipi. Tanpa hidung,
+  tanpa detail kecil yang hilang di ukuran 64px ke bawah.
+
+### Mood & Pemakaian
+
+| Mood | Ciri | Dipakai saat |
+|---|---|---|
+| `happy` | senyum, kedip, melambai | default; empty state netral, sapaan |
+| `excited` | mata berbinar, mulut terbuka, memantul | user menyelesaikan sesuatu |
+| `thinking` | lirikan, mulut datar, gelembung "?" | filter kosong / tidak ketemu |
+| `worried` | alis naik, mulut zigzag, keringat | anggaran ≥90%, peringatan |
+| `sleepy` | mata tertutup, "Zzz", tangan turun | (cadangan; belum dipakai) |
+| `celebrating` | topi pesta, konfeti, melompat | keberhasilan (export, dsb.) |
+
+### Aturan Animasi
+
+- **Entrance:** fade + naik ≤0.7s, easing `[0.22, 1, 0.36, 1]`; stagger
+  maksimal 3 tahap (ikon → kata → tagline).
+- **Idle loop:** hanya untuk elemen yang dilirik sekilas (maskot hiasan).
+  Durasi ≥3 detik per putaran; gabungkan sumbu (y + rotate + scale) agar
+  organik, bukan naik-turun lurus yang terlihat kaku.
+- **Splash & tur:** entrance saja, lalu diam. Splash maksimal ~2 detik.
+- **Reduced motion:** seluruh loop mati via `MotionConfig reducedMotion="user"`;
+  splash dilewati total.
+- Jangan: loop cepat (<2s), bounce berlebihan, animasi yang menghalangi
+  baca angka atau tombol.
+
+### Aturan Penempatan
+
+- Satu Mochi per layar; ukuran 56–148px sesuai hierarki (hiasan kecil di
+  tips, besar di empty state/splash).
+- Selalu ditemani teks/aksi jelas — Mochi tidak pernah berdiri sendiri
+  tanpa pesan atau next action.
+- Interaktif (tur, tips yang bisa ditutup) tidak boleh memblokir alur
+  utama; selalu ada "Lewati"/tombol tutup.
+- `aria-label="Maskot UangKu"` (atau nama konteks); dekorasi murni
+  `aria-hidden`.

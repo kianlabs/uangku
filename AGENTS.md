@@ -96,6 +96,8 @@ For any user-facing frontend work:
 
 - Read `DESIGN.md` before implementation.
 - Treat `DESIGN.md` as the visual source of truth.
+- Mochi mascot spec lives in `DESIGN.md` §5 (moods, animation rules,
+  placements); implementation in `frontend/src/components/brand/Mascot.tsx`.
 - Respect `docs/archive/ux-flow.md`, `docs/archive/ui-wireframe.md`, and `docs/archive/visual-direction.md`.
 - Project-specific product docs take precedence if they conflict.
 - Do not introduce a new visual language without explicit approval.

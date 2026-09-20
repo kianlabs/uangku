@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.budgets import router as budgets_router
 from app.api.v1.categories import router as categories_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.export import router as export_router
@@ -120,6 +121,7 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
 
 
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(budgets_router, prefix="/api/v1")
 app.include_router(categories_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(transactions_router, prefix="/api/v1")

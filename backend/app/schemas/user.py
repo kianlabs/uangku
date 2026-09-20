@@ -21,6 +21,10 @@ class UserPreferencesData(BaseModel):
     """
 
     payday: int | None = Field(None, ge=1, le=31, description="Day of month the user gets paid (1-31).")
+    onboarding_done: bool | None = Field(
+        None,
+        description="Whether the user has completed the onboarding tour.",
+    )
     tx_sources: dict[str, str] | None = Field(
         None,
         max_length=500,

@@ -25,8 +25,19 @@ vi.mock("@/lib/categories", () => ({
   deleteCategory: (...args: unknown[]) => mockDeleteCategory(...args),
 }));
 
+const mockListBudgets = vi.fn();
+const mockUpsertBudget = vi.fn();
+const mockDeleteBudget = vi.fn();
+
+vi.mock("@/lib/budgets", () => ({
+  listBudgets: (...args: unknown[]) => mockListBudgets(...args),
+  upsertBudget: (...args: unknown[]) => mockUpsertBudget(...args),
+  deleteBudget: (...args: unknown[]) => mockDeleteBudget(...args),
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mockListBudgets.mockResolvedValue({ items: [], month: null });
 });
 
 describe("KategoriPage", () => {
