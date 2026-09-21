@@ -1,24 +1,24 @@
 # Project Overview
 
 - Purpose: Personal finance tracking app for managing income and expenses
-- Stack: Next.js (frontend), FastAPI (backend), PostgreSQL
+- Stack: Next.js (client), FastAPI (server), PostgreSQL
 
 # Development
 
 - Package manager: `mise` (manages Node.js, Python, PostgreSQL)
 - Install: `mise install`
-- Dev: `mise run dev` (starts both frontend and backend)
-- Test: `mise run test` (backend only); frontend: `cd frontend && npm run test`
+- Dev: `mise run dev` (starts both client and server)
+- Test: `mise run test` (server only); client: `cd client && npm run test`
 - Lint: `mise run lint`
 - Build: `mise run build`
 
 # Architecture
 
-- Frontend: `frontend/src/` (Next.js 16, React 19, TypeScript, Tailwind CSS)
-- Backend: `backend/app/` (FastAPI, SQLAlchemy, PostgreSQL)
-- Tests: `backend/tests/` (pytest)
+- Client: `client/src/` (Next.js 16, React 19, TypeScript, Tailwind CSS)
+- Server: `server/app/` (FastAPI, SQLAlchemy, PostgreSQL)
+- Tests: `server/tests/` (pytest)
 - Docs: `docs/` (architecture, ERD, product brief, DESIGN); archived in `docs/archive/`: api-contract, ux-flow, ui-wireframe, visual-direction
-- Database and migrations: `backend/migrations/` (Alembic)
+- Database and migrations: `server/migrations/` (Alembic)
 
 # Coding Rules
 
@@ -43,7 +43,7 @@ multi-step technical task, spawn an omp worker instead of doing it yourself.
 
 - File write/edit tasks
 - Multi-step technical investigation
-- Frontend or backend implementation
+- Client or server implementation
 - Debugging, refactoring, testing
 
 ## When NOT to spawn omp
@@ -90,14 +90,14 @@ Write the spec as if briefing a senior engineer cold:
 - Tests, lint, and build pass using the commands above.
 - Apply `verification-before-completion` and review the final diff before finishing.
 
-## Frontend Design
+## Client Design
 
-For any user-facing frontend work:
+For any user-facing client work:
 
 - Read `DESIGN.md` before implementation.
 - Treat `DESIGN.md` as the visual source of truth.
 - Mochi mascot spec lives in `DESIGN.md` §5 (moods, animation rules,
-  placements); implementation in `frontend/src/components/brand/Mascot.tsx`.
+  placements); implementation in `client/src/components/brand/Mascot.tsx`.
 - Respect `docs/archive/ux-flow.md`, `docs/archive/ui-wireframe.md`, and `docs/archive/visual-direction.md`.
 - Project-specific product docs take precedence if they conflict.
 - Do not introduce a new visual language without explicit approval.

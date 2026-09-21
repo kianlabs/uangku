@@ -5,49 +5,49 @@ python = "3.13"
 [env]
 APP_ENV = "development"
 
-[tasks."dev:frontend"]
-dir = "frontend"
+[tasks."dev:client"]
+dir = "client"
 run = "npm run dev"
 
-[tasks."dev:backend"]
-dir = "backend"
+[tasks."dev:server"]
+dir = "server"
 run = "uv run uvicorn app.main:app --reload --port 8000"
 
 [tasks.dev]
-run = [{ tasks = ["dev:frontend", "dev:backend"] }]
+run = [{ tasks = ["dev:client", "dev:server"] }]
 
-[tasks."test:backend"]
-dir = "backend"
+[tasks."test:server"]
+dir = "server"
 run = "uv run pytest"
 
-[tasks."test:frontend"]
-dir = "frontend"
+[tasks."test:client"]
+dir = "client"
 run = "npm test"
 
 [tasks.test]
-run = [{ tasks = ["test:backend", "test:frontend"] }]
+run = [{ tasks = ["test:server", "test:client"] }]
 
-[tasks."lint:frontend"]
-dir = "frontend"
+[tasks."lint:client"]
+dir = "client"
 run = "npm run lint"
 
-[tasks."lint:backend"]
-dir = "backend"
+[tasks."lint:server"]
+dir = "server"
 run = "uv run ruff check ."
 
 [tasks.lint]
-run = [{ tasks = ["lint:frontend", "lint:backend"] }]
+run = [{ tasks = ["lint:client", "lint:server"] }]
 
-[tasks."build:frontend"]
-dir = "frontend"
+[tasks."build:client"]
+dir = "client"
 run = "npm run build"
 
 [tasks.build]
-run = [{ task = "build:frontend" }]
+run = [{ task = "build:client" }]
 
 [tasks."test:e2e"]
 description = "Run Playwright E2E tests (requires dev server running)"
-dir = "frontend"
+dir = "client"
 run = "npx playwright test"
 
 [tasks.orchestra]

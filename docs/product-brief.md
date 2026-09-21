@@ -65,7 +65,7 @@ Pengguna dapat:
 
 ### Future
 
-Jika produk memiliki pengguna aktif dan kebutuhan native muncul, aplikasi React Native/Expo dapat dibuat menggunakan backend API yang sama.
+Jika produk memiliki pengguna aktif dan kebutuhan native muncul, aplikasi React Native/Expo dapat dibuat menggunakan server API yang sama.
 
 ## MVP Features
 
@@ -176,7 +176,7 @@ Aturan produk:
 
 - Mochi tidak boleh memblokir aksi user; selalu bisa dilewati/ditutup
 - maksimal satu interupsi per sesi (tur hanya untuk user baru tanpa transaksi)
-- status tur (`onboarding_done`) tersimpan di backend agar lintas perangkat
+- status tur (`onboarding_done`) tersimpan di server agar lintas perangkat
 - seluruh animasi hormat prefers-reduced-motion
 
 Bukan Mochi:
@@ -243,14 +243,14 @@ Gunakan icon, label, dan sign positif/negatif jika diperlukan.
 
 ## Technology Direction
 
-Frontend:
+Client:
 
 - Next.js
 - TypeScript
 - Tailwind CSS
 - PWA support
 
-Backend:
+Server:
 
 - FastAPI
 - Python
@@ -259,7 +259,7 @@ Database:
 
 - PostgreSQL
 
-Backend tetap berupa API terpisah agar di masa depan dapat digunakan oleh:
+Server tetap berupa API terpisah agar di masa depan dapat digunakan oleh:
 
 - PWA
 - mobile native app
@@ -294,7 +294,7 @@ UangKu v1 selesai ketika:
 - PWA dapat di-install jika environment mendukung
 - filter transaksi bekerja
 - export CSV bekerja
-- backend tests lulus
+- server tests lulus
 - browser E2E flow lulus
 - lint dan build lulus
 - production deployment berhasil
@@ -305,9 +305,9 @@ UangKu v1 selesai ketika:
 UangKu harus menunjukkan kemampuan:
 
 - product thinking
-- mobile-first frontend engineering
+- mobile-first client engineering
 - PWA
-- backend API design
+- server API design
 - PostgreSQL relational modeling
 - authentication
 - authorization

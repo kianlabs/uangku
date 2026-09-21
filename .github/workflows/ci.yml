@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  backend:
+  server:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -24,7 +24,7 @@ jobs:
           --health-retries 10
     defaults:
       run:
-        working-directory: backend
+        working-directory: server
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -41,18 +41,18 @@ jobs:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/uangku
           DATABASE_URL_TEST: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
 
-  frontend:
+  client:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: client/package-lock.json
       - run: npm ci
       - run: npm run lint
       - run: npm test
@@ -78,7 +78,7 @@ jobs:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
       DATABASE_URL_TEST: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
       APP_ENV: development
-      BACKEND_URL: http://localhost:8000
+      SERVER_URL: http://localhost:8000
       CI: "true"
     steps:
       - uses: actions/checkout@v4
@@ -89,16 +89,16 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: client/package-lock.json
       - run: uv sync --group dev
-        working-directory: backend
+        working-directory: server
       - run: uv run alembic upgrade head
-        working-directory: backend
+        working-directory: server
       - run: npm ci
-        working-directory: frontend
+        working-directory: client
       - run: npx playwright install --with-deps chromium
-        working-directory: frontend
+        working-directory: client
       - run: uv run uvicorn app.main:app --port 8000 &
-        working-directory: backend
+        working-directory: server
       - run: npx playwright test
-        working-directory: frontend
+        working-directory: client

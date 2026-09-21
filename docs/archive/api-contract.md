@@ -2,13 +2,13 @@
 
 ## Overview
 
-Backend UangKu menggunakan REST API dengan prefix:
+Server UangKu menggunakan REST API dengan prefix:
 
 `/api/v1`
 
 Semua response menggunakan JSON kecuali endpoint export CSV.
 
-Backend adalah source of truth untuk:
+Server adalah source of truth untuk:
 
 - authentication
 - authorization
@@ -30,7 +30,7 @@ Production URL ditentukan saat deployment.
 
 Authentication menggunakan secure HTTP-only cookie.
 
-Frontend tidak perlu menyimpan access token di localStorage.
+Client tidak perlu menyimpan access token di localStorage.
 
 ## Register
 
@@ -346,7 +346,7 @@ Response:
 }
 ```
 
-Backend harus memvalidasi:
+Server harus memvalidasi:
 
 - amount > 0
 - category milik current user
@@ -377,7 +377,7 @@ Response:
 
 User tidak boleh mengakses transaksi milik user lain.
 
-Untuk resource yang bukan milik user, backend boleh merespons `404` agar tidak membocorkan keberadaan resource.
+Untuk resource yang bukan milik user, server boleh merespons `404` agar tidak membocorkan keberadaan resource.
 
 ---
 
@@ -409,7 +409,7 @@ Response:
 }
 ```
 
-Jika type atau category berubah, backend harus memvalidasi ulang compatibility keduanya.
+Jika type atau category berubah, server harus memvalidasi ulang compatibility keduanya.
 
 ---
 

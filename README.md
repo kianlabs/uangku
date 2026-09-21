@@ -4,11 +4,11 @@ Personal finance tracking app for managing income and expenses.
 
 ## Stack
 
-- **Frontend**: Next.js 16, React 19, TypeScript 5, Tailwind CSS 4
-- **Backend**: FastAPI 0.141, SQLAlchemy 2, Pydantic 2, PostgreSQL 16, Alembic
+- **Client**: Next.js 16, React 19, TypeScript 5, Tailwind CSS 4
+- **Server**: FastAPI 0.141, SQLAlchemy 2, Pydantic 2, PostgreSQL 16, Alembic
 - **Auth**: server-side sessions (signed cookie, Argon2 password hashing)
-- **Testing**: pytest (backend), Vitest (frontend)
-- **Tooling**: mise (dev environment), Ruff (Python lint), ESLint (frontend lint)
+- **Testing**: pytest (server), Vitest (client)
+- **Tooling**: mise (dev environment), Ruff (Python lint), ESLint (client lint)
 
 ## Features
 
@@ -29,38 +29,38 @@ Personal finance tracking app for managing income and expenses.
 
 ```sh
 mise install
-cp backend/.env.example backend/.env   # adjust if needed, never commit .env
+cp server/.env.example server/.env   # adjust if needed, never commit .env
 createdb uangku
 createdb uangku_test
-cd backend && uv run alembic upgrade head && cd ..
+cd server && uv run alembic upgrade head && cd ..
 mise run dev
 ```
 
-Frontend: http://localhost:3000
-Backend: http://localhost:8000
+Client: http://localhost:3000
+Server: http://localhost:8000
 API docs: http://localhost:8000/docs
 Health: http://localhost:8000/health
 
-The frontend proxies `/api/*` to the backend via Next.js rewrites
-(`BACKEND_URL`, see `frontend/next.config.ts`), so no CORS setup is needed.
+The client proxies `/api/*` to the server via Next.js rewrites
+(`SERVER_URL`, see `client/next.config.ts`), so no CORS setup is needed.
 
 ## Commands
 
 ```sh
-mise run dev     # frontend + backend together
-mise run test    # backend pytest + frontend vitest
-mise run lint    # backend ruff + frontend eslint
-mise run build   # frontend production build
+mise run dev     # client + server together
+mise run test    # server pytest + client vitest
+mise run lint    # server ruff + client eslint
+mise run build   # client production build
 mise run test:e2e  # Playwright E2E (butuh dev server running)
 ```
 
 Direct equivalents:
 
 ```sh
-cd backend && uv run pytest && uv run ruff check .
-cd frontend && npm test && npm run lint && npm run build
-cd frontend && npx playwright test        # E2E
-cd frontend && npx playwright install     # install browsers (first time)
+cd server && uv run pytest && uv run ruff check .
+cd client && npm test && npm run lint && npm run build
+cd client && npx playwright test        # E2E
+cd client && npx playwright install     # install browsers (first time)
 ```
 
 ## Environment variables
@@ -71,16 +71,16 @@ cd frontend && npx playwright install     # install browsers (first time)
 | `DATABASE_URL_TEST` | `postgresql+psycopg://.../uangku_test` | pytest database |
 | `SECRET_KEY` | random string, min 32 chars | **required in production** (`APP_ENV=production` refuses default and enforces min 32 chars) |
 | `HTTPS_ONLY` | `false` | must be `true` in production (enforced) or session cookies go over HTTP |
-| `BACKEND_URL` | `http://localhost:8000` | frontend env (`frontend/.env.local`), rewrite target (server-side only) |
+| `SERVER_URL` | `http://localhost:8000` | client env (`client/.env.local`, see `client/.env.example`), rewrite target (server-side only) |
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
 | `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting |
 
 ## Architecture
 
-- `frontend/src/` — Next.js App Router (`app/`), reusable components (`components/`), API clients (`lib/`)
-- `backend/app/` — FastAPI app: `api/v1/` (HTTP layer), `services/` (business logic), `schemas/` (Pydantic validation), `models/` (SQLAlchemy), `core/` (config, deps, domain errors)
-- `backend/tests/` — pytest suite (API + service level, per-user isolation)
-- `backend/migrations/` — Alembic migrations
+- `client/src/` — Next.js App Router (`app/`), reusable components (`components/`), API clients (`lib/`)
+- `server/app/` — FastAPI app: `api/v1/` (HTTP layer), `services/` (business logic), `schemas/` (Pydantic validation), `models/` (SQLAlchemy), `core/` (config, deps, domain errors)
+- `server/tests/` — pytest suite (API + service level, per-user isolation)
+- `server/migrations/` — Alembic migrations
 - `docs/` — architecture, ERD, product brief
 
 Error contract: services raise typed `DomainError`s (`app/core/errors.py`);
@@ -97,7 +97,7 @@ from the client are never trusted for ownership.
   in-app to 5 requests/minute per IP (SlowAPI); export to 30/minute and
   dashboard/transaction-list to 60/minute. Storage is in-memory per process —
   for multi-worker production, switch the limiter to Redis (see
-  `backend/app/core/rate_limit.py`). For defense in depth, also put
+  `server/app/core/rate_limit.py`). For defense in depth, also put
   login/register behind reverse-proxy rate limiting (e.g. nginx `limit_req`)
   in production.
 - Session cookies are `httpOnly`, `SameSite=lax`, and expire with the browser

@@ -1,6 +1,6 @@
 # DESIGN.md — UI/UX Light Mode & Safe to Spend Specification for "Uangku"
 
-Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan komponen UI utama untuk perombakan antarmuka aplikasi **Uangku** (Next.js Frontend & FastAPI Backend).
+Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan komponen UI utama untuk perombakan antarmuka aplikasi **Uangku** (Next.js Client & FastAPI Server).
 
 ---
 
@@ -18,7 +18,7 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 > Catatan token: komponen dashboard (`BalanceCard`, `SafeToSpendCard`,
 > `SpendingDonut`, `BudgetWarning`, `Header`, `MonthNavigator`, halaman
 > `/beranda`) memakai palet slate/emerald di bawah persis seperti tertulis.
-> Token OKLCH di `frontend/src/app/globals.css` (`canvas`/`surface`/`accent`/...)
+> Token OKLCH di `client/src/app/globals.css` (`canvas`/`surface`/`accent`/...)
 > dipakai halaman non-dashboard (`riwayat`, `akun`, auth) dan dipetakan ke
 > warna yang sama secara visual (`accent` ≈ `emerald-600`). Jangan migrasi
 > massal satu ke lainnya tanpa review visual di browser.
@@ -87,7 +87,7 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 Mochi (dompet biru + koin hijau "Rp") adalah wajah dan pemandu UangKu.
 Ia muncul di banyak titik aplikasi sebagai agen interaktif — menyapa,
 memandu, mengingatkan, merayakan — dengan gaya dan animasi berbeda per
-konteks. Implementasi: `frontend/src/components/brand/Mascot.tsx`
+konteks. Implementasi: `client/src/components/brand/Mascot.tsx`
 (`mood`), `MochiTip.tsx` (gelembung tips), `OnboardingTour.tsx` (tur),
 `SplashScreen.tsx`.
 

@@ -1,0 +1,108 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { formatRupiah } from "@/lib/format";
+import { Mascot } from "@/components/brand/Mascot";
+
+interface SafeToSpendCardProps {
+  safeToSpendAmount: number;
+  daysLeft: number;
+  remainingBalance: string;
+  /** Total pengeluaran hari ini (Rp) — untuk bar progres harian. */
+  todayExpense?: number;
+}
+
+const COUNT_UP_MS = 600;
+
+// ponytail: rAF tween instead of a count-up lib — fine for one number,
+// revisit only if more animated counters appear across the app.
+export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance, todayExpense = 0 }: SafeToSpendCardProps) {
+  // Angka besar = SISA hari ini: batas harian dikurangi yang sudah dibelanjakan.
+  const dailyLimit = safeToSpendAmount > 0 ? safeToSpendAmount : 0;
+  const hero = Math.max(0, dailyLimit - todayExpense);
+  const [displayed, setDisplayed] = useState(0);
+
+  useEffect(() => {
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let raf = 0;
+    const start = performance.now();
+    const duration = reduceMotion ? 1 : COUNT_UP_MS;
+    // Elapsed dihitung via performance.now(), bukan timestamp rAF —
+    // keduanya bisa beda clock (terbukti di jsdom), yang bikin tween macet.
+    const tick = () => {
+      const p = Math.min(1, Math.max(0, (performance.now() - start) / duration));
+      setDisplayed(hero * p);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [hero]);
+
+  const isTight = safeToSpendAmount <= 0;
+  const isDailySpent = !isTight && hero <= 0;
+  const isEndingSoon = !isTight && !isDailySpent && daysLeft <= 3;
+  const opener = isTight
+    ? "Ups, bulan ini sudah minus. Rem dulu ya?"
+    : isDailySpent
+      ? "Batas hari ini habis. Besok mulai lagi ya."
+      : isEndingSoon
+        ? `Tinggal ${daysLeft} hari! Ini hitunganku buat kamu:`
+        : "Hai! Ini rekomendasi aman belanjamu hari ini:";
+
+  // Bar progres harian: seberapa besar batas hari ini sudah terpakai.
+  const usedPct = dailyLimit > 0 ? Math.min(100, (todayExpense / dailyLimit) * 100) : todayExpense > 0 ? 100 : 0;
+  const isOverDaily = dailyLimit > 0 ? todayExpense > dailyLimit : todayExpense > 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="flex flex-col gap-4 p-6 rounded-2xl bg-emerald-50/70 border border-emerald-100"
+    >
+      <div className="flex items-start gap-3">
+        <Mascot
+          size={64}
+          mood={isTight || isDailySpent ? "worried" : "happy"}
+          label="Mochi mempresentasikan rekomendasi belanja"
+          className="shrink-0"
+        />
+        <div className="flex flex-col gap-1 pt-1">
+          <h2 className="text-sm font-semibold text-slate-900">Rekomendasi Aman Hari Ini</h2>
+          <p className="text-sm text-slate-500 leading-relaxed">{opener}</p>
+        </div>
+      </div>
+
+      <span className="text-2xl leading-tight font-bold text-emerald-700 tabular-nums" aria-live="polite">
+        {hero > 0 ? formatRupiah(displayed.toFixed(2)) : "Rp 0"}
+      </span>
+
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(usedPct)}
+        aria-label={`Terpakai ${Math.round(usedPct)} persen dari batas harian`}
+        className="h-2.5 rounded-full bg-emerald-900/10 overflow-hidden"
+      >
+        <div
+          className={`h-full rounded-full transition-all ${isOverDaily ? "bg-rose-500" : "bg-emerald-600"}`}
+          style={{ width: `${usedPct}%` }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 pt-2 border-t border-emerald-100">
+        <p className="text-sm text-slate-900">
+          Sisa <strong>{daysLeft}</strong> hari lagi
+        </p>
+        <p className="text-sm text-slate-900">
+          Sisa saldo: <strong>{formatRupiah(remainingBalance)}</strong>
+        </p>
+      </div>
+    </motion.div>
+  );
+}

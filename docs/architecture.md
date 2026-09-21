@@ -4,11 +4,11 @@
 
 UangKu v1 menggunakan arsitektur full-stack terpisah:
 
-- Frontend: Next.js + TypeScript
-- Backend: FastAPI + Python
+- Client: Next.js + TypeScript
+- Server: FastAPI + Python
 - Database: PostgreSQL
 
-Frontend dan backend berada dalam satu repository, tetapi dipisahkan sebagai dua aplikasi.
+Client dan server berada dalam satu repository, tetapi dipisahkan sebagai dua aplikasi.
 
 ## Repository Structure
 
@@ -16,8 +16,8 @@ Struktur awal:
 
 ```text
 uangku/
-├── frontend/
-├── backend/
+├── client/
+├── server/
 ├── docs/
 ├── AGENTS.md
 ├── mise.toml
@@ -28,7 +28,7 @@ Target detail:
 
 ```text
 uangku/
-├── frontend/
+├── client/
 │   ├── app/
 │   ├── components/
 │   ├── features/
@@ -36,7 +36,7 @@ uangku/
 │   ├── public/
 │   └── tests/
 │
-├── backend/
+├── server/
 │   ├── app/
 │   │   ├── api/
 │   │   ├── core/
@@ -70,23 +70,23 @@ User
 Mobile Browser / PWA
  │
  ▼
-Next.js Frontend
+Next.js Client
  │
  │ HTTPS / JSON
  ▼
-FastAPI Backend
+FastAPI Server
  │
  ▼
 PostgreSQL
 ```
 
-Frontend tidak boleh mengakses database secara langsung.
+Client tidak boleh mengakses database secara langsung.
 
-Seluruh business logic dan authorization penting berada di backend.
+Seluruh business logic dan authorization penting berada di server.
 
-## Frontend Responsibilities
+## Client Responsibilities
 
-Frontend bertanggung jawab atas:
+Client bertanggung jawab atas:
 
 - mobile-first UI
 - navigation
@@ -99,20 +99,20 @@ Frontend bertanggung jawab atas:
   dan `components/onboarding/`, lihat DESIGN.md §5)
 - PWA behavior
 - loading/error state
-- komunikasi dengan backend API
+- komunikasi dengan server API
 
-Frontend tidak boleh menjadi sumber kebenaran utama untuk:
+Client tidak boleh menjadi sumber kebenaran utama untuk:
 
 - authorization
 - ownership data
 - perhitungan finansial penting
 - validasi business rule utama
 
-Validasi frontend digunakan untuk UX.
+Validasi client digunakan untuk UX.
 
-Backend tetap melakukan validasi ulang.
+Server tetap melakukan validasi ulang.
 
-## Backend Responsibilities
+## Server Responsibilities
 
 FastAPI bertanggung jawab atas:
 
@@ -128,7 +128,7 @@ FastAPI bertanggung jawab atas:
 - API validation
 - security boundaries
 
-Contoh business rule yang wajib divalidasi backend:
+Contoh business rule yang wajib divalidasi server:
 
 - user hanya mengakses data miliknya
 - category milik user yang sama
@@ -148,9 +148,9 @@ Migration:
 
 - Alembic
 
-Database connection dikelola backend.
+Database connection dikelola server.
 
-Frontend tidak menyimpan credential PostgreSQL.
+Client tidak menyimpan credential PostgreSQL.
 
 ## Authentication Strategy
 
@@ -162,7 +162,7 @@ Target:
 - `Secure` aktif pada production
 - `SameSite` dikonfigurasi dengan tepat
 - password disimpan dalam bentuk hash
-- backend menentukan current user dari credential yang valid
+- server menentukan current user dari credential yang valid
 
 Hindari menyimpan long-lived authentication token di `localStorage`.
 
@@ -201,7 +201,7 @@ FastAPI
 
 ## API Boundary
 
-Frontend berkomunikasi dengan FastAPI melalui REST API.
+Client berkomunikasi dengan FastAPI melalui REST API.
 
 Prefix awal:
 
@@ -225,9 +225,9 @@ API contract detail akan ditulis terpisah sebelum implementation.
 
 ## Dashboard Architecture
 
-Dashboard tidak harus menghitung seluruh data di frontend.
+Dashboard tidak harus menghitung seluruh data di client.
 
-Backend menyediakan summary yang sudah teragregasi.
+Server menyediakan summary yang sudah teragregasi.
 
 Contoh response concept:
 
@@ -245,12 +245,12 @@ Contoh response concept:
 Hal ini menjaga:
 
 - business logic konsisten
-- frontend lebih sederhana
+- client lebih sederhana
 - aplikasi native masa depan dapat menggunakan endpoint yang sama
 
 ## Money Handling
 
-Nilai uang tidak menggunakan floating-point untuk perhitungan backend/database.
+Nilai uang tidak menggunakan floating-point untuk perhitungan server/database.
 
 Database:
 
@@ -258,7 +258,7 @@ Database:
 NUMERIC / DECIMAL
 ```
 
-Backend:
+Server:
 
 ```text
 Decimal
@@ -268,7 +268,7 @@ API dapat mengirim nilai dalam representasi yang tidak menyebabkan precision los
 
 ## PWA Architecture
 
-Frontend dirancang mobile-first dan dapat dikembangkan menjadi installable PWA.
+Client dirancang mobile-first dan dapat dikembangkan menjadi installable PWA.
 
 PWA responsibilities:
 
@@ -295,9 +295,9 @@ Tambahkan state library hanya jika kompleksitas aplikasi benar-benar membutuhkan
 
 ## Error Handling
 
-Backend harus menggunakan error response konsisten.
+Server harus menggunakan error response konsisten.
 
-Frontend harus membedakan:
+Client harus membedakan:
 
 - validation error
 - authentication error
@@ -310,7 +310,7 @@ User tidak boleh menerima raw stack trace.
 
 ## Testing Layers
 
-### Backend
+### Server
 
 Pytest untuk:
 
@@ -322,7 +322,7 @@ Pytest untuk:
 - dashboard calculations
 - API endpoint utama
 
-### Frontend
+### Client
 
 Test fokus pada behavior penting.
 
@@ -343,15 +343,15 @@ register/login
 
 ## Deployment Boundary
 
-Frontend dan backend dapat di-deploy terpisah.
+Client dan server dapat di-deploy terpisah.
 
 Concept:
 
 ```text
-Frontend
+Client
 → Vercel
 
-Backend
+Server
 → Railway / Render / VPS
 
 Database
@@ -381,8 +381,8 @@ Target workflow:
 
 ```text
 tmux
-├── frontend
-├── backend
+├── client
+├── server
 ├── tests
 └── Hermes
 ```
@@ -390,8 +390,8 @@ tmux
 Runtime dikelola melalui:
 
 - mise
-- uv untuk backend Python
-- package manager frontend sesuai lockfile project
+- uv untuk server Python
+- package manager client sesuai lockfile project
 
 Target command nantinya:
 
@@ -405,8 +405,8 @@ mise run build
 ## Architecture Principles
 
 1. Keep the MVP simple.
-2. Backend adalah source of truth untuk business rules.
-3. Frontend fokus pada UX.
+2. Server adalah source of truth untuk business rules.
+3. Client fokus pada UX.
 4. Jangan menambah abstraction sebelum dibutuhkan.
 5. Jangan menambah dependency hanya karena populer.
 6. Semua resource user harus melalui authorization check.
@@ -415,7 +415,7 @@ mise run build
 
 ## Future Compatibility
 
-Architecture ini memungkinkan penambahan client native tanpa mengganti backend utama:
+Architecture ini memungkinkan penambahan client native tanpa mengganti server utama:
 
 ```text
 PWA

@@ -383,7 +383,7 @@ Periksa koneksi internet lalu coba lagi.
 [ Coba Lagi ]
 ```
 
-Jangan tampilkan raw backend error.
+Jangan tampilkan raw server error.
 
 ---
 
