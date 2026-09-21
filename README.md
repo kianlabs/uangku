@@ -93,6 +93,9 @@ from the client are never trusted for ownership.
 - Set `APP_ENV=production`, a strong `SECRET_KEY`, and `HTTPS_ONLY=true`.
 - Set `TRUSTED_PROXY_IPS` to the IP(s) of your reverse proxy (e.g. Nginx/Cloudflare) so rate limiting correctly identifies individual clients behind the proxy. Without this, all users share the same rate-limit bucket.
 - Run `alembic upgrade head` on deploy; never edit applied migrations.
+  Wajib: tanpa ini, query transaksi/dashboard gagal total (mis. kolom
+  `is_opening_balance` tidak ada di DB) dan semua halaman tampil
+  "Gagal memuat data". Cek dengan `alembic current` — harus di head terbaru.
 - Auth endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`) are rate-limited
   in-app to 5 requests/minute per IP (SlowAPI); export to 30/minute and
   dashboard/transaction-list to 60/minute. Storage is in-memory per process —
