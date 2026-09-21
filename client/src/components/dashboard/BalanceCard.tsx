@@ -112,13 +112,14 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
       </div>
       {masked ? (
         <span
+          data-testid="balance-value"
           className="text-3xl leading-tight font-bold text-white tabular-nums select-none"
           aria-label="Saldo disembunyikan"
         >
           Rp ••••••
         </span>
       ) : (
-        <span className="text-3xl leading-tight font-bold text-white tabular-nums">
+        <span data-testid="balance-value" className="text-3xl leading-tight font-bold text-white tabular-nums">
           {formatRupiah(Math.round(animated))}
         </span>
       )}

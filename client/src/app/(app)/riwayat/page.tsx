@@ -689,6 +689,10 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        // Cegah native link-drag (mouse desktop): tanpa ini, drag di atas
+        // <Link> memicu drag-and-drop HTML dan menekan pointermove —
+        // swipe-to-delete mati total di browser desktop.
+        onDragStart={(e) => e.preventDefault()}
         style={{
           transform: `translateX(${dx}px)`,
           // State (bukan ref) agar lint-safe: saat drag, tanpa transition;
@@ -698,6 +702,7 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
       >
         <Link
           href={`/transaksi/${tx.id}`}
+          draggable={false}
           onClick={(e) => {
             if (dx !== 0 || swiped.current) {
               // Swipe menyelesaikan gerakannya — jangan navigasi.
