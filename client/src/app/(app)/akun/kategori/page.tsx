@@ -5,7 +5,7 @@ import { listCategories, createCategory, updateCategory, deleteCategory } from "
 import { deleteBudget, listBudgets, upsertBudget } from "@/lib/budgets";
 import { formatRupiah } from "@/lib/format";
 import { Mascot } from "@/components/brand/Mascot";
-import type { Category, TransactionType } from "@/lib/types";
+import type { Budget, Category, TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -13,7 +13,7 @@ import { ApiResponseError } from "@/lib/api";
 
 export default function KategoriPage() {
   const [items, setItems] = useState<Category[]>([]);
-  const [budgets, setBudgets] = useState<Record<string, string>>({});
+  const [budgets, setBudgets] = useState<Record<string, Budget>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -32,8 +32,8 @@ export default function KategoriPage() {
     try {
       const [cats, budgetRes] = await Promise.all([listCategories(), listBudgets()]);
       setItems(cats.items);
-      const map: Record<string, string> = {};
-      for (const b of budgetRes.items) map[b.category_id] = b.amount;
+      const map: Record<string, Budget> = {};
+      for (const b of budgetRes.items) map[b.category_id] = b;
       setBudgets(map);
     } catch (err) {
       if (err instanceof ApiResponseError) {
@@ -153,7 +153,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pengeluaran</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {expenseItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} budgetAmount={budgets[cat.id]} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -164,7 +164,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pemasukan</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {incomeItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} budgetAmount={budgets[cat.id]} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -184,11 +184,11 @@ export default function KategoriPage() {
 
 function CategoryRow({
   category,
-  budgetAmount,
+  budget,
   onUpdate,
 }: {
   category: Category;
-  budgetAmount?: string;
+  budget?: Budget;
   onUpdate: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -199,7 +199,7 @@ function CategoryRow({
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
-  const [budgetInput, setBudgetInput] = useState(budgetAmount ?? "");
+  const [budgetInput, setBudgetInput] = useState(budget?.amount ?? "");
   const [isSavingBudget, setIsSavingBudget] = useState(false);
   const [budgetError, setBudgetError] = useState<string | null>(null);
 
@@ -360,16 +360,16 @@ function CategoryRow({
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-base text-text">{category.name}</span>
-          {budgetAmount && (
+          {budget?.amount && (
             <span className="text-xs text-muted tabular-nums">
-              Anggaran {formatRupiah(budgetAmount)}/bln
+              Anggaran {formatRupiah(budget.amount)}/bln
             </span>
           )}
         </div>
         <div className="flex gap-2">
             <button
               onClick={() => {
-                setBudgetInput(budgetAmount ?? "");
+                setBudgetInput(budget?.amount ?? "");
                 setBudgetError(null);
                 setShowBudgetForm((v) => !v);
               }}
@@ -405,7 +405,7 @@ function CategoryRow({
             <Button size="sm" onClick={handleSaveBudget} loading={isSavingBudget} className="flex-1">
               Simpan
             </Button>
-            {budgetAmount && (
+            {budget?.amount && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -421,7 +421,7 @@ function CategoryRow({
               variant="ghost"
               onClick={() => {
                 setShowBudgetForm(false);
-                setBudgetInput(budgetAmount ?? "");
+                setBudgetInput(budget?.amount ?? "");
                 setBudgetError(null);
               }}
               disabled={isSavingBudget}

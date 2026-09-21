@@ -90,12 +90,13 @@ def get_dashboard_summary(
             "percentage": pct,
         })
 
-    # Query 4: recent transactions (month-filtered, limit 5)
+    # Query 4: recent transactions (month-filtered, limit 5, tanpa saldo awal)
     recent_txs = db.scalars(
         select(Transaction)
         .options(joinedload(Transaction.category))
         .where(
             Transaction.user_id == user.id,
+            Transaction.is_opening_balance.is_(False),
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date < date_to_exclusive,
         )

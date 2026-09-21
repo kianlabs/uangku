@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, createElement } from "react";
+import { useEffect, useRef, useState, useMemo, createElement } from "react";
 import Link from "next/link";
-import { listTransactions } from "@/lib/transactions";
+import { deleteTransaction, listTransactions } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import type { Category, Transaction, TransactionType } from "@/lib/types";
 import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
@@ -64,6 +64,61 @@ export default function RiwayatPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [showMore, setShowMore] = useState(false);
   const [compact, setCompact] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ tx: Transaction; index: number } | null>(null);
+  const pendingRef = useRef<{ tx: Transaction; index: number } | null>(null);
+  const undoTimer = useRef<number | null>(null);
+
+  /** Hapus optimistik: baris hilang seketika, commit ke server setelah jendela undo. */
+  function beginDelete(tx: Transaction) {
+    const index = items.findIndex((i) => i.id === tx.id);
+    if (index < 0) return;
+    setItems((prev) => prev.filter((i) => i.id !== tx.id));
+    const pd = { tx, index };
+    pendingRef.current = pd;
+    setPendingDelete(pd);
+    if (undoTimer.current !== null) clearTimeout(undoTimer.current);
+    undoTimer.current = window.setTimeout(() => void commitDelete(), 6000);
+  }
+
+  function reinsert(pd: { tx: Transaction; index: number }) {
+    setItems((prev) => {
+      const next = [...prev];
+      next.splice(Math.min(pd.index, prev.length), 0, pd.tx);
+      return next;
+    });
+  }
+
+  function undoDelete() {
+    if (undoTimer.current !== null) {
+      clearTimeout(undoTimer.current);
+      undoTimer.current = null;
+    }
+    const pd = pendingRef.current;
+    pendingRef.current = null;
+    setPendingDelete(null);
+    if (pd) reinsert(pd);
+  }
+
+  async function commitDelete() {
+    const pd = pendingRef.current;
+    if (!pd) return;
+    pendingRef.current = null;
+    setPendingDelete(null);
+    try {
+      await deleteTransaction(pd.tx.id);
+      window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+    } catch {
+      // Rollback: kembalikan baris & tampilkan error.
+      reinsert(pd);
+      setError("Gagal menghapus transaksi. Coba lagi.");
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (undoTimer.current !== null) clearTimeout(undoTimer.current);
+    };
+  }, []);
 
   const hasClientFilter = sourceFilter !== "all" || debtFilter !== "all";
   const hasAnyFilter =
@@ -486,6 +541,22 @@ export default function RiwayatPage() {
         </div>
       ) : (
         <>
+          {pendingDelete && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-surface border border-border shadow-sm"
+            >
+              <p className="text-sm text-text truncate">Transaksi dihapus.</p>
+              <button
+                type="button"
+                onClick={undoDelete}
+                className="shrink-0 text-sm font-semibold text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded"
+              >
+                Urungkan
+              </button>
+            </div>
+          )}
           <div className="flex flex-col gap-5">
             {groups.map((g) => (
               <section key={g.date} className="flex flex-col">
@@ -494,7 +565,7 @@ export default function RiwayatPage() {
                 </h2>
                 <div className="flex flex-col divide-y divide-border">
                   {g.items.map((tx) => (
-                    <TxRow key={tx.id} tx={tx} />
+                    <SwipeableTxRow key={tx.id} tx={tx} onDelete={beginDelete} />
                   ))}
                 </div>
               </section>
@@ -522,46 +593,153 @@ export default function RiwayatPage() {
   );
 }
 
-function TxRow({ tx }: { tx: Transaction }) {
+const SWIPE_OPEN_PX = -72;
+const SWIPE_RANGE_PX = 96;
+
+/**
+ * Baris transaksi dengan swipe-kiri-untuk-hapus (mobile idiom).
+ *
+ - Pointer events + `touch-pan-y`: scroll vertikal tetap jalan, geser
+   horizontal membuka tombol hapus di belakang baris.
+ - Hapus bersifat optimistik via `onDelete` — parent menahan undo 6 detik.
+ - Fallback a11y: keyboard/screen reader tetap punya jalur hapus via
+   halaman detail (/transaksi/[id]), swipe hanya enhancement.
+ */
+function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Transaction) => void }) {
   const isIncome = tx.type === "income";
   const source = getTransactionSource(tx.id);
   const debt = getDebtTag(tx.id);
 
+  const [dx, setDx] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startPointer = useRef({ x: 0, y: 0 });
+  const startDx = useRef(0);
+  const dragging = useRef(false);
+  const lockAxis = useRef<"x" | "y" | null>(null);
+  const swiped = useRef(false);
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    startPointer.current = { x: e.clientX, y: e.clientY };
+    startDx.current = dx;
+    dragging.current = true;
+    setIsDragging(true);
+    lockAxis.current = null;
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragging.current) return;
+    const mx = e.clientX - startPointer.current.x;
+    const my = e.clientY - startPointer.current.y;
+    if (lockAxis.current === null) {
+      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+      lockAxis.current = Math.abs(mx) > Math.abs(my) ? "x" : "y";
+      if (lockAxis.current === "x") {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        swiped.current = true;
+      }
+    }
+    if (lockAxis.current !== "x") return;
+    setDx(Math.max(-SWIPE_RANGE_PX, Math.min(0, startDx.current + mx)));
+  }
+
+  function onPointerUp() {
+    if (!dragging.current) return;
+    dragging.current = false;
+    setIsDragging(false);
+    if (lockAxis.current === "x") {
+      setDx((cur) => (cur < -48 ? SWIPE_OPEN_PX : 0));
+    }
+    lockAxis.current = null;
+  }
+
+  function handleDeleteClick() {
+    setDx(0);
+    onDelete(tx);
+  }
+
   return (
-    <Link
-      href={`/transaksi/${tx.id}`}
-      className="group flex items-center gap-3 py-3 px-1 hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
-    >
-      <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-text transition-colors">
-        {createElement(getCategoryIcon(tx.category.name), { className: "w-5 h-5", "aria-hidden": true })}
-      </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <p className="text-base font-medium text-text truncate">
-          {tx.description || tx.category.name}
-        </p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-muted">{tx.category.name}</span>
-          {source && (
-            <span className="text-[11px] font-medium text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
-              {source}
-            </span>
-          )}
-          {debt && (
-            <span className="text-[11px] font-medium text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
-              {debt.tag === "utang" ? "Utang" : "Piutang"}
-              {debt.settled && " (lunas)"}
-            </span>
-          )}
-        </div>
-      </div>
-      <p
-        className={`text-base font-bold tabular-nums shrink-0 ${
-          isIncome ? "text-income" : "text-expense"
-        }`}
+    <div className="relative overflow-hidden rounded-lg touch-pan-y">
+      {/* Tombol hapus di belakang baris — terungkap saat swipe */}
+      {dx < 0 && (
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          aria-label={`Hapus transaksi ${tx.description || tx.category.name}`}
+          className="absolute inset-y-0 right-0 w-20 flex flex-col items-center justify-center gap-0.5 bg-rose-500 text-white rounded-lg active:bg-rose-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-rose-500"
+        >
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a2 2 0 01-2 2H8a2 2 0 01-2-2V6" />
+          </svg>
+          <span className="text-[11px] font-semibold">Hapus</span>
+        </button>
+      )}
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={{
+          transform: `translateX(${dx}px)`,
+          // State (bukan ref) agar lint-safe: saat drag, tanpa transition;
+          // saat lepas, baris menutup/membuka dengan animasi.
+          transition: isDragging ? "none" : "transform 180ms ease",
+        }}
       >
-        {isIncome ? "+" : "-"} {formatRupiah(tx.amount)}
-      </p>
-    </Link>
+        <Link
+          href={`/transaksi/${tx.id}`}
+          onClick={(e) => {
+            if (dx !== 0 || swiped.current) {
+              // Swipe menyelesaikan gerakannya — jangan navigasi.
+              e.preventDefault();
+              swiped.current = false;
+              setDx(0);
+            }
+          }}
+          className="group flex items-center gap-3 py-3 px-1 bg-surface hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
+        >
+          <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-text transition-colors">
+            {createElement(getCategoryIcon(tx.category.name), { className: "w-5 h-5", "aria-hidden": true })}
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+            <p className="text-base font-medium text-text truncate">
+              {tx.description || tx.category.name}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-muted">{tx.category.name}</span>
+              {source && (
+                <span className="text-[11px] font-medium text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
+                  {source}
+                </span>
+              )}
+              {debt && (
+                <span className="text-[11px] font-medium text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
+                  {debt.tag === "utang" ? "Utang" : "Piutang"}
+                  {debt.settled && " (lunas)"}
+                </span>
+              )}
+            </div>
+          </div>
+          <p
+            className={`text-base font-bold tabular-nums shrink-0 ${
+              isIncome ? "text-income" : "text-expense"
+            }`}
+          >
+            {isIncome ? "+" : "-"} {formatRupiah(tx.amount)}
+          </p>
+        </Link>
+      </div>
+    </div>
   );
 }
 

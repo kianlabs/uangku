@@ -1,7 +1,7 @@
 "use client";
 
 import type { ExpenseByCategoryItem } from "@/lib/types";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, formatRupiahCompact } from "@/lib/format";
 
 interface SpendingDonutProps {
   data: ExpenseByCategoryItem[];
@@ -113,7 +113,7 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
           </text>
         </svg>
         <ul className="flex flex-col gap-1 flex-1">
-          {slices.map((s) => (
+          {slices.map((s, i) => (
             <li
               key={s.name}
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 -mx-2"
@@ -121,6 +121,9 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
                 background: `linear-gradient(to right, ${s.color}24 ${s.pct}%, transparent ${s.pct}%)`,
               }}
             >
+              <span className="w-6 shrink-0 text-xs text-muted tabular-nums">
+                {String(i + 1).padStart(2, "0")}
+              </span>
               <span
                 className="h-3 w-3 shrink-0 rounded-full"
                 style={{ backgroundColor: s.color }}
@@ -131,7 +134,7 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
                 {s.pct.toFixed(0)}%
               </span>
               <span className="text-sm text-muted tabular-nums whitespace-nowrap">
-                {formatRupiah(s.amount)}
+                {formatRupiahCompact(s.amount)}
               </span>
             </li>
           ))}

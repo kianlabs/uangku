@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
+import { buzz } from "@/lib/haptics";
 
 const navItems = [
   {
@@ -105,9 +106,13 @@ export function BottomNav() {
           <div className="absolute left-1/2 -translate-x-1/2 -top-[60px] z-10">
             <button
               type="button"
-              onClick={() => setModalOpen(true)}
+              onClick={() => {
+                buzz(10);
+                setModalOpen(true);
+              }}
               aria-label="Catat cepat"
               aria-haspopup="dialog"
+              aria-expanded={modalOpen}
               className="flex items-center justify-center w-12 h-12 rounded-full bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:bg-accent/90 active:scale-95 transition-all select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <svg
@@ -120,6 +125,7 @@ export function BottomNav() {
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className={`transition-transform duration-200 ${modalOpen ? "rotate-45" : ""}`}
               >
                 <path d="M12 5v14M5 12h14" />
               </svg>
@@ -140,7 +146,7 @@ export function BottomNav() {
                   ].join(" ")}
                 >
                   {item.icon}
-                  <span className="text-[11px]">{item.label}</span>
+                  <span className="text-xs">{item.label}</span>
                 </Link>
               </li>
             );

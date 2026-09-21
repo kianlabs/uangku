@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, createElement } from "react";
+import { CloudOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
+import { Minus, TrendingDown, TrendingUp, Flag } from "lucide-react";
 import { ApiResponseError } from "@/lib/api";
 import { getDashboardSummary, getDashboardMetrics } from "@/lib/dashboard";
 import { listBudgets } from "@/lib/budgets";
@@ -25,17 +27,36 @@ import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
 
 export default function BerandaPage() {
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    function update() {
+      setIsOffline(!navigator.onLine);
+    }
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [prevData, setPrevData] = useState<DashboardSummary | null>(null);
   const [hasAnyTransaction, setHasAnyTransaction] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,14 +71,17 @@ export default function BerandaPage() {
       listTransactions({ page: 1, page_size: 1, signal: controller.signal })
         .then((res) => res.pagination.total_items > 0)
         .catch(() => false),
+      getDashboardSummary(prevMonth, controller.signal).catch(() => null),
     ])
-      .then(([currentUser, summary, metricsData, budgetData, anyTx]) => {
+      .then(([currentUser, summary, metricsData, budgetData, anyTx, prevSummary]) => {
         if (!cancelled) {
           setUser(currentUser);
           setData(summary);
           setMetrics(metricsData);
           setBudgets(budgetData.items);
           setHasAnyTransaction(anyTx);
+          setPrevData(prevSummary);
+          setLoadedAt(new Date());
           setIsLoading(false);
         }
       })
@@ -91,6 +115,16 @@ export default function BerandaPage() {
     return <LoadingSkeleton />;
   }
 
+  const offlineBanner = isOffline ? (
+    <div
+      role="status"
+      className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-sm font-medium text-amber-800"
+    >
+      <CloudOff className="w-4 h-4 shrink-0" aria-hidden="true" />
+      Offline — data mungkin tidak terbaru.
+    </div>
+  ) : null;
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
@@ -108,13 +142,32 @@ export default function BerandaPage() {
 
   if (!data || !user || !metrics) return null;
 
+  const updatedLabel = loadedAt
+    ? loadedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   const blownBudget = budgets.find((b) => (b.percentage ?? 0) >= 90);
-  const hasExpense = data.expense_by_category.length > 0 && parseFloat(data.monthly_expense) > 0;
-
   const hasMonthTransactions = data.recent_transactions && data.recent_transactions.length > 0;
-
   const streak = calculateStreak(metrics.transaction_dates);
   const showStreakMilestone = streak > 0 && (streak === 7 || streak === 30 || streak % 30 === 0);
+  const maxBudgetPct = budgets.reduce((m, b) => Math.max(m, b.percentage ?? 0), 0);
+
+  const monthlyIncomeNum = parseFloat(data.monthly_income) || 0;
+  const monthlyExpenseNum = parseFloat(data.monthly_expense) || 0;
+  const expenseRatio = monthlyIncomeNum > 0 ? monthlyExpenseNum / monthlyIncomeNum : monthlyExpenseNum > 0 ? 1 : 0;
+  const weather =
+    maxBudgetPct >= 90 || parseFloat(metrics.safe_to_spend) <= 0
+      ? "hujan"
+      : maxBudgetPct >= 75 || expenseRatio >= 0.75
+        ? "berawan"
+        : "cerah";
+
+  const weekTotal = parseFloat(metrics.week_expense_total) || 0;
+  const hasExpense = data.expense_by_category.length > 0 && parseFloat(data.monthly_expense) > 0;
+
+  const prevExpense = prevData ? parseFloat(prevData.monthly_expense) || 0 : 0;
+  const momDelta =
+    prevExpense > 0 ? ((monthlyExpenseNum - prevExpense) / prevExpense) * 100 : null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -125,8 +178,9 @@ export default function BerandaPage() {
         className="flex flex-col gap-4 pb-4 lg:grid lg:grid-cols-6 lg:gap-5 lg:items-start"
       >
         <div className="lg:col-span-6 sticky top-0 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5">
-          <Header userName={user.email.split("@")[0] || user.email} currentDate={now} />
+          <Header userName={user.email.split("@")[0] || user.email} currentDate={now} weather={weather} />
         </div>
+        {offlineBanner && <div className="lg:col-span-6">{offlineBanner}</div>}
 
         {hasAnyTransaction ? (
           <>
@@ -145,6 +199,30 @@ export default function BerandaPage() {
                 remainingBalance={metrics.remaining_balance}
                 todayExpense={parseFloat(metrics.today_expense ?? "0") || 0}
               />
+            </div>
+
+            <div className="lg:col-span-3">
+              <MochiTip
+                mood="firm"
+                title="Refleksi minggu ini"
+                mascotAnimated
+                message={
+                  weekTotal > 0
+                    ? `Habis ${formatRupiah(weekTotal)}${metrics.week_top_category ? `, terbanyak di ${metrics.week_top_category}.` : "."}`
+                    : "Belum ada pengeluaran minggu ini. Tenang, catat saja begitu jajan."
+                }
+              />
+            </div>
+
+            <div className="flex items-center gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
+              <Mascot size={48} mood={streak > 0 ? "celebrating" : "happy"} />
+              <Flag className="w-5 h-5 text-accent shrink-0" aria-hidden="true" />
+              <div className="flex flex-col min-w-0">
+                <p className="text-base font-bold text-slate-900 tabular-nums">
+                  {streak > 0 ? `${streak} hari beruntun` : "Belum ada rentetan"}
+                </p>
+                <p className="text-xs text-slate-500 truncate">Catat tiap hari biar makin panjang.</p>
+              </div>
             </div>
 
             {blownBudget && (
@@ -170,14 +248,42 @@ export default function BerandaPage() {
 
             {data.transaction_count > 0 && (
               <div className="grid grid-cols-2 gap-4 lg:col-span-6 lg:grid-cols-6">
-                <div className="flex flex-col gap-1 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
+                <div className="flex flex-col gap-1 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaksi</span>
                   <span className="text-xl font-bold text-slate-900 tabular-nums">{data.transaction_count}×</span>
                   <span className="text-xs text-slate-400">bulan ini</span>
                 </div>
-                <div className="flex flex-col gap-1 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
+                <div className="flex flex-col gap-1 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Menuju gajian</span>
                   <span className="text-xl font-bold text-slate-900 tabular-nums">{metrics.days_left} hari</span>
+                </div>
+              </div>
+            )}
+
+            {momDelta !== null && (
+              <div className="flex items-center gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-6">
+                {momDelta < 0 ? (
+                  <TrendingDown className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden="true" />
+                ) : momDelta > 0 ? (
+                  <TrendingUp className="w-5 h-5 text-rose-600 shrink-0" aria-hidden="true" />
+                ) : (
+                  <Minus className="w-5 h-5 text-slate-400 shrink-0" aria-hidden="true" />
+                )}
+                <div className="flex flex-col min-w-0">
+                  <p
+                    className={`text-base font-bold tabular-nums ${
+                      momDelta < 0 ? "text-emerald-600" : momDelta > 0 ? "text-rose-600" : "text-slate-900"
+                    }`}
+                  >
+                    {momDelta < 0
+                      ? `Turun ${Math.round(Math.abs(momDelta))}%`
+                      : momDelta > 0
+                        ? `Naik ${Math.round(momDelta)}%`
+                        : "Sama seperti bulan lalu"}
+                  </p>
+                  <p className="text-xs text-slate-500 tabular-nums truncate">
+                    {formatRupiah(monthlyExpenseNum)} bulan ini · {formatRupiah(prevExpense)} bulan lalu
+                  </p>
                 </div>
               </div>
             )}
@@ -248,6 +354,9 @@ export default function BerandaPage() {
           </div>
         )}
       </motion.div>
+      <p className="text-center text-xs text-slate-400 lg:col-span-6">
+        {updatedLabel ? `Diperbarui ${updatedLabel}` : ""}
+      </p>
       <MochiGuide />
     </MotionConfig>
   );

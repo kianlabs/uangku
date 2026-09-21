@@ -422,6 +422,7 @@ def test_opening_balance_counts_toward_balance_only(db, user, income_cat):
     assert result["monthly_income"] == Decimal(0)
     assert result["transaction_count"] == 0
     assert result["balance"] >= Decimal(5000000)
+    assert all(tx["description"] != "Saldo awal" for tx in result["recent_transactions"])
 
 
 def test_metrics_excludes_opening_balance(db, metrics_user, metrics_income_cat, metrics_expense_cat):

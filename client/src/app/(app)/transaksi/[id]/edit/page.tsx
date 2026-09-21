@@ -9,6 +9,7 @@ import { updateTransaction } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
+import { buzz } from "@/lib/haptics";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -146,6 +147,7 @@ export default function EditTransaksiPage() {
       }
 
       await updateTransaction(id, patch);
+      buzz();
       router.push(`/transaksi/${id}`);
     } catch (err) {
       if (err instanceof ApiResponseError) {

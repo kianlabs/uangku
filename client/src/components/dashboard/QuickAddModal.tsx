@@ -84,8 +84,9 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
         )}
         <QuickAddInline
           onSave={() => {
-            window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
-            // Kasih waktu lihat Mochi celebrating, lalu tutup otomatis.
+            // tx-changed sudah didispatch QuickAddInline segera setelah submit
+            // (pola perceived-instant) — di sini cukup tutup dengan jeda agar
+            // user sempat lihat Mochi celebrating.
             if (closeTimer.current !== null) clearTimeout(closeTimer.current);
             closeTimer.current = window.setTimeout(onClose, 1400);
           }}

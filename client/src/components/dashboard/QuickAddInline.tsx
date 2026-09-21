@@ -6,6 +6,7 @@ import { createTransaction } from "@/lib/transactions";
 import { listCategories, createCategory } from "@/lib/categories";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
+import { buzz } from "@/lib/haptics";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddGuide } from "@/components/dashboard/QuickAddGuide";
 
@@ -57,13 +58,22 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
 
       // Tanggal lokal (bukan UTC): toISOString() bisa mundur sehari untuk WIB
       const today = todayLocalISO();
-      await createTransaction({
+      const promise = createTransaction({
         type: parsed.type,
         amount: String(parsed.amount),
         category_id: category.id,
         transaction_date: today,
         description: parsed.description,
       });
+
+      // Terasa instan: beri tahu halaman lain SEKARANG (mereka me-refetch
+      // dari server — sumber kebenaran tetap satu). Kalau create gagal,
+      // catch di bawah menampilkan error dan refetch berikutnya sudah
+      // mengembalikan state yang benar (rollback efektif tanpa duplikasi).
+      window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+      buzz();
+
+      await promise; // error → catch → tampilkan pesan
 
       setInput("");
       setShowSuccess(true);

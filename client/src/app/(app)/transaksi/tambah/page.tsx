@@ -10,6 +10,7 @@ import { ApiResponseError } from "@/lib/api";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
+import { buzz } from "@/lib/haptics";
 import { setTransactionSource, setDebtTag, getTemplates, setTemplates, type SubscriptionTemplate } from "@/lib/local-storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -153,6 +154,7 @@ export default function TambahTransaksiPage() {
         transaction_date: today,
         description: template.name,
       });
+      buzz();
       router.push("/beranda");
     } catch {
       setServerError("Gagal membuat dari template. Coba lagi.");
@@ -205,6 +207,7 @@ export default function TambahTransaksiPage() {
       if (debtTag && txData?.id) {
         setDebtTag(txData.id, { tag: debtTag, settled: debtSettled });
       }
+      buzz();
       router.push("/beranda");
     } catch (err) {
       if (err instanceof ApiResponseError) {

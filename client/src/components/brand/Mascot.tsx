@@ -9,7 +9,8 @@ export type MascotMood =
   | "worried"
   | "sleepy"
   | "celebrating"
-  | "ok";
+  | "ok"
+  | "firm";
 
 interface MascotProps {
   size?: number;
@@ -34,9 +35,10 @@ const EASE_IN_OUT = "easeInOut" as const;
 /**
  * Mochi — maskot pemandu UangKu (dompet biru + koin hijau).
  *
- * 7 mood dengan gaya animasi berbeda:
+ * 8 mood dengan gaya animasi berbeda:
  * - happy: mengambang + kedip + melambai (default)
-+ * - ok: mengambang pelan + acungan jempol (rekomendasi aman baik-baik saja)
+ * - ok: mengambang pelan + acungan jempol (rekomendasi aman baik-baik saja)
+ * - firm: nyaris diam + alis tegas (refleksi/teguran santai)
  * - excited: memantul + mata berbinar
  * - thinking: diam + gelembung "?" (khidmat)
  * - worried: gelisah + tetes keringat
@@ -89,6 +91,11 @@ export function Mascot({
                         animate: { y: [0, -4, 0] },
                         transition: loop(3.6),
                       }
+                  : mood === "firm"
+                    ? {
+                        animate: { y: [0, -3, 0] },
+                        transition: loop(4.2),
+                      }
                   : mood === "sleepy"
                     ? {
                         animate: { y: [0, -3, 0], rotate: [0, 1.2, 0] },
@@ -101,7 +108,7 @@ export function Mascot({
         blink: {
           animate: { scaleY: [1, 1, 0.08, 1, 1] },
           transition: loop(
-            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : mood === "ok" ? 4.8 : 4.4
+            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : mood === "ok" ? 4.8 : mood === "firm" ? 5.4 : 4.4
           ),
         },
         wave: {
@@ -129,7 +136,7 @@ export function Mascot({
         },
         coin: {
           animate: { y: [0, -6, 0], rotate: [0, 8, 0] },
-          transition: loop(mood === "excited" ? 2.4 : mood === "sleepy" ? 5 : 3.8),
+          transition: loop(mood === "excited" ? 2.4 : mood === "sleepy" ? 5 : mood === "firm" ? 4.4 : 3.8),
         },
         drip: {
           animate: { y: [0, 4, 0], opacity: [1, 0.7, 1] },
@@ -266,13 +273,23 @@ export function Mascot({
           <circle cx="122" cy="102" r="11" fill="#27865a" />
           <circle cx="122" cy="102" r="4" fill="#ffffff" />
 
-          {/* tangan kanan: melambai, kecuali sleepy (turun) dan ok (acungan jempol) */}
+          {/* tangan kanan: melambai, kecuali sleepy (turun), ok (jempol), firm (tegak di sisi) */}
           {mood === "sleepy" ? (
             <line
               x1="127"
               y1="102"
               x2="137"
               y2="118"
+              stroke="#024691"
+              strokeWidth="7"
+              strokeLinecap="round"
+            />
+          ) : mood === "firm" ? (
+            <line
+              x1="129"
+              y1="100"
+              x2="133"
+              y2="121"
               stroke="#024691"
               strokeWidth="7"
               strokeLinecap="round"
@@ -349,6 +366,14 @@ export function Mascot({
             </g>
           )}
 
+          {/* alis tegas: miring ke dalam */}
+          {mood === "firm" && (
+            <g stroke="#0b1f3a" strokeWidth="3" strokeLinecap="round">
+              <line x1="55" y1="83" x2="70" y2="87" />
+              <line x1="90" y1="87" x2="105" y2="83" />
+            </g>
+          )}
+
           {/* pipi */}
           {showBlush && (
             <>
@@ -363,7 +388,7 @@ export function Mascot({
               <ellipse cx="80" cy="117" rx="8" ry="9" fill="#0b1f3a" />
               <ellipse cx="80" cy="120.5" rx="4" ry="3.4" fill="#f9a8d4" />
             </g>
-          ) : mood === "thinking" ? (
+          ) : mood === "thinking" || mood === "firm" ? (
             <line
               x1="74"
               y1="116"
