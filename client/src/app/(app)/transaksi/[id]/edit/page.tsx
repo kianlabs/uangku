@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { apiFetch, ApiResponseError } from "@/lib/api";
 import { updateTransaction } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
+import { groupThousands } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -102,17 +104,6 @@ export default function EditTransaksiPage() {
     setServerError(null);
   }
 
-  function formatPreview(raw: string): string {
-    const num = parseAmountInput(raw);
-    if (isNaN(num) || num === 0) return "";
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(num);
-  }
-
   function validate() {
     const e: typeof errors = {};
     const num = parseAmountInput(amount);
@@ -176,8 +167,6 @@ export default function EditTransaksiPage() {
       setIsSubmitting(false);
     }
   }
-
-  const amountPreview = formatPreview(amount);
 
   if (isLoadingTx) {
     return (
@@ -295,26 +284,28 @@ export default function EditTransaksiPage() {
                 type="button"
                 onClick={() => handleTypeChange("expense")}
                 className={[
-                  "flex-1 h-10 rounded-lg text-sm font-medium transition-colors",
+                  "flex-1 h-11 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5",
                   type === "expense"
                     ? "bg-surface text-text shadow-sm"
                     : "text-muted hover:text-text",
                 ].join(" ")}
                 aria-pressed={type === "expense"}
               >
+                <ArrowDown className="w-4 h-4" aria-hidden="true" />
                 Pengeluaran
               </button>
               <button
                 type="button"
                 onClick={() => handleTypeChange("income")}
                 className={[
-                  "flex-1 h-10 rounded-lg text-sm font-medium transition-colors",
+                  "flex-1 h-11 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5",
                   type === "income"
                     ? "bg-surface text-text shadow-sm"
                     : "text-muted hover:text-text",
                 ].join(" ")}
                 aria-pressed={type === "income"}
               >
+                <ArrowUp className="w-4 h-4" aria-hidden="true" />
                 Pemasukan
               </button>
             </div>
@@ -331,22 +322,17 @@ export default function EditTransaksiPage() {
                 id="amount"
                 type="text"
                 inputMode="decimal"
-                value={amount}
+                value={groupThousands(amount)}
                 onChange={(e) => {
                   setAmount(e.target.value.replace(/\D/g, ""));
                 }}
                 placeholder="0"
                 autoComplete="off"
-                className="flex-1 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 focus:outline-none"
+                className="flex-1 min-w-0 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 focus:outline-none"
                 aria-invalid={errors.amount ? "true" : undefined}
-                aria-describedby={errors.amount ? "amount-error" : amountPreview ? "amount-preview" : undefined}
+                aria-describedby={errors.amount ? "amount-error" : undefined}
               />
             </div>
-            {amountPreview && !errors.amount && (
-              <p id="amount-preview" className="text-sm text-muted tabular-nums">
-                {amountPreview}
-              </p>
-            )}
             {errors.amount && (
               <p id="amount-error" role="alert" className="text-sm text-danger">
                 {errors.amount}

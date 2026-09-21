@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.errors import TypeMismatchError
 from app.models import Base, Category, Transaction, User  # noqa: F401
 from app.services.auth import register_user
 from app.services.category import create_category
@@ -242,3 +243,10 @@ def test_delete_transaction_not_owned_raises(db, user, other_user, other_expense
                             category_id=other_expense_cat.id, transaction_date=date(2026, 9, 17))
     with pytest.raises(ValueError, match="not_found"):
         delete_transaction(db, user, tx.id)
+
+
+def test_create_opening_balance_must_be_income(db, user, expense_cat):
+    with pytest.raises(TypeMismatchError):
+        create_transaction(db, user, type_="expense", amount=Decimal(1000),
+                           category_id=expense_cat.id, transaction_date=date(2026, 3, 1),
+                           is_opening_balance=True)

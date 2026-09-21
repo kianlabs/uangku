@@ -39,7 +39,7 @@ def get_dashboard_summary(
     ).one()
     balance = Decimal(str(balance_row.total_income)) - Decimal(str(balance_row.total_expense))
 
-    # Query 2: monthly aggregates
+    # Query 2: monthly aggregates (saldo awal tidak dihitung sebagai income)
     monthly_row = db.execute(
         select(
             func.coalesce(
@@ -51,6 +51,7 @@ def get_dashboard_summary(
             func.count(Transaction.id).label("transaction_count"),
         ).where(
             Transaction.user_id == user.id,
+            Transaction.is_opening_balance.is_(False),
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date < date_to_exclusive,
         )
@@ -70,6 +71,7 @@ def get_dashboard_summary(
         .where(
             Transaction.user_id == user.id,
             Transaction.type == "expense",
+            Transaction.is_opening_balance.is_(False),
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date < date_to_exclusive,
         )
@@ -181,11 +183,12 @@ def get_user_metrics(
     cutoff_streak = today - timedelta(days=60)
     cutoff_week = today - timedelta(days=6)   # last 7 days inclusive
 
-    # -- Query 1: distinct dates for streak (60-day window) --
+    # -- Query 1: distinct dates for streak (60-day window, tanpa saldo awal) --
     date_rows = db.scalars(
         select(Transaction.transaction_date)
         .where(
             Transaction.user_id == user.id,
+            Transaction.is_opening_balance.is_(False),
             Transaction.transaction_date >= cutoff_streak,
             Transaction.transaction_date <= today,
         )
@@ -246,6 +249,7 @@ def get_user_metrics(
             ).label("monthly_expense"),
         ).where(
             Transaction.user_id == user.id,
+            Transaction.is_opening_balance.is_(False),
             Transaction.transaction_date >= month_start,
             Transaction.transaction_date < month_end_exclusive,
         )
@@ -254,7 +258,17 @@ def get_user_metrics(
     monthly_income = Decimal(str(monthly_row.monthly_income))
     monthly_expense = Decimal(str(monthly_row.monthly_expense))
 
-    remaining_balance = monthly_income - monthly_expense
+    # Saldo awal adalah uang yang memang dipegang (timeless seed money),
+    # jadi ikut menghitung sebagai dana tersedia — walau bukan income.
+    opening_total = db.scalar(
+        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.user_id == user.id,
+            Transaction.is_opening_balance.is_(True),
+        )
+    )
+    opening_total = Decimal(str(opening_total))
+
+    remaining_balance = monthly_income - monthly_expense + opening_total
     days_left = _days_until_next_payday(today, payday)
     # Clamp to zero: overspent months show Rp 0/day instead of a negative budget.
     raw_safe = (remaining_balance / days_left) if days_left > 0 else Decimal(0)

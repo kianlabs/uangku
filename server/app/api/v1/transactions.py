@@ -86,6 +86,7 @@ def post_transaction(
             category_id=body.category_id,
             transaction_date=body.transaction_date,
             description=body.description,
+            is_opening_balance=body.is_opening_balance,
         )
     except InvalidCategoryError:
         raise HTTPException(

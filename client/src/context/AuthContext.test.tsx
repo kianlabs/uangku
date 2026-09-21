@@ -28,6 +28,7 @@ vi.mock("@/lib/preferences", () => ({
 // Mock seedLocalStorageFromPreferences — tidak perlu benar-benar seed di unit test
 vi.mock("@/lib/local-storage", () => ({
   seedLocalStorageFromPreferences: vi.fn(),
+  clearLocalCache: vi.fn(),
 }));
 
 function AuthProbe() {

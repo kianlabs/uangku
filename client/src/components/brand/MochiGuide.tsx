@@ -7,7 +7,7 @@ import { getPayday, setPayday } from "@/lib/local-storage";
 import { createTransaction, listTransactions } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
-import { formatRupiah } from "@/lib/format";
+import { groupThousands } from "@/lib/format";
 
 interface GuideStep {
   mood: MascotMood;
@@ -15,14 +15,6 @@ interface GuideStep {
   body: string;
   cta: string;
   kind?: "info" | "payday" | "balance";
-}
-
-interface GuideStep {
-  mood: MascotMood;
-  title: string;
-  body: string;
-  cta: string;
-  kind?: "info" | "payday";
 }
 
 const STEPS: GuideStep[] = [
@@ -138,6 +130,7 @@ export function MochiGuide() {
               category_id: cat.id,
               transaction_date: todayLocalISO(),
               description: "Saldo awal",
+              is_opening_balance: true,
             });
             window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
           }
@@ -155,8 +148,6 @@ export function MochiGuide() {
       setStep((s) => s + 1);
     }
   }
-
-  const balanceNum = parseFloat(balance.replace(/\D/g, "")) || 0;
 
   if (!visible) return null;
 
@@ -226,18 +217,15 @@ export function MochiGuide() {
                 inputMode="numeric"
                 autoComplete="off"
                 placeholder="0"
-                value={balance}
-                onChange={(e) => {
-                  setBalanceState(e.target.value.replace(/\D/g, ""));
-                  if (balanceError) setBalanceError(null);
-                }}
-                aria-invalid={balanceError ? "true" : undefined}
-                className="w-full h-12 text-center text-lg font-bold tabular-nums rounded-xl border border-border bg-surface text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
-              />
-              {balanceNum > 0 && !balanceError && (
-                <p className="text-xs text-muted tabular-nums">{formatRupiah(balanceNum)}</p>
-              )}
-              {balanceError && (
+              value={groupThousands(balance)}
+              onChange={(e) => {
+                setBalanceState(e.target.value.replace(/\D/g, ""));
+                if (balanceError) setBalanceError(null);
+              }}
+              aria-invalid={balanceError ? "true" : undefined}
+              className="w-full h-12 text-center text-lg font-bold tabular-nums rounded-xl border border-border bg-surface text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+            />
+            {balanceError && (
                 <p role="alert" className="text-xs text-danger">
                   {balanceError}
                 </p>

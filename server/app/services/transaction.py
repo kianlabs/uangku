@@ -63,9 +63,12 @@ def create_transaction(
     category_id: uuid.UUID,
     transaction_date: date,
     description: str | None = None,
+    is_opening_balance: bool = False,
 ) -> Transaction:
     if amount <= 0:
         raise InvalidAmountError()
+    if is_opening_balance and type_ != "income":
+        raise TypeMismatchError()
     cat = _get_owned_category(db, user, category_id)
     _validate_type_match(type_, cat.type)
     tx = Transaction(
@@ -75,6 +78,7 @@ def create_transaction(
         amount=amount,
         description=description,
         transaction_date=transaction_date,
+        is_opening_balance=is_opening_balance,
     )
     db.add(tx)
     db.commit()

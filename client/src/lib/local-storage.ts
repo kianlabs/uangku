@@ -40,6 +40,9 @@ export function seedLocalStorageFromPreferences(prefs: UserPreferences): void {
 
   if (prefs.payday != null) {
     localStorage.setItem(PAYDAY_KEY, String(prefs.payday));
+  } else {
+    // Server tidak punya nilai → buang sisa akun sebelumnya (shared browser).
+    localStorage.removeItem(PAYDAY_KEY);
   }
   // Merge, don't blind-overwrite: empty objects/arrays from server
   // (new user) must not wipe local defaults (e.g. subscription templates).
@@ -66,6 +69,19 @@ function syncToServer(partial: Partial<UserPreferences>): void {
     .catch(() => {
       // Intentional no-op: sync gagal tidak mengganggu UX
     });
+}
+
+// ---------------------------------------------------------------------------
+// Reset — buang cache lokal saat ganti akun (logout/register) agar tidak
+// ada sisa data akun sebelumnya di browser bersama.
+// ---------------------------------------------------------------------------
+
+export function clearLocalCache(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(PAYDAY_KEY);
+  localStorage.removeItem(SOURCES_KEY);
+  localStorage.removeItem(DEBT_TAGS_KEY);
+  localStorage.removeItem(TEMPLATES_KEY);
 }
 
 // ---------------------------------------------------------------------------

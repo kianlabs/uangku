@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { motion, MotionConfig } from "motion/react";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
 
@@ -35,19 +36,26 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Catat transaksi cepat"
-    >
-      <button
-        type="button"
-        aria-label="Tutup dialog"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40 cursor-default"
-      />
-      <div className="relative w-full max-w-lg mx-4 mb-24 sm:mb-0 rounded-2xl bg-surface border border-border shadow-xl p-6 flex flex-col items-center gap-4">
+    <MotionConfig reducedMotion="user">
+      <div
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Catat transaksi cepat"
+      >
+        <button
+          type="button"
+          aria-label="Tutup dialog"
+          onClick={onClose}
+          className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px] cursor-default"
+        />
+        <motion.div
+          initial={{ opacity: 0, y: 48, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 380, damping: 34 }}
+          className="relative w-full max-w-lg mx-4 mb-24 sm:mb-0 rounded-t-[28px] sm:rounded-[28px] bg-surface/85 border border-white/60 shadow-xl backdrop-blur-2xl backdrop-saturate-150 p-6 pt-3 flex flex-col items-center gap-4"
+        >
+          <div aria-hidden="true" className="h-1.5 w-12 rounded-full bg-slate-900/15" />
         <button
           type="button"
           onClick={onClose}
@@ -99,7 +107,8 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
             atau isi form manual
           </Link>
         )}
+        </motion.div>
       </div>
-    </div>
+    </MotionConfig>
   );
 }

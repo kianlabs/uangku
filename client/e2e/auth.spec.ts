@@ -49,8 +49,9 @@ test.describe("Auth", () => {
     await page.getByLabel("Konfirmasi Password").fill("testpass1234");
     await page.getByRole("button", { name: "Daftar" }).click();
 
-    // Error harus muncul (email sudah terdaftar)
-    await expect(page.getByRole("alert")).toBeVisible({ timeout: 5_000 });
+    // Error harus muncul (email sudah terdaftar; atau rate-limit bila
+    // suite penuh menekan limit — keduanya render alert di dalam form)
+    await expect(page.locator("form").getByRole("alert")).toBeVisible({ timeout: 5_000 });
   });
 
   test("register dengan password pendek menampilkan validasi", async ({ page }) => {
@@ -76,7 +77,7 @@ test.describe("Auth", () => {
     await page.getByLabel("Password", { exact: true }).fill("wrongpassword");
     await page.getByRole("button", { name: "Masuk" }).click();
 
-    await expect(page.getByRole("alert")).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator("form").getByRole("alert")).toBeVisible({ timeout: 5_000 });
   });
 
   test("logout membersihkan sesi dan redirect ke /masuk", async ({ page }) => {

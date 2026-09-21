@@ -15,6 +15,8 @@ class TransactionCreateRequest(BaseModel):
     category_id: uuid.UUID
     description: str | None = Field(None, max_length=500)
     transaction_date: date
+    # Saldo awal hanya boleh untuk income; divalidasi di service layer.
+    is_opening_balance: bool = False
 
     @field_validator("amount")
     @classmethod

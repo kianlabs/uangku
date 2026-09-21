@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 
 function subscribe(callback: () => void) {
@@ -20,10 +20,13 @@ function getServerSnapshot() {
 
 /**
  * Video portrait di dalam bingkai HP. Jika reduced-motion: tampilkan
- * gambar mark statis sebagai gantinya.
+ * gambar mark statis sebagai gantinya. Jika file video belum ada (404):
+ * jatuh kembali ke gambar statis agar hero tidak kosong.
  */
 export function LandingPhoneVideo() {
   const reduced = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [videoMissing, setVideoMissing] = useState(false);
+  const showStatic = reduced || videoMissing;
 
   return (
     <div
@@ -31,7 +34,7 @@ export function LandingPhoneVideo() {
       className="relative mx-auto w-full max-w-[280px] rounded-[2.5rem] border-[10px] border-slate-900 bg-slate-900 shadow-xl overflow-hidden"
     >
       <div className="rounded-[1.6rem] overflow-hidden bg-slate-950 aspect-[9/16]">
-        {reduced ? (
+        {showStatic ? (
           <Image
             src="/images/logo-uangku-mark.png"
             alt="Logo UangKu"
@@ -47,6 +50,7 @@ export function LandingPhoneVideo() {
             playsInline
             preload="metadata"
             src="/videos/UangKu_motiongraph.mp4"
+            onError={() => setVideoMissing(true)}
             className="h-full w-full object-cover"
           />
         )}

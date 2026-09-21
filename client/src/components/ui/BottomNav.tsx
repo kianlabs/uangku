@@ -73,20 +73,20 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 inset-x-0 z-40 px-4"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
     >
-      <ul className="flex h-16 max-w-lg lg:max-w-4xl mx-auto list-none m-0 p-0">
+      <ul className="flex h-16 max-w-md mx-auto list-none m-0 p-1.5 rounded-[28px] border border-white/60 bg-surface/70 shadow-[0_8px_30px_rgba(2,6,23,0.12)] backdrop-blur-xl backdrop-saturate-150">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
-            <li key={item.href} className="flex-1">
+            <li key={item.href} className="flex-1 flex">
               <Link
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={[
-                  "flex flex-col items-center justify-center h-full gap-1 transition-all select-none min-h-[44px] rounded-2xl mx-1.5 my-1",
-                  isActive ? "text-accent bg-accent/10 font-semibold" : "text-muted hover:text-text font-medium",
+                  "flex flex-1 flex-col items-center justify-center gap-1 transition-all select-none min-h-[44px] rounded-2xl",
+                  isActive ? "text-accent bg-accent/15 font-semibold" : "text-muted hover:text-text font-medium",
                 ].join(" ")}
               >
                 {item.icon}

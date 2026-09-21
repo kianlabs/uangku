@@ -11,7 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import { getMe, login, logout, register } from "@/lib/auth";
 import { getPreferences } from "@/lib/preferences";
-import { seedLocalStorageFromPreferences } from "@/lib/local-storage";
+import { clearLocalCache, seedLocalStorageFromPreferences } from "@/lib/local-storage";
 import type { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -100,12 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const registerUser = useCallback(async (email: string, password: string) => {
     const u = await register(email, password);
     unauthorizedRef.current = false;
+    // Akun baru di browser bersama — buang sisa cache akun sebelumnya
+    clearLocalCache();
     setUser(u);
     // Preferences kosong untuk user baru — tidak perlu hydrate, localStorage sudah default
   }, []);
 
   const logoutUser = useCallback(async () => {
     await logout();
+    clearLocalCache();
     setUser(null);
     router.push("/masuk");
   }, [router]);

@@ -410,3 +410,29 @@ def test_metrics_today_expense_only_counts_today(
 
     result = get_user_metrics(db, metrics_user, payday=25, today=today)
     assert result["today_expense"] == Decimal(30000)
+
+
+# --- opening balance ---
+
+def test_opening_balance_counts_toward_balance_only(db, user, income_cat):
+    create_transaction(db, user, type_="income", amount=Decimal(5000000),
+                       category_id=income_cat.id, transaction_date=date(2026, 3, 10),
+                       description="Saldo awal", is_opening_balance=True)
+    result = get_dashboard_summary(db, user, "2026-03")
+    assert result["monthly_income"] == Decimal(0)
+    assert result["transaction_count"] == 0
+    assert result["balance"] >= Decimal(5000000)
+
+
+def test_metrics_excludes_opening_balance(db, metrics_user, metrics_income_cat, metrics_expense_cat):
+    today = date(2029, 6, 15)
+    create_transaction(db, metrics_user, type_="income", amount=Decimal(9000000),
+                       category_id=metrics_income_cat.id, transaction_date=date(2029, 6, 1),
+                       description="Saldo awal", is_opening_balance=True)
+    create_transaction(db, metrics_user, type_="expense", amount=Decimal(100000),
+                       category_id=metrics_expense_cat.id, transaction_date=date(2029, 6, 5))
+
+    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    # Dana tersedia = saldo awal + income - expense = 9.000.000 + 0 - 100.000
+    assert result["remaining_balance"] == Decimal(8900000)
+    assert result["transaction_dates"] == ["2029-06-05"]

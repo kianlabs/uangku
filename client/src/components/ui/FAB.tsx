@@ -38,12 +38,13 @@ export function FAB() {
         aria-label="Catat cepat"
         aria-haspopup="dialog"
         className={[
-          "fixed right-4 z-50 flex items-center justify-center gap-2",
+          "fixed z-50 flex items-center justify-center gap-2",
+          "right-4 lg:right-[max(1rem,calc((100vw-56rem)/2+1.5rem))]",
           "h-14 px-5 rounded-2xl bg-accent text-accent-ink text-base font-semibold shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
           "hover:bg-accent/90 active:scale-95 transition-all select-none",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         ].join(" ")}
-        style={{ bottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 6rem)" }}
       >
         <svg
           aria-hidden="true"
@@ -60,7 +61,11 @@ export function FAB() {
         </svg>
         <span>Catat</span>
       </button>
-      <QuickAddModal open={open} onClose={() => setOpen(false)} />
+      <QuickAddModal
+        key={open ? "open" : "closed"}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
     </>
   );
 }

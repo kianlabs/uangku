@@ -163,7 +163,7 @@ export default function DetailTransaksiPage() {
               {tx.type === "income" ? "Pemasukan" : "Pengeluaran"}
             </p>
             <p
-              className={`text-5xl font-bold tabular-nums leading-none ${
+              className={`text-4xl sm:text-5xl font-bold tabular-nums leading-tight break-words ${
                 tx.type === "income" ? "text-income" : "text-expense"
               }`}
             >
@@ -174,13 +174,13 @@ export default function DetailTransaksiPage() {
 
           {/* Details */}
           <div className="flex flex-col divide-y divide-border border-y border-border">
-            <div className="flex items-center justify-between py-3.5">
-              <span className="text-sm font-medium text-text">Kategori</span>
-              <span className="text-sm font-medium text-text">{tx.category.name}</span>
+            <div className="flex items-center justify-between gap-4 py-3.5">
+              <span className="text-sm font-medium text-text shrink-0">Kategori</span>
+              <span className="text-sm font-medium text-text text-right truncate min-w-0">{tx.category.name}</span>
             </div>
-            <div className="flex items-center justify-between py-3.5">
-              <span className="text-sm font-medium text-text">Tanggal</span>
-              <span className="text-sm font-medium text-text">{formatDate(tx.transaction_date)}</span>
+            <div className="flex items-center justify-between gap-4 py-3.5">
+              <span className="text-sm font-medium text-text shrink-0">Tanggal</span>
+              <span className="text-sm font-medium text-text tabular-nums">{formatDate(tx.transaction_date)}</span>
             </div>
             {tx.description && (
               <div className="flex flex-col gap-1.5 py-3.5">

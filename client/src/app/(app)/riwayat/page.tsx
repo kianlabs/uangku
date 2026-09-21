@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo, createElement } from "react";
 import Link from "next/link";
 import { listTransactions } from "@/lib/transactions";
-import type { Transaction, TransactionType } from "@/lib/types";
+import { listCategories } from "@/lib/categories";
+import type { Category, Transaction, TransactionType } from "@/lib/types";
 import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { formatRupiah, formatDate } from "@/lib/format";
@@ -49,9 +50,11 @@ function dateLabel(iso: string): string {
 
 export default function RiwayatPage() {
   const [items, setItems] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [debtFilter, setDebtFilter] = useState<string>("all");
   const [monthFilter, setMonthFilter] = useState<string>("all");
@@ -63,7 +66,7 @@ export default function RiwayatPage() {
 
   const hasClientFilter = sourceFilter !== "all" || debtFilter !== "all";
   const hasAnyFilter =
-    hasClientFilter || monthFilter !== "all" || filter !== "all";
+    hasClientFilter || monthFilter !== "all" || filter !== "all" || categoryFilter !== "all";
 
   const thisMonth = toMonthStr(new Date());
   const lastMonth = toMonthStr(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
@@ -101,12 +104,27 @@ export default function RiwayatPage() {
   }, [filteredItems]);
 
   useEffect(() => {
+    let cancelled = false;
+    listCategories()
+      .then((res) => {
+        if (!cancelled) setCategories(res.items);
+      })
+      .catch(() => {
+        // Kategori opsional untuk filter — gagal muat tidak block daftar
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
     async function fetchPage() {
       setError(null);
       try {
         const range = monthFilter === "all" ? null : monthRange(monthFilter);
+        const category_id = categoryFilter === "all" ? undefined : categoryFilter;
         if (hasClientFilter) {
           const allItems: Transaction[] = [];
           const MAX_PAGES = 10;
@@ -116,6 +134,7 @@ export default function RiwayatPage() {
               page: i,
               page_size: PAGE_SIZE,
               type: filter === "all" ? undefined : filter,
+              category_id,
               date_from: range?.date_from,
               date_to: range?.date_to,
               signal: controller.signal,
@@ -132,6 +151,7 @@ export default function RiwayatPage() {
             page,
             page_size: PAGE_SIZE,
             type: filter === "all" ? undefined : filter,
+            category_id,
             date_from: range?.date_from,
             date_to: range?.date_to,
             signal: controller.signal,
@@ -156,7 +176,7 @@ export default function RiwayatPage() {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filter, sourceFilter, debtFilter, monthFilter, reloadKey]);
+  }, [page, filter, categoryFilter, sourceFilter, debtFilter, monthFilter, reloadKey]);
 
   useEffect(() => {
     function handleTxChanged() {
@@ -197,12 +217,19 @@ export default function RiwayatPage() {
     setMonthFilter(m);
   }
 
+  function handleCategoryFilter(c: string) {
+    setIsLoading(true);
+    resetPage();
+    setCategoryFilter(c);
+  }
+
   function handleResetFilter() {
     setIsLoading(true);
     setSourceFilter("all");
     setDebtFilter("all");
     setMonthFilter("all");
     setFilter("all");
+    setCategoryFilter("all");
     resetPage();
   }
 
@@ -293,6 +320,48 @@ export default function RiwayatPage() {
         )}
       </div>
 
+      {/* Kategori */}
+      <div className="flex items-center gap-2">
+        <label htmlFor="filter-category" className="sr-only">
+          Filter kategori
+        </label>
+        <div className="relative max-w-full">
+          <select
+            id="filter-category"
+            value={categoryFilter}
+            onChange={(e) => handleCategoryFilter(e.target.value)}
+            className={`h-11 max-w-full rounded-full pl-4 pr-9 text-sm font-medium appearance-none border transition-all focus:outline-none focus:ring-2 focus:ring-accent truncate ${
+              categoryFilter !== "all"
+                ? "bg-accent text-accent-ink border-transparent"
+                : "bg-surface-muted text-text border-transparent hover:bg-surface-muted/80"
+            }`}
+          >
+            <option value="all">Semua kategori</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${
+              categoryFilter !== "all" ? "text-accent-ink" : "text-muted"
+            }`}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+      </div>
+
       {/* Filter lanjutan: sumber & kasbon */}
       {showMore && (
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4">
@@ -358,7 +427,7 @@ export default function RiwayatPage() {
           />
           <div className="flex flex-col gap-1 items-center text-center max-w-xs">
             <p className="text-base font-semibold text-text">
-              {monthFilter !== "all" && !hasClientFilter && filter === "all"
+              {monthFilter !== "all" && !hasClientFilter && filter === "all" && categoryFilter === "all"
                 ? `Belum ada catatan pada ${monthLabel(monthFilter)}`
                 : hasAnyFilter
                   ? "Hmm, tidak ada yang cocok"

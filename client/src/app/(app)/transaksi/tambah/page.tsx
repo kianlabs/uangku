@@ -9,6 +9,7 @@ import { listCategories } from "@/lib/categories";
 import { ApiResponseError } from "@/lib/api";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
+import { groupThousands } from "@/lib/format";
 import { setTransactionSource, setDebtTag, getTemplates, setTemplates, type SubscriptionTemplate } from "@/lib/local-storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -93,17 +94,6 @@ export default function TambahTransaksiPage() {
       setCategoryId("");
       setPendingCategoryName(null);
     }
-  }
-
-  function formatPreview(raw: string): string {
-    const num = parseFloat(raw.replace(/\D/g, ""));
-    if (isNaN(num) || num === 0) return "";
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(num);
   }
 
   function handleQuickAdd(value: string) {
@@ -237,8 +227,6 @@ export default function TambahTransaksiPage() {
     }
   }
 
-  const amountPreview = formatPreview(amount);
-
   return (
     <div className="min-h-screen flex flex-col bg-canvas">
       {/* Header */}
@@ -336,21 +324,16 @@ export default function TambahTransaksiPage() {
                 id="amount"
                 type="text"
                 inputMode="decimal"
-                value={amount}
+                value={groupThousands(amount)}
                 onChange={(e) => {
                   setAmount(e.target.value.replace(/\D/g, ""));
                 }}
                 placeholder="0"
                 autoComplete="off"
                 aria-invalid={errors.amount ? "true" : undefined}
-                aria-describedby={errors.amount ? "amount-error" : amountPreview ? "amount-preview" : undefined}
+                aria-describedby={errors.amount ? "amount-error" : undefined}
               />
             </div>
-            {amountPreview && !errors.amount && (
-              <p id="amount-preview" className="text-sm text-muted tabular-nums">
-                {amountPreview}
-              </p>
-            )}
             {errors.amount && (
               <p id="amount-error" role="alert" className="text-sm text-danger">
                 {errors.amount}
@@ -500,7 +483,7 @@ export default function TambahTransaksiPage() {
                         type="text"
                         inputMode="decimal"
                         placeholder="Nominal"
-                        value={newTemplate.amount}
+                        value={groupThousands(newTemplate.amount)}
                         onChange={(e) => setNewTemplate({ ...newTemplate, amount: e.target.value.replace(/\D/g, "") })}
                         className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
                       />

@@ -9,6 +9,16 @@ export function formatRupiah(value: string | number): string {
   }).format(n);
 }
 
+/**
+ * Kelompokkan digit mentah ("1500000" → "1.500.000") untuk tampil live
+ * di input nominal. State tetap simpan digit polos.
+ */
+export function groupThousands(digits: string): string {
+  const d = digits.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+  if (!d) return "";
+  return d.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export function formatDate(
   dateStr: string,
   opts?: { long?: boolean }
