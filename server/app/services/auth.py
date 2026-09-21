@@ -15,7 +15,10 @@ from app.models.user import User
 _pwd_hash = PasswordHash([Argon2Hasher()])
 _DEFAULT_EXPENSE_CATEGORIES = [
     "Makanan", "Transportasi", "Belanja", "Hiburan",
-    "Tagihan", "Kesehatan", "Pendidikan", "Lainnya",
+    "Tagihan", "Listrik & Air", "Internet & Telepon", "Langganan Digital",
+    "Cicilan & Pinjaman", "Asuransi", "Pajak & Administrasi",
+    "Kebutuhan Rumah", "Pembayaran Digital", "Kesehatan", "Pendidikan",
+    "Donasi & Zakat", "Lainnya",
 ]
 _DEFAULT_INCOME_CATEGORIES = [
     "Gaji", "Freelance", "Bonus", "Penjualan", "Lainnya",

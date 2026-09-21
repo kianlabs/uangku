@@ -10,6 +10,23 @@ export function formatRupiah(value: string | number): string {
 }
 
 /**
+ * Ringkasan angka besar utk ruang sempit: "2.100.000" → "Rp 2,1 jt",
+ * "450.000" → "Rp 450 rb", < 1.000 → "Rp 750". Pembulatan 1 desimal.
+ */
+export function formatRupiahCompact(value: string | number): string {
+  const n = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+  const fmt = (v: number) =>
+    new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(v);
+  if (abs >= 1_000_000_000) return `${sign}Rp ${fmt(abs / 1_000_000_000)} M`;
+  if (abs >= 1_000_000) return `${sign}Rp ${fmt(abs / 1_000_000)} jt`;
+  if (abs >= 1_000) return `${sign}Rp ${fmt(abs / 1_000)} rb`;
+  return `${sign}Rp ${fmt(abs)}`;
+}
+
+/**
  * Kelompokkan digit mentah ("1500000" → "1.500.000") untuk tampil live
  * di input nominal. State tetap simpan digit polos.
  */

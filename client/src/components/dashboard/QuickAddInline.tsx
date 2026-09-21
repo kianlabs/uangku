@@ -6,6 +6,7 @@ import { createTransaction } from "@/lib/transactions";
 import { listCategories, createCategory } from "@/lib/categories";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
+import { haptic } from "@/lib/haptics";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddGuide } from "@/components/dashboard/QuickAddGuide";
 
@@ -31,6 +32,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
     const parsed = parseQuickAdd(input);
     if (!parsed) {
       setError("Format: Makan siang 45k atau Gaji 5jt");
+      haptic.warning();
       return;
     }
 
@@ -57,7 +59,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
 
       // Tanggal lokal (bukan UTC): toISOString() bisa mundur sehari untuk WIB
       const today = todayLocalISO();
-      await createTransaction({
+      const promise = createTransaction({
         type: parsed.type,
         amount: String(parsed.amount),
         category_id: category.id,
@@ -65,10 +67,20 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
         description: parsed.description,
       });
 
+      // Terasa instan: beri tahu halaman lain SEKARANG (mereka me-refetch
+      // dari server — sumber kebenaran tetap satu). Kalau create gagal,
+      // catch di bawah menampilkan error dan refetch berikutnya sudah
+      // mengembalikan state yang benar (rollback efektif tanpa duplikasi).
+      window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+      haptic.success();
+
+      await promise; // error → catch → tampilkan pesan
+
       setInput("");
       setShowSuccess(true);
       onSave();
     } catch {
+      haptic.error();
       setError("Gagal menyimpan. Coba lagi.");
     } finally {
       setIsLoading(false);
@@ -83,7 +95,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
         transition={{ duration: 0.2 }}
         className="flex flex-col items-center gap-2 py-4 text-center"
       >
-        <Mascot size={88} mood="celebrating" label="Mochi merayakan catatan tersimpan" />
+        <Mascot size={88} mood="celebrating" variant="sparkle" label="Mochi merayakan catatan tersimpan" />
         <p className="text-sm text-accent font-semibold">Tersimpan!</p>
         <button
           onClick={() => setShowSuccess(false)}

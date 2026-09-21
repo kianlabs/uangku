@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Source_Serif_4 } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { SplashScreen } from "@/components/brand/SplashScreen";
 import { RegisterSW } from "./register-sw";
@@ -9,6 +9,17 @@ const geist = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+
+// Serif khusus angka data read-only (saldo, nominal, %, count) — aksen
+// identitas, lihat DESIGN.md §2. Label, tanggal, dan input tetap sans.
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
+  subsets: ["latin"],
+});
+
+// Warna brand disimpan di satu konstanta — manifest.json & viewport harus
+// identik dengan --color-brand (DESIGN.md §2, warna badan dompet Mochi).
+export const BRAND_COLOR = "#024691";
 
 export const metadata: Metadata = {
   title: "UangKu — Catat keuanganmu",
@@ -21,14 +32,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    apple: "/images/logo-uangku-mark.png",
+  },
+  other: {
+    "apple-mobile-web-app-title": "UangKu",
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1a5c3a",
+  themeColor: BRAND_COLOR,
 };
 
 export default function RootLayout({
@@ -37,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${geist.variable} h-full antialiased`}>
+    <html lang="id" className={`${geist.variable} ${sourceSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-canvas text-text">
         <SplashScreen />
         <AuthProvider>{children}</AuthProvider>

@@ -14,7 +14,13 @@
   --color-expense: oklch(52% 0.19 25);
   --color-danger: oklch(52% 0.19 25);
 
+  /* Brand navy — badan dompet Mochi (DESIGN.md §5). Hex disengaja (bukan
+     OKLCH) agar identik dengan SVG maskot & wordmark. Dipakai sebagai
+     satu-satunya blok gelap per layar (mis. kartu saldo di /beranda). */
+  --color-brand: #024691;
+
   --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
 
   --radius-sm: 0.625rem;
   --radius-md: 0.875rem;
@@ -54,6 +60,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Angka data read-only (saldo, nominal, %, count): serif + tabular.
+   Aturan DESIGN.md §2 — label UI, tanggal, dan input form tetap sans. */
+.num {
+  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
@@ -75,4 +88,45 @@ body {
   100% {
     transform: translateX(100%);
   }
+}
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(0.8deg);
+  }
+}
+
+.landing-reveal {
+  animation: landing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.landing-delay-2 {
+  animation-delay: 0.22s;
+}
+
+.landing-delay-3 {
+  animation-delay: 0.32s;
+}
+
+.landing-phone-float {
+  animation: landing-float 5.5s ease-in-out 0.8s infinite;
 }

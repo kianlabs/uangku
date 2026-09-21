@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { ApiResponseError } from "@/lib/api";
-import { exportTransactionsCsv } from "@/lib/transactions";
+import { exportTransactionsPdf } from "@/lib/transactions";
 import type { TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Mascot } from "@/components/brand/Mascot";
+import { FileDown } from "lucide-react";
 
 type FilterType = "all" | TransactionType;
 
@@ -24,7 +25,7 @@ export default function ExportDataPage() {
     setSuccess(null);
     setIsExporting(true);
     try {
-      const { blob, filename } = await exportTransactionsCsv({
+      const { blob, filename } = await exportTransactionsPdf({
         type: filter === "all" ? undefined : filter,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
@@ -57,7 +58,7 @@ export default function ExportDataPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-bold text-text">Export Data</h1>
         <p className="text-sm text-muted">
-          Download transaksi Anda dalam format CSV
+          Download transaksi Anda dalam format PDF yang siap dibaca atau dicetak.
         </p>
       </div>
 
@@ -104,7 +105,7 @@ export default function ExportDataPage() {
           role="status"
           className="flex items-center gap-3 rounded-xl bg-surface border border-border px-4 py-3"
         >
-          <Mascot size={52} mood="celebrating" animated={false} />
+          <Mascot size={52} mood="celebrating" variant="cap" animated={false} />
           <p className="text-sm text-text">{success}</p>
         </div>
       )}
@@ -116,7 +117,8 @@ export default function ExportDataPage() {
         onClick={handleExport}
         className="w-full"
       >
-        Unduh CSV
+        <FileDown className="w-5 h-5" aria-hidden="true" />
+        Unduh PDF
       </Button>
     </div>
   );

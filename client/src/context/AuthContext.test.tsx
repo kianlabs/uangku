@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/beranda",
   useRouter: () => ({
     push: mockPush,
   }),

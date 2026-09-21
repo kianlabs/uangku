@@ -33,8 +33,8 @@ test.describe("Kategori", () => {
   // Halaman baru dalam context yang sudah login (cookie sesi terbawa).
   async function authedPage(): Promise<Page> {
     const pg = await ctx.newPage();
-    await pg.goto("/akun/kategori");
-    await pg.waitForURL("**/akun/kategori", { timeout: 15_000 });
+    await pg.goto("/pengaturan/kategori");
+    await pg.waitForURL("**/pengaturan/kategori", { timeout: 15_000 });
     return pg;
   }
 

@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/categories";
 import { deleteBudget, listBudgets, upsertBudget } from "@/lib/budgets";
 import { formatRupiah } from "@/lib/format";
-import { Mascot } from "@/components/brand/Mascot";
-import type { Category, TransactionType } from "@/lib/types";
+import type { Budget, Category, TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { getCategoryColor, getCategoryIcon } from "@/lib/category-icons";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ApiResponseError } from "@/lib/api";
 
 export default function KategoriPage() {
   const [items, setItems] = useState<Category[]>([]);
-  const [budgets, setBudgets] = useState<Record<string, string>>({});
+  const [budgets, setBudgets] = useState<Record<string, Budget>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -32,8 +33,8 @@ export default function KategoriPage() {
     try {
       const [cats, budgetRes] = await Promise.all([listCategories(), listBudgets()]);
       setItems(cats.items);
-      const map: Record<string, string> = {};
-      for (const b of budgetRes.items) map[b.category_id] = b.amount;
+      const map: Record<string, Budget> = {};
+      for (const b of budgetRes.items) map[b.category_id] = b;
       setBudgets(map);
     } catch (err) {
       if (err instanceof ApiResponseError) {
@@ -153,7 +154,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pengeluaran</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {expenseItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} budgetAmount={budgets[cat.id]} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -164,19 +165,23 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pemasukan</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {incomeItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} budgetAmount={budgets[cat.id]} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} onUpdate={load} />
             ))}
           </div>
         </div>
       )}
 
       {items.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-8">
-          <Mascot size={96} />
-          <p className="text-sm text-muted text-center">
-            Belum ada kategori. Tambah yang pertama yuk!
-          </p>
-        </div>
+        <EmptyState
+          mood="excited"
+          title="Belum ada kategori"
+          description="Bikin kategori sesuai gaya hidupmu, misalnya Jajan atau Profilaksi."
+          actions={
+            <Button size="sm" onClick={() => setShowAddForm(true)}>
+              Tambah kategori
+            </Button>
+          }
+        />
       )}
     </div>
   );
@@ -184,11 +189,11 @@ export default function KategoriPage() {
 
 function CategoryRow({
   category,
-  budgetAmount,
+  budget,
   onUpdate,
 }: {
   category: Category;
-  budgetAmount?: string;
+  budget?: Budget;
   onUpdate: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -199,7 +204,7 @@ function CategoryRow({
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
-  const [budgetInput, setBudgetInput] = useState(budgetAmount ?? "");
+  const [budgetInput, setBudgetInput] = useState(budget?.amount ?? "");
   const [isSavingBudget, setIsSavingBudget] = useState(false);
   const [budgetError, setBudgetError] = useState<string | null>(null);
 
@@ -358,18 +363,24 @@ function CategoryRow({
   return (
     <div className="flex flex-col gap-2 p-4">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col">
+        <div className="flex items-center gap-3 min-w-0">
+          {(() => {
+            const color = getCategoryColor(category.name);
+            return <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${color.background}`}>{createElement(getCategoryIcon(category.name), { className: `w-4 h-4 ${color.foreground}`, "aria-hidden": true })}</span>;
+          })()}
+          <div className="flex flex-col min-w-0">
           <span className="text-base text-text">{category.name}</span>
-          {budgetAmount && (
-            <span className="text-xs text-muted tabular-nums">
-              Anggaran {formatRupiah(budgetAmount)}/bln
+          {budget?.amount && (
+            <span className="text-xs text-muted">
+              Anggaran <span className="num">{formatRupiah(budget.amount)}</span>/bln
             </span>
           )}
+          </div>
         </div>
         <div className="flex gap-2">
             <button
               onClick={() => {
-                setBudgetInput(budgetAmount ?? "");
+                setBudgetInput(budget?.amount ?? "");
                 setBudgetError(null);
                 setShowBudgetForm((v) => !v);
               }}
@@ -405,7 +416,7 @@ function CategoryRow({
             <Button size="sm" onClick={handleSaveBudget} loading={isSavingBudget} className="flex-1">
               Simpan
             </Button>
-            {budgetAmount && (
+            {budget?.amount && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -421,7 +432,7 @@ function CategoryRow({
               variant="ghost"
               onClick={() => {
                 setShowBudgetForm(false);
-                setBudgetInput(budgetAmount ?? "");
+                setBudgetInput(budget?.amount ?? "");
                 setBudgetError(null);
               }}
               disabled={isSavingBudget}

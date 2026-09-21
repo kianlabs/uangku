@@ -123,7 +123,7 @@ FastAPI bertanggung jawab atas:
 - category CRUD
 - dashboard aggregation
 - business rules
-- CSV export
+- CSV export API and client-generated PDF export
 - database access
 - API validation
 - security boundaries
@@ -277,9 +277,14 @@ PWA responsibilities:
 - icons
 - responsive mobile UI
 
-Offline-first transaction syncing belum menjadi requirement v1.
+Offline transaction sync is implemented as a small client-side queue: network
+failures while creating a transaction are queued in browser storage and retried
+when the app is online. The server remains the source of truth; queued data is
+device-local and is not a substitute for server backup.
 
-Jangan membuat kompleksitas offline sync sebelum dibutuhkan.
+Recurring transaction reminders are also client-side templates for now. They
+require explicit user confirmation before creating a server transaction and do
+not require a database migration yet.
 
 ## State Management
 

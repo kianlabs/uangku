@@ -324,7 +324,7 @@ Akun → Kategori
 │ user@example.com            │
 │                             │
 │ Kategori                 >  │
-│ Export Data              >  │
+│ Export PDF               >  │
 │ Tentang UangKu           >  │
 │                             │
 │ Keluar                       │

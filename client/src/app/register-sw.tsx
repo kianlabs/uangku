@@ -12,13 +12,15 @@ export function RegisterSW() {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     // Daftarkan SW setelah halaman selesai load agar tidak menghambat rendering
-    window.addEventListener("load", () => {
+    function register() {
       navigator.serviceWorker
         .register("/sw.js")
         .catch(() => {
           // SW registration gagal — tidak fatal, app tetap berjalan normal
         });
-    });
+    }
+    window.addEventListener("load", register);
+    return () => window.removeEventListener("load", register);
   }, []);
 
   return null;

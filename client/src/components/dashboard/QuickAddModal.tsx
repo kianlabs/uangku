@@ -76,7 +76,7 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
-        {!saved && <Mascot size={72} mood="happy" />}
+        {!saved && <Mascot size={72} mood="happy" variant="bow" />}
         {!saved && (
           <div className="flex flex-col items-center gap-1 text-center">
             <h2 className="text-lg font-bold text-text">Catat cepat</h2>
@@ -84,8 +84,9 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
         )}
         <QuickAddInline
           onSave={() => {
-            window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
-            // Kasih waktu lihat Mochi celebrating, lalu tutup otomatis.
+            // tx-changed sudah didispatch QuickAddInline segera setelah submit
+            // (pola perceived-instant) — di sini cukup tutup dengan jeda agar
+            // user sempat lihat Mochi celebrating.
             if (closeTimer.current !== null) clearTimeout(closeTimer.current);
             closeTimer.current = window.setTimeout(onClose, 1400);
           }}

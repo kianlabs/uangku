@@ -8,6 +8,9 @@ Server UangKu menggunakan REST API dengan prefix:
 
 Semua response menggunakan JSON kecuali endpoint export CSV.
 
+Catatan: client juga menyediakan export PDF dengan mengambil data dari endpoint
+CSV ini lalu memformatnya di browser. API server tetap mengeluarkan CSV.
+
 Server adalah source of truth untuk:
 
 - authentication

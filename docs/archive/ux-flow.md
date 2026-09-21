@@ -265,7 +265,7 @@ Akses dari Profile/Settings.
 │ user@email.com          │
 │                         │
 │ Kategori             >  │
-│ Export Data          >  │
+│ Export PDF           >  │
 │ Tentang UangKu       >  │
 │                         │
 │ [ Logout ]              │
@@ -366,7 +366,9 @@ Saat aplikasi di-install:
 - warna browser/theme konsisten
 - aplikasi tetap usable sebagai browser biasa
 
-Offline transaction sync bukan bagian dari v1.
+Catatan implementasi saat ini: transaksi yang gagal karena network dapat masuk
+queue device-local dan dicoba ulang saat koneksi kembali. Ini bukan background
+sync service worker atau server scheduler.
 
 ## Core User Journey
 

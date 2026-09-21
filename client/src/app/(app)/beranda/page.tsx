@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, createElement } from "react";
+import { CloudOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
+import { Minus, TrendingDown, TrendingUp, Flag } from "lucide-react";
 import { ApiResponseError } from "@/lib/api";
 import { getDashboardSummary, getDashboardMetrics } from "@/lib/dashboard";
 import { listBudgets } from "@/lib/budgets";
@@ -14,6 +16,7 @@ import { getPayday } from "@/lib/local-storage";
 import { listTransactions } from "@/lib/transactions";
 import type { Budget, DashboardMetrics, DashboardSummary, RecentTransactionItem, User } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
+import { Sparkline } from "@/components/dashboard/Sparkline";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
 import { MochiTip } from "@/components/brand/MochiTip";
@@ -23,21 +26,39 @@ import { Header } from "@/components/dashboard/Header";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function BerandaPage() {
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    function update() {
+      setIsOffline(!navigator.onLine);
+    }
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const [month, setMonth] = useState(currentMonth);
-  const isCurrentMonth = month === currentMonth;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [prevData, setPrevData] = useState<DashboardSummary | null>(null);
   const [hasAnyTransaction, setHasAnyTransaction] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,20 +67,23 @@ export default function BerandaPage() {
 
     Promise.all([
       getMe(),
-      getDashboardSummary(month, controller.signal),
+      getDashboardSummary(currentMonth, controller.signal),
       getDashboardMetrics(payday, controller.signal),
-      listBudgets(month).catch(() => ({ items: [], month: null })),
+      listBudgets(currentMonth).catch(() => ({ items: [], month: null })),
       listTransactions({ page: 1, page_size: 1, signal: controller.signal })
         .then((res) => res.pagination.total_items > 0)
         .catch(() => false),
+      getDashboardSummary(prevMonth, controller.signal).catch(() => null),
     ])
-      .then(([currentUser, summary, metricsData, budgetData, anyTx]) => {
+      .then(([currentUser, summary, metricsData, budgetData, anyTx, prevSummary]) => {
         if (!cancelled) {
           setUser(currentUser);
           setData(summary);
           setMetrics(metricsData);
           setBudgets(budgetData.items);
           setHasAnyTransaction(anyTx);
+          setPrevData(prevSummary);
+          setLoadedAt(new Date());
           setIsLoading(false);
         }
       })
@@ -77,7 +101,7 @@ export default function BerandaPage() {
       cancelled = true;
       controller.abort();
     };
-  }, [month, fetchKey, router]);
+  }, [currentMonth, fetchKey, prevMonth, router]);
 
   useEffect(() => {
     function handleTxChanged() {
@@ -92,6 +116,16 @@ export default function BerandaPage() {
   if (isLoading) {
     return <LoadingSkeleton />;
   }
+
+  const offlineBanner = isOffline ? (
+    <div
+      role="status"
+      className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-sm font-medium text-amber-800"
+    >
+      <CloudOff className="w-4 h-4 shrink-0" aria-hidden="true" />
+      Offline — data mungkin tidak terbaru.
+    </div>
+  ) : null;
 
   if (error) {
     return (
@@ -110,14 +144,22 @@ export default function BerandaPage() {
 
   if (!data || !user || !metrics) return null;
 
+  const updatedLabel = loadedAt
+    ? loadedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   const blownBudget = budgets.find((b) => (b.percentage ?? 0) >= 90);
-
   const hasMonthTransactions = data.recent_transactions && data.recent_transactions.length > 0;
-
   const streak = calculateStreak(metrics.transaction_dates);
-  const showStreakMilestone = isCurrentMonth && streak > 0 && (streak === 7 || streak === 30 || streak % 30 === 0);
+  const showStreakMilestone = streak > 0 && (streak === 7 || streak === 30 || streak % 30 === 0);
+  const monthlyExpenseNum = parseFloat(data.monthly_expense) || 0;
 
-  const monthFull = monthFullLabel(month);
+  const weekTotal = parseFloat(metrics.week_expense_total) || 0;
+  const hasExpense = data.expense_by_category.length > 0 && parseFloat(data.monthly_expense) > 0;
+
+  const prevExpense = prevData ? parseFloat(prevData.monthly_expense) || 0 : 0;
+  const momDelta =
+    prevExpense > 0 ? ((monthlyExpenseNum - prevExpense) / prevExpense) * 100 : null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -125,102 +167,142 @@ export default function BerandaPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="flex flex-col gap-6 pb-4 lg:grid lg:grid-cols-5 lg:gap-8 lg:items-start"
+        className="flex flex-col gap-4 pb-4 lg:grid lg:grid-cols-6 lg:gap-5 lg:items-start"
       >
-        <div className="lg:col-span-5 sticky top-0 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5">
+        <div className="lg:col-span-6 sticky top-0 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5">
           <Header userName={user.email.split("@")[0] || user.email} currentDate={now} />
         </div>
+        {offlineBanner && <div className="lg:col-span-6">{offlineBanner}</div>}
 
         {hasAnyTransaction ? (
           <>
-            <div className="flex flex-col gap-6 lg:col-span-3">
-              <div className="flex items-center justify-between -mb-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsLoading(true);
-                    setMonth((m) => shiftMonth(m, -1));
-                  }}
-                  aria-label="Bulan sebelumnya"
-                  className="flex items-center justify-center w-11 h-11 rounded-xl text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
-                >
-                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Ringkasan · {monthFull}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsLoading(true);
-                    setMonth((m) => shiftMonth(m, 1));
-                  }}
-                  disabled={isCurrentMonth}
-                  aria-label="Bulan berikutnya"
-                  className="flex items-center justify-center w-11 h-11 rounded-xl text-slate-900 hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
-                >
-                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-              </div>
+            <div className="lg:col-span-3">
               <BalanceCard
                 balance={data.balance}
                 monthly_income={data.monthly_income}
                 monthly_expense={data.monthly_expense}
               />
+            </div>
 
-              {isCurrentMonth && (
-                <SafeToSpendCard
-                  safeToSpendAmount={parseFloat(metrics.safe_to_spend)}
-                  daysLeft={metrics.days_left}
-                  remainingBalance={metrics.remaining_balance}
-                  todayExpense={parseFloat(metrics.today_expense ?? "0") || 0}
-                />
-              )}
+            <div className="lg:col-span-3">
+              <SafeToSpendCard
+                safeToSpendAmount={parseFloat(metrics.safe_to_spend)}
+                daysLeft={metrics.days_left}
+                remainingBalance={metrics.remaining_balance}
+                todayExpense={parseFloat(metrics.today_expense ?? "0") || 0}
+              />
+            </div>
 
-              {blownBudget && (
+            <div className="lg:col-span-3">
+              <MochiTip
+                mood="firm"
+                title="Refleksi minggu ini"
+                mascotAnimated
+                message={
+                  weekTotal > 0
+                    ? `Habis ${formatRupiah(weekTotal)}${metrics.week_top_category ? `, terbanyak di ${metrics.week_top_category}.` : "."}`
+                    : "Belum ada pengeluaran minggu ini. Tenang, catat saja begitu jajan."
+                }
+              />
+            </div>
+
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3">
+              <Mascot size={48} mood={streak > 0 ? "celebrating" : "happy"} variant="bow" />
+              <Flag className="w-5 h-5 text-accent shrink-0" aria-hidden="true" />
+              <div className="flex flex-col min-w-0">
+                <p className="num text-base font-bold text-slate-900">
+                  {streak > 0 ? `${streak} hari beruntun` : "Belum ada rentetan"}
+                </p>
+                <p className="text-xs text-slate-500 truncate">Catat tiap hari biar makin panjang.</p>
+              </div>
+            </div>
+
+            {metrics.daily_expense_7d && metrics.daily_expense_7d.length === 7 && (
+              <div className="p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3">
+                <Sparkline data={metrics.daily_expense_7d} label="Pengeluaran 7 hari" />
+                <p className="text-xs text-slate-500 mt-2">
+                  Total minggu ini{" "}
+                  <span className="num font-semibold text-slate-700">{formatRupiah(weekTotal)}</span>
+                </p>
+              </div>
+            )}
+
+            {blownBudget && (
+              <div className="lg:col-span-6">
                 <MochiTip
                   mood="worried"
                   title="Ups, hampir jebol!"
+                  mascotAnimated
                   message={`Kategori ${blownBudget.category_name} sudah ${Math.round(blownBudget.percentage ?? 0)}% dari anggaran. Rem dikit ya?`}
                   action={{ label: "Lihat riwayat", href: "/riwayat" }}
                 />
-              )}
+              </div>
+            )}
 
-              {showStreakMilestone && (
+            {showStreakMilestone && (
+              <div className="lg:col-span-6">
                 <MochiTip
                   mood="celebrating"
                   title={`🔥 ${streak} hari catat!`}
                   message="Keren banget konsistennya. Lanjutkan ya!"
                 />
-              )}
+              </div>
+            )}
 
-              <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
+            {momDelta !== null && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 lg:col-span-6">
+                {momDelta < 0 ? (
+                  <TrendingDown className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden="true" />
+                ) : momDelta > 0 ? (
+                  <TrendingUp className="w-5 h-5 text-rose-600 shrink-0" aria-hidden="true" />
+                ) : (
+                  <Minus className="w-5 h-5 text-slate-400 shrink-0" aria-hidden="true" />
+                )}
+                <div className="flex flex-col min-w-0">
+                  <p
+                    className={`num text-base font-bold ${
+                      momDelta < 0 ? "text-emerald-600" : momDelta > 0 ? "text-rose-600" : "text-slate-900"
+                    }`}
+                  >
+                    {momDelta < 0
+                      ? `Turun ${Math.round(Math.abs(momDelta))}%`
+                      : momDelta > 0
+                        ? `Naik ${Math.round(momDelta)}%`
+                        : "Sama seperti bulan lalu"}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">
+                    <span className="num">{formatRupiah(monthlyExpenseNum)}</span> bulan ini · <span className="num">{formatRupiah(prevExpense)}</span> bulan lalu
+                  </p>
+                </div>
+              </div>
+            )}
 
-              {budgets.length > 0 && (
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-slate-900">Anggaran</h2>
-                    <Link href="/akun/kategori" className="text-sm font-medium text-emerald-600 hover:underline">
-                      Kelola
-                    </Link>
-                  </div>
-                  {budgets.map((b) => (
-                    <BudgetWarning
-                      key={b.category_id}
-                      spent={b.spent ?? "0"}
-                      limit={b.amount}
-                      label={b.category_name}
-                    />
-                  ))}
-                </section>
-              )}
-            </div>
+            {hasExpense && (
+              <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 lg:col-span-3">
+                <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
+              </div>
+            )}
 
-            <div className="flex flex-col gap-6 lg:col-span-2 lg:sticky lg:top-24">
+            {budgets.length > 0 && (
+              <section className={`flex flex-col gap-3 ${hasExpense ? "lg:col-span-3" : "lg:col-span-6"}`}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-slate-900">Anggaran</h2>
+                  <Link href="/pengaturan/kategori" className="text-sm font-medium text-emerald-600 hover:underline">
+                    Kelola
+                  </Link>
+                </div>
+                {budgets.map((b) => (
+                  <BudgetWarning
+                    key={b.category_id}
+                    spent={b.spent ?? "0"}
+                    limit={b.amount}
+                    label={b.category_name}
+                  />
+                ))}
+              </section>
+            )}
+
+            <div className="flex flex-col gap-6 lg:col-span-6">
               {hasMonthTransactions ? (
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
@@ -236,15 +318,26 @@ export default function BerandaPage() {
                   </div>
                 </section>
               ) : (
-                <p className="text-sm text-slate-500 text-center py-8">
-                  Belum ada catatan pada {monthFull}.
-                </p>
+                <EmptyState
+                  mood="thinking"
+                  mascotSize={88}
+                  title="Belum ada catatan bulan ini"
+                  description="Mulai dari satu catatan kecil hari ini."
+                  actions={
+                    <Link
+                      href="/transaksi/tambah"
+                      className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+                    >
+                      Catat transaksi
+                    </Link>
+                  }
+                />
               )}
             </div>
           </>
         ) : (
-          <div className="lg:col-span-5 flex flex-col items-center gap-4 py-12">
-            <Mascot size={128} mood="excited" delay={-2.2} />
+          <div className="lg:col-span-6 flex flex-col items-center gap-4 py-12">
+            <Mascot size={128} mood="excited" variant="peace" delay={-2.2} />
             <div className="flex flex-col items-center gap-1 text-center">
               <h2 className="text-xl font-bold text-slate-900">Mulai catat keuanganmu</h2>
               <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
@@ -261,26 +354,12 @@ export default function BerandaPage() {
           </div>
         )}
       </motion.div>
+      <p className="text-center text-xs text-slate-400 lg:col-span-6">
+        {updatedLabel ? `Diperbarui ${updatedLabel}` : ""}
+      </p>
       <MochiGuide />
     </MotionConfig>
   );
-}
-
-const MONTH_NAMES_ID = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
-function monthFullLabel(month: string): string {
-  const [y, m] = month.split("-").map(Number);
-  if (!y || !m || m < 1 || m > 12) return month;
-  return `${MONTH_NAMES_ID[m - 1]} ${y}`;
-}
-
-function shiftMonth(month: string, delta: number): string {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
@@ -299,7 +378,7 @@ function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
         <span className="text-xs text-slate-400">{formatDate(tx.transaction_date)}</span>
       </div>
       <span
-        className={`text-base font-bold tabular-nums shrink-0 ${
+        className={`num text-base font-bold shrink-0 ${
           isIncome ? "text-emerald-600" : "text-rose-600"
         }`}
       >

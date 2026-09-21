@@ -9,7 +9,16 @@ export type MascotMood =
   | "worried"
   | "sleepy"
   | "celebrating"
-  | "ok";
+  | "ok"
+  | "firm";
+
+export type MascotVariant =
+  | "classic"
+  | "glasses"
+  | "peace"
+  | "cap"
+  | "bow"
+  | "sparkle";
 
 interface MascotProps {
   size?: number;
@@ -17,6 +26,7 @@ interface MascotProps {
   className?: string;
   animated?: boolean;
   mood?: MascotMood;
+  variant?: MascotVariant;
   /**
    * Offset fase loop (detik, negatif untuk mulai di tengah siklus).
    * Dipakai agar beberapa Mochi di satu layar tidak bergerak sinkron.
@@ -34,9 +44,10 @@ const EASE_IN_OUT = "easeInOut" as const;
 /**
  * Mochi — maskot pemandu UangKu (dompet biru + koin hijau).
  *
- * 7 mood dengan gaya animasi berbeda:
+ * 8 mood dengan gaya animasi berbeda:
  * - happy: mengambang + kedip + melambai (default)
-+ * - ok: mengambang pelan + acungan jempol (rekomendasi aman baik-baik saja)
+ * - ok: mengambang pelan + acungan jempol (rekomendasi aman baik-baik saja)
+ * - firm: nyaris diam + alis tegas (refleksi/teguran santai)
  * - excited: memantul + mata berbinar
  * - thinking: diam + gelembung "?" (khidmat)
  * - worried: gelisah + tetes keringat
@@ -51,6 +62,7 @@ export function Mascot({
   className = "",
   animated = true,
   mood = "happy",
+  variant = "classic",
   delay = 0,
 }: MascotProps) {
   const loop = (duration: number) => ({
@@ -89,6 +101,11 @@ export function Mascot({
                         animate: { y: [0, -4, 0] },
                         transition: loop(3.6),
                       }
+                  : mood === "firm"
+                    ? {
+                        animate: { y: [0, -3, 0] },
+                        transition: loop(4.2),
+                      }
                   : mood === "sleepy"
                     ? {
                         animate: { y: [0, -3, 0], rotate: [0, 1.2, 0] },
@@ -101,7 +118,7 @@ export function Mascot({
         blink: {
           animate: { scaleY: [1, 1, 0.08, 1, 1] },
           transition: loop(
-            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : mood === "ok" ? 4.8 : 4.4
+            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : mood === "ok" ? 4.8 : mood === "firm" ? 5.4 : 4.4
           ),
         },
         wave: {
@@ -129,7 +146,7 @@ export function Mascot({
         },
         coin: {
           animate: { y: [0, -6, 0], rotate: [0, 8, 0] },
-          transition: loop(mood === "excited" ? 2.4 : mood === "sleepy" ? 5 : 3.8),
+          transition: loop(mood === "excited" ? 2.4 : mood === "sleepy" ? 5 : mood === "firm" ? 4.4 : 3.8),
         },
         drip: {
           animate: { y: [0, 4, 0], opacity: [1, 0.7, 1] },
@@ -163,6 +180,7 @@ export function Mascot({
           viewBox="0 0 160 160"
           fill="none"
           aria-hidden="true"
+          data-mascot-variant={variant}
         >
           {/* koin hijau melayang */}
           <motion.g {...motionProps.coin} style={SVG_ORIGIN}>
@@ -194,6 +212,29 @@ export function Mascot({
               <polygon points="80,14 60,54 100,54" fill="#27865a" />
               <rect x="58" y="50" width="44" height="8" rx="4" fill="#ffffff" fillOpacity="0.92" />
               <circle cx="80" cy="14" r="5.5" fill="#f9a8d4" />
+            </g>
+          )}
+
+          {/* aksesori kepala alternatif */}
+          {variant === "cap" && mood !== "celebrating" && (
+            <g>
+              <path d="M46 58 Q80 34 114 58 L108 68 H52 Z" fill="#27865a" />
+              <path d="M101 58 Q124 58 132 66 Q116 70 103 66 Z" fill="#1259ad" />
+            </g>
+          )}
+
+          {variant === "bow" && (
+            <g>
+              <path d="M67 55 Q56 43 48 54 Q55 65 68 60 Z" fill="#f9a8d4" />
+              <path d="M93 55 Q104 43 112 54 Q105 65 92 60 Z" fill="#f9a8d4" />
+              <circle cx="80" cy="57" r="6" fill="#f43f5e" />
+            </g>
+          )}
+
+          {variant === "sparkle" && (
+            <g fill="#f9a8d4">
+              <path d="M25 67 l3 8 8 3-8 3-3 8-3-8-8-3 8-3 Z" />
+              <path d="M137 91 l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5 Z" />
             </g>
           )}
 
@@ -266,13 +307,30 @@ export function Mascot({
           <circle cx="122" cy="102" r="11" fill="#27865a" />
           <circle cx="122" cy="102" r="4" fill="#ffffff" />
 
-          {/* tangan kanan: melambai, kecuali sleepy (turun) dan ok (acungan jempol) */}
-          {mood === "sleepy" ? (
+          {/* tangan kanan: tiap variant punya gestur khas bila tidak ditentukan mood. */}
+          {variant === "peace" ? (
+            <g>
+              <line x1="127" y1="100" x2="139" y2="82" stroke="#024691" strokeWidth="7" strokeLinecap="round" />
+              <line x1="139" y1="82" x2="134" y2="68" stroke="#024691" strokeWidth="5" strokeLinecap="round" />
+              <line x1="139" y1="82" x2="147" y2="70" stroke="#024691" strokeWidth="5" strokeLinecap="round" />
+              <circle cx="139" cy="82" r="5" fill="#024691" />
+            </g>
+          ) : mood === "sleepy" ? (
             <line
               x1="127"
               y1="102"
               x2="137"
               y2="118"
+              stroke="#024691"
+              strokeWidth="7"
+              strokeLinecap="round"
+            />
+          ) : mood === "firm" ? (
+            <line
+              x1="129"
+              y1="100"
+              x2="133"
+              y2="121"
               stroke="#024691"
               strokeWidth="7"
               strokeLinecap="round"
@@ -349,6 +407,23 @@ export function Mascot({
             </g>
           )}
 
+          {/* alis tegas: miring ke dalam */}
+          {mood === "firm" && (
+            <g stroke="#0b1f3a" strokeWidth="3" strokeLinecap="round">
+              <line x1="55" y1="83" x2="70" y2="87" />
+              <line x1="90" y1="87" x2="105" y2="83" />
+            </g>
+          )}
+
+          {/* kacamata */}
+          {variant === "glasses" && (
+            <g stroke="#0b1f3a" strokeWidth="3" fill="#ffffff" fillOpacity="0.2">
+              <rect x="51" y="91" width="25" height="18" rx="7" />
+              <rect x="84" y="91" width="25" height="18" rx="7" />
+              <line x1="76" y1="96" x2="84" y2="96" />
+            </g>
+          )}
+
           {/* pipi */}
           {showBlush && (
             <>
@@ -363,7 +438,7 @@ export function Mascot({
               <ellipse cx="80" cy="117" rx="8" ry="9" fill="#0b1f3a" />
               <ellipse cx="80" cy="120.5" rx="4" ry="3.4" fill="#f9a8d4" />
             </g>
-          ) : mood === "thinking" ? (
+          ) : mood === "thinking" || mood === "firm" ? (
             <line
               x1="74"
               y1="116"

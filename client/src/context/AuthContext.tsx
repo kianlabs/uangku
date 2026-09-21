@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getMe, login, logout, register } from "@/lib/auth";
 import { getPreferences } from "@/lib/preferences";
 import { clearLocalCache, seedLocalStorageFromPreferences } from "@/lib/local-storage";
@@ -28,10 +28,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const pathname = usePathname();
+  const isPublicPath = ["/", "/masuk", "/daftar"].includes(pathname);
   const router = useRouter();
   const initialized = useRef(false);
 
   useEffect(() => {
+    if (isPublicPath) {
+      return;
+    }
     if (initialized.current) return;
     initialized.current = true;
 
@@ -47,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [isPublicPath, pathname]);
 
   const unauthorizedRef = useRef(false);
 
@@ -91,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const u = await login(email, password);
     unauthorizedRef.current = false;
     setUser(u);
+    window.dispatchEvent(new CustomEvent("uangku:auth-success"));
     // Hydrate localStorage dari server setelah login
     getPreferences()
       .then((prefs) => seedLocalStorageFromPreferences(prefs))
@@ -103,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Akun baru di browser bersama — buang sisa cache akun sebelumnya
     clearLocalCache();
     setUser(u);
+    window.dispatchEvent(new CustomEvent("uangku:auth-success"));
     // Preferences kosong untuk user baru — tidak perlu hydrate, localStorage sudah default
   }, []);
 
@@ -113,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/masuk");
   }, [router]);
 
-  if (isLoading) {
+  if (isLoading && !isPublicPath) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
         <svg
@@ -146,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isAuthenticated: user !== null,
-        isLoading,
+        isLoading: isLoading && !isPublicPath,
         loginUser,
         registerUser,
         logoutUser,

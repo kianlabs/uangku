@@ -22,7 +22,8 @@ Fields:
 - `password_hash` — string, required
 - `preferences` — JSONB, required (default `{}`); kunci opsional:
   `payday` (1–31), `onboarding_done` (bool, status tur Mochi),
-  `tx_sources`, `debt_tags`, `templates`
+    `tx_sources`, `debt_tags`, `templates`. Offline queue dan recurring
+    reminder templates saat ini disimpan device-locally di browser.
 - `created_at` — timestamp
 - `updated_at` — timestamp
 
@@ -200,12 +201,18 @@ Saat akun baru dibuat, UangKu dapat membuat kategori default milik user tersebut
 - Penjualan
 - Lainnya
 
+## Current client-local features
+
+Offline transaction queue and recurring reminder templates intentionally do not
+have database entities yet. Offline items are pending client writes, while a
+recurring reminder is only materialized as a Transaction after user confirmation.
+
 ## Future Schema
 
 Belum masuk v1:
 
 - wallet/account
-- recurring transaction
+- server-side recurring transaction scheduler
 - financial goal
 - shared account
 - bank account integration

@@ -22,7 +22,7 @@ export function BudgetWarning({ spent, limit, label = "Anggaran bulan ini" }: Bu
     <section aria-label={label} className="flex flex-col gap-2 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</span>
-        <span className={`text-sm font-bold tabular-nums ${text}`}>{pct.toFixed(0)}%</span>
+        <span className={`num text-sm font-bold ${text}`}>{pct.toFixed(0)}%</span>
       </div>
       <div
         role="progressbar"
@@ -34,8 +34,8 @@ export function BudgetWarning({ spent, limit, label = "Anggaran bulan ini" }: Bu
       >
         <div className={`h-full rounded-full transition-all ${bar}`} style={{ width: `${pct}%` }} />
       </div>
-      <p className="text-xs text-slate-500 tabular-nums">
-        {formatRupiah(spentNum)} dari {formatRupiah(limitNum)}
+      <p className="text-xs text-slate-500">
+        <span className="num">{formatRupiah(spentNum)}</span> dari <span className="num">{formatRupiah(limitNum)}</span>
       </p>
     </section>
   );
