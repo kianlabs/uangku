@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
-import { buzz } from "@/lib/haptics";
+import { haptic } from "@/lib/haptics";
 
 interface BalanceCardProps {
   balance: string;
@@ -100,7 +100,7 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
         <button
           type="button"
           onClick={() => {
-            buzz(8);
+            haptic.tap();
             toggleMasked();
           }}
           aria-label={masked ? "Tampilkan saldo" : "Sembunyikan saldo"}
@@ -113,13 +113,13 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
       {masked ? (
         <span
           data-testid="balance-value"
-          className="text-3xl leading-tight font-bold text-white tabular-nums select-none"
+          className="num font-serif text-[1.9rem] leading-tight font-bold text-white select-none"
           aria-label="Saldo disembunyikan"
         >
           Rp ••••••
         </span>
       ) : (
-        <span data-testid="balance-value" className="text-3xl leading-tight font-bold text-white tabular-nums">
+        <span data-testid="balance-value" className="num font-serif text-[1.9rem] leading-tight font-bold text-white">
           {formatRupiah(Math.round(animated))}
         </span>
       )}
@@ -128,11 +128,11 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/15">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wide">Pemasukan</span>
-          <span className="text-lg font-bold text-emerald-300 tabular-nums">+{formatRupiah(monthly_income)}</span>
+          <span className="num text-lg font-bold text-emerald-300">+{formatRupiah(monthly_income)}</span>
         </div>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-rose-300 uppercase tracking-wide">Pengeluaran</span>
-          <span className="text-lg font-bold text-rose-300 tabular-nums">-{formatRupiah(monthly_expense)}</span>
+          <span className="num text-lg font-bold text-rose-300">-{formatRupiah(monthly_expense)}</span>
         </div>
       </div>
     </div>

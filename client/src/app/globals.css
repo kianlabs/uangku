@@ -20,6 +20,7 @@
   --color-brand: #024691;
 
   --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
 
   --radius-sm: 0.625rem;
   --radius-md: 0.875rem;
@@ -56,6 +57,13 @@ body {
 }
 
 .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Angka data read-only (saldo, nominal, %, count): serif + tabular.
+   Aturan DESIGN.md §2 — label UI, tanggal, dan input form tetap sans. */
+.num {
+  font-family: var(--font-serif);
   font-variant-numeric: tabular-nums;
 }
 

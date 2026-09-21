@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/categories";
 import { deleteBudget, listBudgets, upsertBudget } from "@/lib/budgets";
 import { formatRupiah } from "@/lib/format";
-import { Mascot } from "@/components/brand/Mascot";
 import type { Budget, Category, TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ApiResponseError } from "@/lib/api";
@@ -171,12 +171,16 @@ export default function KategoriPage() {
       )}
 
       {items.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-8">
-          <Mascot size={96} />
-          <p className="text-sm text-muted text-center">
-            Belum ada kategori. Tambah yang pertama yuk!
-          </p>
-        </div>
+        <EmptyState
+          mood="excited"
+          title="Belum ada kategori"
+          description="Bikin kategori sesuai gaya hidupmu, misalnya Jajan atau Profilaksi."
+          actions={
+            <Button size="sm" onClick={() => setShowAddForm(true)}>
+              Tambah kategori
+            </Button>
+          }
+        />
       )}
     </div>
   );
@@ -361,8 +365,8 @@ function CategoryRow({
         <div className="flex flex-col">
           <span className="text-base text-text">{category.name}</span>
           {budget?.amount && (
-            <span className="text-xs text-muted tabular-nums">
-              Anggaran {formatRupiah(budget.amount)}/bln
+            <span className="text-xs text-muted">
+              Anggaran <span className="num">{formatRupiah(budget.amount)}</span>/bln
             </span>
           )}
         </div>

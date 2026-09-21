@@ -36,6 +36,12 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
   - Headings / Nominal Utama: `text-slate-900`
   - Subtitle / Label Sekunder: `text-slate-500`
   - Caption / Helper: `text-xs text-slate-400`
+- **Angka Data (Serif):** Semua angka read-only — saldo, nominal transaksi,
+  persentase, dan hitungan — memakai serif (`Source Serif 4`, utility `.num`
+  = `font-family: var(--font-serif)` + `tabular-nums`). Ini aksen identitas;
+  label UI, tanggal, dan input form tetap sans (Geist). Angka yang melekat
+  pada kalimat dibungkus `<span className="num">` hanya pada nilai
+  rupiahnya, bukan seluruh kalimatnya.
 
 ---
 
@@ -95,7 +101,7 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
   (BalanceCard) count-up singkat (~500–600ms, easeOut) saat pertama tampil.
   Wajib hormati `prefers-reduced-motion` (langsung angka final).
 - **FAB:** saat dialog Catat Cepat terbuka, ikon + berputar 45° menjadi ×.
-  Plus haptic halus (`buzz(10)`) saat membuka dialog.
+  Plus haptic halus (`haptic.tap()`) saat membuka dialog.
 - **Skeleton Loading:** Tampilkan komponen *shimmer* bergelombang pada seluruh kartu saat data API sedang di-fetch.
 
 ---
@@ -195,3 +201,31 @@ per halaman.
   badge) pakai `Rp 2,1 jt` / `Rp 450 rb`. Angka utama tetap presisi penuh.
 - **Ritme spacing kartu:** padding kartu `p-5`/`p-6`, gap antar kartu
   `gap-4`. Jangan mencampur ukuran antar kartu di satu halaman.
+- **Haptic pola baku (`lib/haptics.ts` → `haptic`):** `tap` (10ms) untuk
+  buka dialog/tombol nav, `success` (pop ganda) untuk mutasi berhasil,
+  `error` (40ms panjang) untuk gagal server, `warning` (dua ketukan) untuk
+  error validasi inline. Jangan panggil `buzz()` mentah di komponen.
+- **Pil nav aktif bergerak:** indikator tab aktif BottomNav memakai satu
+  `motion.span layoutId="nav-active-pill"` (spring) — pil meluncur antar
+  ikon, bukan per-item fade.
+- **Empty state ber-brand (`ui/EmptyState.tsx`):** kondisi kosong memakai
+  komponen EmptyState (Mochi + judul + CTA) — bukan teks polos. Mood Mochi
+  disesuaikan konteks (thinking = "tidak ada hasil", excited = ajakan).
+- **Onboarding selesai → app hidup:** langkah terakhir MochiGuide menawarkan
+  "Coba dengan contoh data" (POST `/api/v1/dashboard/demo-data`, rate-limit
+  ketat, 409 bila sudah ada transaksi). User baru melihat dashboard penuh,
+  bukan empty state, setelah tur.
+
+### PWA & Native Shell
+
+- **`theme-color` = navy brand `#024691`** (viewport + manifest, satu
+  konstanta `BRAND_COLOR` di `layout.tsx`) — address bar/status bar ikut
+  warna brand. Icon PWA wajib menyertakan varian **maskable** (mark pada
+  safe-zone 68% di atas navy) dan `apple-touch-icon` 180px flattened.
+
+### Data Viz
+
+- **Sparkline 7 hari (`dashboard/Sparkline.tsx`):** SVG tulisan tangan
+  (tanpa library chart) — area fill rose 7%, garis rose, titik endpoint.
+  Data dari `metrics.daily_expense_7d`. Semua grafik baru mengikuti pola
+  hand-written SVG seperti donut & ring.

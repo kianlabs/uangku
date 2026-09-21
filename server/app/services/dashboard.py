@@ -198,7 +198,7 @@ def get_user_metrics(
     ).all()
     transaction_dates = [str(d) for d in date_rows]  # "YYYY-MM-DD"
 
-    # -- Query 2: weekly expense by category --
+    # -- Query 2: weekly expense by category (saldo awal tidak termasuk) --
     week_rows = db.execute(
         select(
             Category.name.label("category_name"),
@@ -208,6 +208,7 @@ def get_user_metrics(
         .where(
             Transaction.user_id == user.id,
             Transaction.type == "expense",
+            Transaction.is_opening_balance.is_(False),
             Transaction.transaction_date >= cutoff_week,
             Transaction.transaction_date <= today,
         )
@@ -215,23 +216,33 @@ def get_user_metrics(
         .order_by(func.sum(Transaction.amount).desc())
     ).all()
 
-    week_expense_total = Decimal(0)
-    week_top_category: str | None = None
-    for row in week_rows:
-        amount = Decimal(str(row.amount))
-        week_expense_total += amount
-        if week_top_category is None:
-            week_top_category = row.category_name
+    week_top_category: str | None = week_rows[0].category_name if week_rows else None
 
-    # -- Query 2b: today's expense total (for the SafeToSpend daily bar) --
-    today_expense = db.scalar(
-        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+    # -- Query 2a: pengeluaran harian 7 hari (sparkline beranda) --
+    daily_rows = db.execute(
+        select(
+            Transaction.transaction_date,
+            func.coalesce(func.sum(Transaction.amount), 0).label("amount"),
+        )
+        .where(
             Transaction.user_id == user.id,
             Transaction.type == "expense",
-            Transaction.transaction_date == today,
+            Transaction.is_opening_balance.is_(False),
+            Transaction.transaction_date >= cutoff_week,
+            Transaction.transaction_date <= today,
         )
-    )
-    today_expense = Decimal(str(today_expense))
+        .group_by(Transaction.transaction_date)
+        .order_by(Transaction.transaction_date.asc())
+    ).all()
+    amounts_by_date = {row.transaction_date: Decimal(str(row.amount)) for row in daily_rows}
+    week_expense_total = sum(amounts_by_date.values(), Decimal(0))
+    daily_expense_7d = [
+        float(amounts_by_date.get(today - timedelta(days=d), Decimal(0)))
+        for d in range(6, -1, -1)
+    ]
+
+    # -- Query 2b: today's expense (nilai terakhir sparkline) --
+    today_expense = amounts_by_date.get(today, Decimal(0))
 
     # -- Query 3: current-month totals for safe-to-spend --
     month_start = date(today.year, today.month, 1)
@@ -279,6 +290,7 @@ def get_user_metrics(
         "transaction_dates": transaction_dates,
         "week_expense_total": week_expense_total,
         "week_top_category": week_top_category,
+        "daily_expense_7d": daily_expense_7d,
         "today_expense": today_expense,
         "safe_to_spend": safe_to_spend,
         "days_left": days_left,

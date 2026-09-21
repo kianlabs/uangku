@@ -16,6 +16,7 @@ import { getPayday } from "@/lib/local-storage";
 import { listTransactions } from "@/lib/transactions";
 import type { Budget, DashboardMetrics, DashboardSummary, RecentTransactionItem, User } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
+import { Sparkline } from "@/components/dashboard/Sparkline";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
 import { MochiTip } from "@/components/brand/MochiTip";
@@ -25,6 +26,7 @@ import { Header } from "@/components/dashboard/Header";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function BerandaPage() {
   const [isOffline, setIsOffline] = useState(false);
@@ -218,12 +220,22 @@ export default function BerandaPage() {
               <Mascot size={48} mood={streak > 0 ? "celebrating" : "happy"} />
               <Flag className="w-5 h-5 text-accent shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0">
-                <p className="text-base font-bold text-slate-900 tabular-nums">
+                <p className="num text-base font-bold text-slate-900">
                   {streak > 0 ? `${streak} hari beruntun` : "Belum ada rentetan"}
                 </p>
                 <p className="text-xs text-slate-500 truncate">Catat tiap hari biar makin panjang.</p>
               </div>
             </div>
+
+            {metrics.daily_expense_7d && metrics.daily_expense_7d.length === 7 && (
+              <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
+                <Sparkline data={metrics.daily_expense_7d} label="Pengeluaran 7 hari" />
+                <p className="text-xs text-slate-500 mt-2">
+                  Total minggu ini{" "}
+                  <span className="num font-semibold text-slate-700">{formatRupiah(weekTotal)}</span>
+                </p>
+              </div>
+            )}
 
             {blownBudget && (
               <div className="lg:col-span-6">
@@ -250,12 +262,12 @@ export default function BerandaPage() {
               <div className="grid grid-cols-2 gap-4 lg:col-span-6 lg:grid-cols-6">
                 <div className="flex flex-col gap-1 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaksi</span>
-                  <span className="text-xl font-bold text-slate-900 tabular-nums">{data.transaction_count}×</span>
+                  <span className="num text-xl font-bold text-slate-900">{data.transaction_count}×</span>
                   <span className="text-xs text-slate-400">bulan ini</span>
                 </div>
                 <div className="flex flex-col gap-1 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Menuju gajian</span>
-                  <span className="text-xl font-bold text-slate-900 tabular-nums">{metrics.days_left} hari</span>
+                  <span className="num text-xl font-bold text-slate-900">{metrics.days_left} hari</span>
                 </div>
               </div>
             )}
@@ -271,7 +283,7 @@ export default function BerandaPage() {
                 )}
                 <div className="flex flex-col min-w-0">
                   <p
-                    className={`text-base font-bold tabular-nums ${
+                    className={`num text-base font-bold ${
                       momDelta < 0 ? "text-emerald-600" : momDelta > 0 ? "text-rose-600" : "text-slate-900"
                     }`}
                   >
@@ -281,8 +293,8 @@ export default function BerandaPage() {
                         ? `Naik ${Math.round(momDelta)}%`
                         : "Sama seperti bulan lalu"}
                   </p>
-                  <p className="text-xs text-slate-500 tabular-nums truncate">
-                    {formatRupiah(monthlyExpenseNum)} bulan ini · {formatRupiah(prevExpense)} bulan lalu
+                  <p className="text-xs text-slate-500 truncate">
+                    <span className="num">{formatRupiah(monthlyExpenseNum)}</span> bulan ini · <span className="num">{formatRupiah(prevExpense)}</span> bulan lalu
                   </p>
                 </div>
               </div>
@@ -329,9 +341,12 @@ export default function BerandaPage() {
                   </div>
                 </section>
               ) : (
-                <p className="text-sm text-slate-500 text-center py-8">
-                  Belum ada catatan bulan ini.
-                </p>
+                <EmptyState
+                  mood="thinking"
+                  mascotSize={88}
+                  title="Belum ada catatan bulan ini"
+                  description="Pencet tombol + , contoh: Makan siang 45k"
+                />
               )}
             </div>
           </>
@@ -378,7 +393,7 @@ function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
         <span className="text-xs text-slate-400">{formatDate(tx.transaction_date)}</span>
       </div>
       <span
-        className={`text-base font-bold tabular-nums shrink-0 ${
+        className={`num text-base font-bold shrink-0 ${
           isIncome ? "text-emerald-600" : "text-rose-600"
         }`}
       >

@@ -107,7 +107,7 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
             className="fill-text"
             fontSize={12}
             fontWeight={700}
-            style={{ fontVariantNumeric: "tabular-nums" }}
+            style={{ fontFamily: "var(--font-serif)", fontVariantNumeric: "tabular-nums" }}
           >
             {formatRupiah(total)}
           </text>
@@ -121,7 +121,7 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
                 background: `linear-gradient(to right, ${s.color}24 ${s.pct}%, transparent ${s.pct}%)`,
               }}
             >
-              <span className="w-6 shrink-0 text-xs text-muted tabular-nums">
+              <span className="num w-6 shrink-0 text-xs text-muted">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span
@@ -130,10 +130,10 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
                 aria-hidden="true"
               />
               <span className="flex-1 text-sm text-text">{s.name}</span>
-              <span className="text-sm font-semibold text-text tabular-nums">
+              <span className="num text-sm font-semibold text-text">
                 {s.pct.toFixed(0)}%
               </span>
-              <span className="text-sm text-muted tabular-nums whitespace-nowrap">
+              <span className="num text-sm text-muted whitespace-nowrap">
                 {formatRupiahCompact(s.amount)}
               </span>
             </li>

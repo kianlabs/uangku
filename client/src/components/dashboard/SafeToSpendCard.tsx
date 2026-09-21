@@ -83,7 +83,7 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <span className="text-3xl leading-tight font-bold text-emerald-700 tabular-nums" aria-live="polite">
+        <span className="num font-serif text-[1.9rem] leading-tight font-bold text-emerald-700" aria-live="polite">
           {hero > 0 ? formatRupiah(Math.round(displayed)) : "Rp 0"}
         </span>
         <svg
@@ -117,11 +117,11 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
       <div className="grid grid-cols-2 gap-3 pt-2 border-t border-emerald-100">
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-slate-500">Sisa hari</span>
-          <span className="text-sm font-bold text-slate-900 tabular-nums">{daysLeft} hari</span>
+          <span className="num text-sm font-bold text-slate-900">{daysLeft} hari</span>
         </div>
         <div className="flex flex-col gap-0.5 text-right">
           <span className="text-xs text-slate-500">Sisa saldo</span>
-          <span className="text-sm font-bold text-slate-900 tabular-nums">{formatRupiah(remainingBalance)}</span>
+          <span className="num text-sm font-bold text-slate-900">{formatRupiah(remainingBalance)}</span>
         </div>
       </div>
     </motion.div>

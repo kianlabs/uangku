@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { Mascot, type MascotMood } from "@/components/brand/Mascot";
 import { getPreferences, updatePreferences } from "@/lib/preferences";
 import { getPayday, setPayday } from "@/lib/local-storage";
-import { createTransaction, listTransactions } from "@/lib/transactions";
+import { createTransaction, deleteTransaction, listTransactions } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
+import { apiFetch } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
 
 interface GuideStep {
   mood: MascotMood;
@@ -69,6 +71,7 @@ export function MochiGuide() {
   const [balance, setBalanceState] = useState("");
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +94,37 @@ export function MochiGuide() {
       new CustomEvent("uangku:guide-open", { detail: { open: visible } })
     );
   }, [visible]);
+
+  /** Isi contoh data via server, lalu tutup tur. Kalau gagal → hapus saldo
+   * awal agar user tidak terjebak "sudah punya transaksi" tanpa data penuh. */
+  async function handleSeed() {
+    setSeeding(true);
+    try {
+      const res = await apiFetch<{ transactions: number; budgets: number }>(
+        "/api/v1/dashboard/demo-data",
+        { method: "POST" }
+      );
+      window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+      haptic.success();
+      console.info(`Contoh data: ${res.transactions} transaksi, ${res.budgets} budget`);
+      dismiss();
+    } catch {
+      haptic.error();
+      try {
+        const existing = await listTransactions({ page: 1, page_size: 50 });
+        for (const tx of existing.items.filter((t) => t.description === "Saldo awal")) {
+          await deleteTransaction(tx.id);
+        }
+        if (existing.items.some((t) => t.description === "Saldo awal")) {
+          window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+        }
+      } catch {
+        // Bersih-bersih gagal — biarkan; user bisa hapus manual
+      }
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   function dismiss() {
     updatePreferences({ onboarding_done: true }).catch(() => {
@@ -234,23 +268,35 @@ export function MochiGuide() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 pt-8">
-          <button
-            type="button"
-            onClick={dismiss}
-            disabled={isSaving}
-            className="flex-1 h-12 rounded-xl text-sm font-semibold text-muted hover:text-text transition-colors disabled:opacity-50"
-          >
-            Lewati
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={isSaving}
-            className="flex-[2] h-12 rounded-xl bg-accent text-accent-ink text-sm font-bold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60"
-          >
-            {isSaving ? "Menyimpan…" : current.cta}
-          </button>
+        <div className="flex flex-col gap-2 pt-8">
+          {step === STEPS.length - 1 && (
+            <button
+              type="button"
+              onClick={handleSeed}
+              disabled={isSaving || seeding}
+              className="h-12 rounded-xl border border-accent/40 text-accent text-sm font-semibold hover:bg-accent/10 active:scale-[0.98] transition-all disabled:opacity-60"
+            >
+              {seeding ? "Menyiapkan contoh…" : "Coba dengan contoh data"}
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={dismiss}
+              disabled={isSaving || seeding}
+              className="flex-1 h-12 rounded-xl text-sm font-semibold text-muted hover:text-text transition-colors disabled:opacity-50"
+            >
+              Lewati
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={isSaving || seeding}
+              className="flex-[2] h-12 rounded-xl bg-accent text-accent-ink text-sm font-bold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-60"
+            >
+              {isSaving ? "Menyimpan…" : current.cta}
+            </button>
+          </div>
         </div>
       </div>
     </div>

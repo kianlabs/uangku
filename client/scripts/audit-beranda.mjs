@@ -80,6 +80,52 @@ const run = async () => {
     `tombol=${mask.btn}, dots=${mask.dotsVisible}`
   );
 
+  // 2b. Angka data memakai serif (aksen identitas, DESIGN.md §2)
+  const serifFont = await m.evaluate(() => {
+    const bal = document.querySelector('[data-testid="balance-value"]');
+    const hero = [...document.querySelectorAll("span[aria-live=\"polite\"]")].at(-1);
+    const isSerif = (el) => el && /source serif|georgia|serif/i.test(getComputedStyle(el).fontFamily);
+    return {
+      balance: isSerif(bal) ? getComputedStyle(bal).fontFamily.slice(0, 60) : null,
+      safeToSpend: isSerif(hero) ? getComputedStyle(hero).fontFamily.slice(0, 60) : null,
+    };
+  });
+  check(
+    "Angka saldo pakai font serif",
+    serifFont?.balance != null,
+    serifFont?.balance ?? "elemen tidak ditemukan / bukan serif"
+  );
+  check(
+    "Angka Safe to Spend pakai font serif",
+    serifFont?.safeToSpend != null,
+    serifFont?.safeToSpend ?? "elemen tidak ditemukan / bukan serif"
+  );
+
+  // 2c. Drift-guard: tidak ada tabular-nums di luar .num (input form dikecualikan)
+  const naked = await m.evaluate(() =>
+    [...document.querySelectorAll(".tabular-nums")].filter(
+      (el) => !/^(INPUT|TEXTAREA)$/.test(el.tagName) && !el.classList.contains("num")
+    ).length
+  );
+  check(
+    "Tidak ada angka sans di luar utility .num",
+    naked === 0,
+    `${naked} elemen melanggar`
+  );
+
+  // 3a. Sparkline 7 hari tampil (SVG dengan aria-label sesuai §6 Data Viz)
+  const spark = await m.evaluate(() => {
+    const svg = document.querySelector('svg[aria-label*="7 hari"]');
+    if (!svg) return { found: false };
+    const paths = svg.querySelectorAll("path").length;
+    return { found: paths >= 2, paths };
+  });
+  check(
+    "Sparkline 7 hari tampil di beranda",
+    spark.found === true,
+    spark.found ? `${spark.paths} path SVG` : "elemen tidak ditemukan"
+  );
+
   // 3b. SafeToSpend emerald soft ada
   const sts = await m.evaluate(() =>
     [...document.querySelectorAll("div")].some((d) =>

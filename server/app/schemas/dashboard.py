@@ -57,6 +57,7 @@ class DashboardMetricsResponse(BaseModel):
     transaction_dates: list[str]   # "YYYY-MM-DD" strings untuk kalkulasi streak
     week_expense_total: Decimal
     week_top_category: str | None
+    daily_expense_7d: list[float]  # pengeluaran per hari, 7 nilai urut lama→baru
     today_expense: Decimal
     safe_to_spend: Decimal
     days_left: int
@@ -66,3 +67,10 @@ class DashboardMetricsResponse(BaseModel):
     @field_serializer("week_expense_total", "today_expense", "safe_to_spend", "remaining_balance")
     def serialize_money(self, v: Decimal) -> str:
         return _fmt(v)
+
+
+class DemoDataResponse(BaseModel):
+    """Ringkasan hasil seed data contoh."""
+
+    transactions: int
+    budgets: int

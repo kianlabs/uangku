@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
-import { buzz } from "@/lib/haptics";
+import { haptic } from "@/lib/haptics";
 
 const navItems = [
   {
@@ -107,7 +108,7 @@ export function BottomNav() {
             <button
               type="button"
               onClick={() => {
-                buzz(10);
+                haptic.tap();
                 setModalOpen(true);
               }}
               aria-label="Catat cepat"
@@ -141,12 +142,20 @@ export function BottomNav() {
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={[
-                    "flex flex-1 flex-col items-center justify-center gap-1 transition-all select-none min-h-[44px] rounded-2xl",
-                    isActive ? "text-accent bg-accent/15 font-semibold" : "text-muted hover:text-text font-medium",
+                    "relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors select-none min-h-[44px] rounded-2xl",
+                    isActive ? "text-accent font-semibold" : "text-muted hover:text-text font-medium",
                   ].join(" ")}
                 >
-                  {item.icon}
-                  <span className="text-xs">{item.label}</span>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                      className="absolute inset-0 rounded-2xl bg-accent/15"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="relative">{item.icon}</span>
+                  <span className="relative text-xs">{item.label}</span>
                 </Link>
               </li>
             );

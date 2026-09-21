@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getPayday, setPayday } from "@/lib/local-storage";
+import { haptic } from "@/lib/haptics";
 
 export default function AkunPage() {
   const { user, logoutUser } = useAuth();
@@ -19,7 +20,9 @@ export default function AkunPage() {
       setPaydayState(day);
       setEditingPayday(false);
       setPaydayError(null);
+      haptic.success();
     } else {
+      haptic.warning();
       setPaydayError("Tanggal harus 1-31.");
     }
   }

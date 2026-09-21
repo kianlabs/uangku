@@ -9,7 +9,7 @@ import { updateTransaction } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
-import { buzz } from "@/lib/haptics";
+import { haptic } from "@/lib/haptics";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -147,9 +147,10 @@ export default function EditTransaksiPage() {
       }
 
       await updateTransaction(id, patch);
-      buzz();
+      haptic.success();
       router.push(`/transaksi/${id}`);
     } catch (err) {
+      haptic.error();
       if (err instanceof ApiResponseError) {
         if (err.status === 0) {
           setServerError(err.message);

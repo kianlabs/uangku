@@ -163,7 +163,7 @@ export default function DetailTransaksiPage() {
               {tx.type === "income" ? "Pemasukan" : "Pengeluaran"}
             </p>
             <p
-              className={`text-4xl sm:text-5xl font-bold tabular-nums leading-tight break-words ${
+              className={`num text-4xl sm:text-5xl font-bold leading-tight break-words ${
                 tx.type === "income" ? "text-income" : "text-expense"
               }`}
             >

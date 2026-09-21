@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiResponseError } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -43,16 +44,19 @@ export function RegisterForm() {
     const fieldErrors = validate();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
+      haptic.warning();
       return;
     }
     setErrors({});
     setIsLoading(true);
     try {
       await registerUser(email, password);
+      haptic.success();
       const next = searchParams.get("next") || "/beranda";
       const redirect = next.startsWith("/") && !next.startsWith("//") ? next : "/beranda";
       router.push(redirect);
     } catch (err) {
+      haptic.error();
       if (err instanceof ApiResponseError && err.fields) {
         const newErrors: typeof errors = {};
         if (err.fields.email) newErrors.email = err.fields.email;

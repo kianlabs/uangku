@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
 from app.core.errors import DomainError, InvalidMonthError
 from app.core.rate_limit import limiter
 from app.models.user import User
-from app.schemas.dashboard import DashboardMetricsResponse, DashboardSummaryResponse
+from app.schemas.dashboard import (
+    DashboardMetricsResponse,
+    DashboardSummaryResponse,
+    DemoDataResponse,
+)
 from app.services.dashboard import get_dashboard_summary, get_user_metrics
+from app.services.demo import seed_demo_data
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -53,3 +58,25 @@ def dashboard_metrics(
     """
     data = get_user_metrics(db, current_user, payday=payday)
     return DashboardMetricsResponse(**data)
+
+
+@router.post("/demo-data", response_model=DemoDataResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("2/minute")
+def create_demo_data(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Isi data contoh (3 minggu transaksi + 2 budget) untuk user baru.
+
+    Dipakai tombol "Isi contoh data" di akhir onboarding MochiGuide.
+    Tolak dengan 409 kalau user sudah punya transaksi.
+    """
+    try:
+        result = seed_demo_data(db, current_user)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ALREADY_HAS_DATA", "message": str(exc)},
+        )
+    return DemoDataResponse(**result)

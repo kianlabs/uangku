@@ -8,6 +8,7 @@ import type { Category, Transaction, TransactionType } from "@/lib/types";
 import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { formatRupiah, formatDate } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
 import { todayLocalISO } from "@/lib/date";
 import { Mascot } from "@/components/brand/Mascot";
 
@@ -107,9 +108,11 @@ export default function RiwayatPage() {
     try {
       await deleteTransaction(pd.tx.id);
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+      haptic.success();
     } catch {
       // Rollback: kembalikan baris & tampilkan error.
       reinsert(pd);
+      haptic.error();
       setError("Gagal menghapus transaksi. Coba lagi.");
     }
   }
@@ -327,7 +330,7 @@ export default function RiwayatPage() {
         <div className="max-w-lg mx-auto px-4 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5 flex items-baseline justify-between">
           <p className="text-base font-bold text-text">Riwayat</p>
           {!isLoading && (
-            <p className="text-xs text-muted tabular-nums">{filteredItems.length} transaksi</p>
+            <p className="text-xs text-muted"><span className="num">{filteredItems.length}</span> transaksi</p>
           )}
         </div>
       </div>
@@ -736,7 +739,7 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
             </div>
           </div>
           <p
-            className={`text-base font-bold tabular-nums shrink-0 ${
+            className={`num text-base font-bold shrink-0 ${
               isIncome ? "text-income" : "text-expense"
             }`}
           >

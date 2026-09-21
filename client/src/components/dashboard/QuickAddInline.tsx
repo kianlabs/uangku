@@ -6,7 +6,7 @@ import { createTransaction } from "@/lib/transactions";
 import { listCategories, createCategory } from "@/lib/categories";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
-import { buzz } from "@/lib/haptics";
+import { haptic } from "@/lib/haptics";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddGuide } from "@/components/dashboard/QuickAddGuide";
 
@@ -32,6 +32,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
     const parsed = parseQuickAdd(input);
     if (!parsed) {
       setError("Format: Makan siang 45k atau Gaji 5jt");
+      haptic.warning();
       return;
     }
 
@@ -71,7 +72,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
       // catch di bawah menampilkan error dan refetch berikutnya sudah
       // mengembalikan state yang benar (rollback efektif tanpa duplikasi).
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
-      buzz();
+      haptic.success();
 
       await promise; // error → catch → tampilkan pesan
 
@@ -79,6 +80,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
       setShowSuccess(true);
       onSave();
     } catch {
+      haptic.error();
       setError("Gagal menyimpan. Coba lagi.");
     } finally {
       setIsLoading(false);

@@ -10,7 +10,7 @@ import { ApiResponseError } from "@/lib/api";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
-import { buzz } from "@/lib/haptics";
+import { haptic } from "@/lib/haptics";
 import { setTransactionSource, setDebtTag, getTemplates, setTemplates, type SubscriptionTemplate } from "@/lib/local-storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -154,9 +154,10 @@ export default function TambahTransaksiPage() {
         transaction_date: today,
         description: template.name,
       });
-      buzz();
+      haptic.success();
       router.push("/beranda");
     } catch {
+      haptic.error();
       setServerError("Gagal membuat dari template. Coba lagi.");
     } finally {
       setIsSubmitting(false);
@@ -190,6 +191,7 @@ export default function TambahTransaksiPage() {
     const fieldErrors = validate();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
+      haptic.warning();
       return;
     }
     setErrors({});
@@ -207,9 +209,10 @@ export default function TambahTransaksiPage() {
       if (debtTag && txData?.id) {
         setDebtTag(txData.id, { tag: debtTag, settled: debtSettled });
       }
-      buzz();
+      haptic.success();
       router.push("/beranda");
     } catch (err) {
+      haptic.error();
       if (err instanceof ApiResponseError) {
         if (err.status === 0) {
           setServerError(err.message);

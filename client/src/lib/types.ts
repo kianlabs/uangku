@@ -87,6 +87,7 @@ export interface DashboardMetrics {
   transaction_dates: string[];
   week_expense_total: string;
   week_top_category: string | null;
+  daily_expense_7d?: number[];
   today_expense: string;
   safe_to_spend: string;
   days_left: number;
