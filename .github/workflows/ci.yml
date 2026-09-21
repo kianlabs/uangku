@@ -32,13 +32,15 @@ jobs:
           python-version: "3.13"
       - run: uv sync --group dev
       - run: uv run ruff check .
+      # CI postgres hanya punya DB uangku_test — alembic + pytest sama-sama
+      # pakai DB itu (pytest me-rebuild skema via create_all/drop_all).
       - run: uv run alembic upgrade head
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/uangku
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
           DATABASE_URL_TEST: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
       - run: uv run pytest -q
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/uangku
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
           DATABASE_URL_TEST: postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test
 
   client:
