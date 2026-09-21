@@ -21,6 +21,7 @@ describe("Mascot", () => {
 
   it.each([
     "happy",
+    "ok",
     "excited",
     "thinking",
     "worried",

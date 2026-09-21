@@ -37,17 +37,27 @@ export default function AkunPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-text">Akun</h1>
-        {user && <p className="text-sm text-muted">{user.email}</p>}
-      </div>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-xl font-bold text-text">Akun</h1>
 
-      <div className="flex flex-col gap-4">
+      <section aria-label="Profil" className="flex items-center gap-4 p-5 rounded-2xl bg-surface border border-border shadow-sm">
+        <span
+          aria-hidden="true"
+          className="flex items-center justify-center w-12 h-12 rounded-2xl bg-accent/10 text-accent text-lg font-bold shrink-0"
+        >
+          {(user?.email?.[0] ?? "U").toUpperCase()}
+        </span>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-base font-semibold text-text truncate">{user?.email ?? "Pengguna"}</span>
+          <span className="text-sm text-muted">Pengguna UangKu</span>
+        </div>
+      </section>
+
+      <section aria-label="Pengaturan" className="flex flex-col gap-3 p-5 rounded-2xl bg-surface border border-border shadow-sm">
         <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">
           Pengaturan
         </h2>
-        <div className="flex flex-col gap-3 py-4 border-b border-border">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-base font-medium text-text">Tanggal gajian</span>
             {editingPayday ? (
@@ -93,9 +103,9 @@ export default function AkunPage() {
             </p>
           )}
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col divide-y divide-border">
+      <nav aria-label="Menu akun" className="flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border">
         <Link
           href="/akun/kategori"
           className="flex items-center justify-between py-4 text-base font-medium text-text hover:bg-surface-muted/50 active:opacity-70 transition-colors px-2 -mx-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
@@ -136,7 +146,7 @@ export default function AkunPage() {
             <path d="M9 18l6-6-6-6" />
           </svg>
         </Link>
-      </div>
+      </nav>
 
       <button
         onClick={handleLogout}

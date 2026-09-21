@@ -67,9 +67,10 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
       <div className="flex items-start gap-3">
         <Mascot
           size={64}
-          mood={isTight || isDailySpent ? "worried" : "happy"}
+          mood={isTight || isDailySpent ? "worried" : "ok"}
           label="Mochi mempresentasikan rekomendasi belanja"
           className="shrink-0"
+          delay={-1.3}
         />
         <div className="flex flex-col gap-1 pt-1">
           <h2 className="text-sm font-semibold text-slate-900">Rekomendasi Aman Hari Ini</h2>
@@ -77,8 +78,8 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
         </div>
       </div>
 
-      <span className="text-2xl leading-tight font-bold text-emerald-700 tabular-nums" aria-live="polite">
-        {hero > 0 ? formatRupiah(displayed.toFixed(2)) : "Rp 0"}
+      <span className="text-3xl leading-tight font-bold text-emerald-700 tabular-nums" aria-live="polite">
+        {hero > 0 ? formatRupiah(Math.round(displayed)) : "Rp 0"}
       </span>
 
       <div
@@ -87,7 +88,7 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
         aria-valuemax={100}
         aria-valuenow={Math.round(usedPct)}
         aria-label={`Terpakai ${Math.round(usedPct)} persen dari batas harian`}
-        className="h-2.5 rounded-full bg-emerald-900/10 overflow-hidden"
+        className="h-2.5 rounded-full bg-emerald-950/15 overflow-hidden"
       >
         <div
           className={`h-full rounded-full transition-all ${isOverDaily ? "bg-rose-500" : "bg-emerald-600"}`}
@@ -95,13 +96,15 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
         />
       </div>
 
-      <div className="flex flex-col gap-2 pt-2 border-t border-emerald-100">
-        <p className="text-sm text-slate-900">
-          Sisa <strong>{daysLeft}</strong> hari lagi
-        </p>
-        <p className="text-sm text-slate-900">
-          Sisa saldo: <strong>{formatRupiah(remainingBalance)}</strong>
-        </p>
+      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-emerald-100">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-slate-500">Sisa hari</span>
+          <span className="text-sm font-bold text-slate-900 tabular-nums">{daysLeft} hari</span>
+        </div>
+        <div className="flex flex-col gap-0.5 text-right">
+          <span className="text-xs text-slate-500">Sisa saldo</span>
+          <span className="text-sm font-bold text-slate-900 tabular-nums">{formatRupiah(remainingBalance)}</span>
+        </div>
       </div>
     </motion.div>
   );

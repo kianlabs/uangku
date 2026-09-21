@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const navItems = [
   {
     href: "/beranda",
-    label: "Home",
+    label: "Beranda",
     icon: (
       <svg
         aria-hidden="true"
@@ -76,7 +76,7 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="flex h-16 max-w-lg mx-auto list-none m-0 p-0">
+      <ul className="flex h-16 max-w-lg lg:max-w-4xl mx-auto list-none m-0 p-0">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
@@ -85,12 +85,12 @@ export function BottomNav() {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={[
-                  "flex flex-col items-center justify-center h-full gap-1 transition-colors select-none min-h-[44px] rounded-xl mx-2 my-1",
-                  isActive ? "text-accent bg-accent/10" : "text-muted hover:text-text",
+                  "flex flex-col items-center justify-center h-full gap-1 transition-all select-none min-h-[44px] rounded-2xl mx-1.5 my-1",
+                  isActive ? "text-accent bg-accent/10 font-semibold" : "text-muted hover:text-text font-medium",
                 ].join(" ")}
               >
                 {item.icon}
-                <span className="text-[11px] font-medium">{item.label}</span>
+                <span className="text-[11px]">{item.label}</span>
               </Link>
             </li>
           );

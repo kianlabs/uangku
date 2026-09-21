@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { createTransaction } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { ApiResponseError } from "@/lib/api";
@@ -242,7 +243,7 @@ export default function TambahTransaksiPage() {
     <div className="min-h-screen flex flex-col bg-canvas">
       {/* Header */}
       <header className="w-full max-w-lg mx-auto px-4 py-4 flex items-center justify-between border-b border-border">
-        <h1 className="text-lg font-semibold text-text">Tambah Transaksi</h1>
+        <h1 className="text-xl font-bold text-text">Tambah Transaksi</h1>
         <Link
           href="/beranda"
           className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
@@ -280,7 +281,7 @@ export default function TambahTransaksiPage() {
               placeholder="kopi 20rb"
               className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
             />
-            <span className="text-xs text-muted">Format: deskripsi + angka + rb/ribu/k/jt/juta — atau isi form di bawah manual</span>
+            <span className="text-xs text-muted">cth: kopi 20rb → pengeluaran · gaji 5jt → pemasukan (<span className="font-mono text-text">rb/k/ribu</span> = ribuan, <span className="font-mono text-text">jt/juta</span> = jutaan)</span>
           </div>
 
           {/* Type toggle */}
@@ -297,26 +298,28 @@ export default function TambahTransaksiPage() {
                 type="button"
                 onClick={() => handleTypeChange("expense")}
                 className={[
-                  "flex-1 h-10 rounded-lg text-sm font-medium transition-colors",
+                  "flex-1 h-11 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5",
                   type === "expense"
                     ? "bg-surface text-text shadow-sm"
                     : "text-muted hover:text-text",
                 ].join(" ")}
                 aria-pressed={type === "expense"}
               >
+                <ArrowDown className="w-4 h-4" aria-hidden="true" />
                 Pengeluaran
               </button>
               <button
                 type="button"
                 onClick={() => handleTypeChange("income")}
                 className={[
-                  "flex-1 h-10 rounded-lg text-sm font-medium transition-colors",
+                  "flex-1 h-11 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5",
                   type === "income"
                     ? "bg-surface text-text shadow-sm"
                     : "text-muted hover:text-text",
                 ].join(" ")}
                 aria-pressed={type === "income"}
               >
+                <ArrowUp className="w-4 h-4" aria-hidden="true" />
                 Pemasukan
               </button>
             </div>
@@ -339,7 +342,6 @@ export default function TambahTransaksiPage() {
                 }}
                 placeholder="0"
                 autoComplete="off"
-                className="flex-1 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 focus:outline-none"
                 aria-invalid={errors.amount ? "true" : undefined}
                 aria-describedby={errors.amount ? "amount-error" : amountPreview ? "amount-preview" : undefined}
               />
@@ -602,7 +604,7 @@ export default function TambahTransaksiPage() {
           )}
 
           {/* Submit */}
-          <Button type="submit" disabled={isSubmitting || isCatLoading || (catError && categories.length === 0)}>
+          <Button type="submit" className="w-full" disabled={isSubmitting || isCatLoading || (catError && categories.length === 0)}>
             {isSubmitting ? "Menyimpan…" : catError && categories.length === 0 ? "Pilih kategori terlebih dahulu" : "Simpan Transaksi"}
           </Button>
         </form>

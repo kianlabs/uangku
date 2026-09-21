@@ -47,7 +47,7 @@ describe("KategoriPage", () => {
 
     render(<KategoriPage />);
 
-    expect(screen.getByText(/memuat/i)).toBeTruthy();
+    expect(screen.getByRole("status", { name: /memuat kategori/i })).toBeTruthy();
   });
 
   it("renders expense and income categories when loaded", async () => {

@@ -108,14 +108,7 @@ export default function BerandaPage() {
   const streak = calculateStreak(metrics.transaction_dates);
   const showStreakMilestone = streak > 0 && (streak === 7 || streak === 30 || streak % 30 === 0);
 
-  const isTight = parseFloat(metrics.safe_to_spend) <= 0;
-  const headerMood = blownBudget || isTight
-    ? "worried"
-    : showStreakMilestone
-      ? "celebrating"
-      : metrics.days_left <= 3
-        ? "thinking"
-        : "happy";
+  const monthFull = monthFullLabel(currentMonth);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -123,69 +116,100 @@ export default function BerandaPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="flex flex-col gap-6 pb-24"
+        className="flex flex-col gap-6 pb-24 lg:grid lg:grid-cols-5 lg:gap-8 lg:items-start"
       >
-        <Header userName={user.email.split("@")[0] || user.email} currentDate={now} mochiMood={headerMood} />
-
-        <BalanceCard
-          balance={data.balance}
-          monthly_income={data.monthly_income}
-          monthly_expense={data.monthly_expense}
-        />
-
-        <SafeToSpendCard
-          safeToSpendAmount={parseFloat(metrics.safe_to_spend)}
-          daysLeft={metrics.days_left}
-          remainingBalance={metrics.remaining_balance}
-          todayExpense={parseFloat(metrics.today_expense ?? "0") || 0}
-        />
-
-        {blownBudget && (
-          <MochiTip
-            mood="worried"
-            title="Ups, hampir jebol!"
-            message={`Kategori ${blownBudget.category_name} sudah ${Math.round(blownBudget.percentage ?? 0)}% dari anggaran. Rem dikit ya?`}
-            action={{ label: "Lihat riwayat", href: "/riwayat" }}
-          />
-        )}
-
-        {showStreakMilestone && (
-          <MochiTip
-            mood="celebrating"
-            title={`🔥 ${streak} hari catat!`}
-            message="Keren banget konsistennya. Lanjutkan ya!"
-          />
-        )}
-
-        <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
+        <div className="lg:col-span-5 sticky top-0 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-canvas/85 backdrop-blur-md">
+          <Header userName={user.email.split("@")[0] || user.email} currentDate={now} />
+        </div>
 
         {hasTransactions ? (
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Transaksi terbaru</h2>
-              <Link href="/riwayat" className="text-sm font-medium text-emerald-600 hover:underline">
-                Lihat semua
-              </Link>
+          <>
+            <div className="flex flex-col gap-6 lg:col-span-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 -mb-3">
+                Ringkasan · {monthFull}
+              </p>
+              <BalanceCard
+                balance={data.balance}
+                monthly_income={data.monthly_income}
+                monthly_expense={data.monthly_expense}
+              />
+
+              <SafeToSpendCard
+                safeToSpendAmount={parseFloat(metrics.safe_to_spend)}
+                daysLeft={metrics.days_left}
+                remainingBalance={metrics.remaining_balance}
+                todayExpense={parseFloat(metrics.today_expense ?? "0") || 0}
+              />
+
+              {blownBudget && (
+                <MochiTip
+                  mood="worried"
+                  title="Ups, hampir jebol!"
+                  message={`Kategori ${blownBudget.category_name} sudah ${Math.round(blownBudget.percentage ?? 0)}% dari anggaran. Rem dikit ya?`}
+                  action={{ label: "Lihat riwayat", href: "/riwayat" }}
+                />
+              )}
+
+              {showStreakMilestone && (
+                <MochiTip
+                  mood="celebrating"
+                  title={`🔥 ${streak} hari catat!`}
+                  message="Keren banget konsistennya. Lanjutkan ya!"
+                />
+              )}
+
+              <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
             </div>
-            <div className="flex flex-col divide-y divide-slate-100">
-              {data.recent_transactions.slice(0, 5).map((tx) => (
-                <RecentTxRow key={tx.id} tx={tx} />
-              ))}
+
+            <div className="flex flex-col gap-6 lg:col-span-2 lg:sticky lg:top-24">
+              <section className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-slate-900">Transaksi terbaru</h2>
+                  <Link href="/riwayat" className="text-sm font-medium text-emerald-600 hover:underline">
+                    Lihat semua
+                  </Link>
+                </div>
+                <div className="flex flex-col divide-y divide-slate-100">
+                  {data.recent_transactions.slice(0, 5).map((tx) => (
+                    <RecentTxRow key={tx.id} tx={tx} />
+                  ))}
+                </div>
+              </section>
             </div>
-          </section>
+          </>
         ) : (
-          <section className="flex flex-col items-center gap-4 py-12">
-            <Mascot size={128} mood="happy" />
-            <p className="text-base text-slate-500 text-center max-w-xs">
-              Belum ada catatan. Coba ketik: Makan siang 45k
-            </p>
+          <div className="lg:col-span-5 flex flex-col items-center gap-4 py-12">
+            <Mascot size={128} mood="excited" delay={-2.2} />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <h2 className="text-xl font-bold text-slate-900">Mulai catat keuanganmu</h2>
+              <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
+                Catat transaksi pertamamu — ringkasan saldo dan batas aman harian akan muncul di sini.
+              </p>
+            </div>
             <QuickAddInline onSave={() => setFetchKey((k) => k + 1)} />
-          </section>
+            <Link
+              href="/transaksi/tambah"
+              className="text-sm font-medium text-emerald-600 hover:underline"
+            >
+              atau isi form lengkap
+            </Link>
+          </div>
         )}
       </motion.div>
       <MochiGuide />
     </MotionConfig>
   );
+}
+
+const MONTH_NAMES_ID = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+function monthFullLabel(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  if (!y || !m || m < 1 || m > 12) return month;
+  return `${MONTH_NAMES_ID[m - 1]} ${y}`;
 }
 
 function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {

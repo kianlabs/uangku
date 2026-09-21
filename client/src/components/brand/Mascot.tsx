@@ -8,7 +8,8 @@ export type MascotMood =
   | "thinking"
   | "worried"
   | "sleepy"
-  | "celebrating";
+  | "celebrating"
+  | "ok";
 
 interface MascotProps {
   size?: number;
@@ -16,6 +17,11 @@ interface MascotProps {
   className?: string;
   animated?: boolean;
   mood?: MascotMood;
+  /**
+   * Offset fase loop (detik, negatif untuk mulai di tengah siklus).
+   * Dipakai agar beberapa Mochi di satu layar tidak bergerak sinkron.
+   */
+  delay?: number;
 }
 
 const SVG_ORIGIN = {
@@ -28,8 +34,9 @@ const EASE_IN_OUT = "easeInOut" as const;
 /**
  * Mochi — maskot pemandu UangKu (dompet biru + koin hijau).
  *
- * 6 mood dengan gaya animasi berbeda:
+ * 7 mood dengan gaya animasi berbeda:
  * - happy: mengambang + kedip + melambai (default)
++ * - ok: mengambang pelan + acungan jempol (rekomendasi aman baik-baik saja)
  * - excited: memantul + mata berbinar
  * - thinking: diam + gelembung "?" (khidmat)
  * - worried: gelisah + tetes keringat
@@ -44,11 +51,13 @@ export function Mascot({
   className = "",
   animated = true,
   mood = "happy",
+  delay = 0,
 }: MascotProps) {
   const loop = (duration: number) => ({
     duration,
     repeat: Infinity,
     ease: EASE_IN_OUT,
+    delay,
   });
 
   const motionProps = animated
@@ -75,6 +84,11 @@ export function Mascot({
                       animate: { rotate: [-1.2, 1.2, -1.2] },
                       transition: loop(5),
                     }
+                  : mood === "ok"
+                    ? {
+                        animate: { y: [0, -4, 0] },
+                        transition: loop(3.6),
+                      }
                   : mood === "sleepy"
                     ? {
                         animate: { y: [0, -3, 0], rotate: [0, 1.2, 0] },
@@ -87,7 +101,7 @@ export function Mascot({
         blink: {
           animate: { scaleY: [1, 1, 0.08, 1, 1] },
           transition: loop(
-            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : 4.4
+            mood === "worried" ? 2.2 : mood === "thinking" ? 6 : mood === "celebrating" ? 3.2 : mood === "ok" ? 4.8 : 4.4
           ),
         },
         wave: {
@@ -133,7 +147,7 @@ export function Mascot({
     : { bob: {}, blink: {}, wave: {}, coin: {}, drip: {}, floaty: {}, confetti: {} };
 
   const showBlush =
-    mood === "happy" || mood === "excited" || mood === "celebrating";
+    mood === "happy" || mood === "excited" || mood === "celebrating" || mood === "ok";
 
   return (
     <MotionConfig reducedMotion="user">
@@ -252,7 +266,7 @@ export function Mascot({
           <circle cx="122" cy="102" r="11" fill="#27865a" />
           <circle cx="122" cy="102" r="4" fill="#ffffff" />
 
-          {/* tangan kanan: melambai, kecuali sleepy (turun) */}
+          {/* tangan kanan: melambai, kecuali sleepy (turun) dan ok (acungan jempol) */}
           {mood === "sleepy" ? (
             <line
               x1="127"
@@ -263,6 +277,20 @@ export function Mascot({
               strokeWidth="7"
               strokeLinecap="round"
             />
+          ) : mood === "ok" ? (
+            <g>
+              <line
+                x1="127"
+                y1="100"
+                x2="140"
+                y2="84"
+                stroke="#024691"
+                strokeWidth="7"
+                strokeLinecap="round"
+              />
+              <circle cx="141" cy="80" r="7.5" fill="#024691" />
+              <rect x="137.5" y="64" width="7" height="15" rx="3.5" fill="#024691" />
+            </g>
           ) : (
             <motion.g
               {...motionProps.wave}

@@ -9,12 +9,12 @@ interface SpendingDonutProps {
 }
 
 const PALETTE = [
-  "oklch(35% 0.08 160)", // accent
-  "oklch(45% 0.07 160)",
-  "oklch(55% 0.06 160)",
-  "oklch(65% 0.05 160)",
-  "oklch(75% 0.04 160)",
-  "oklch(82% 0.03 160)",
+  "#27865a", // brand green
+  "#2563eb", // blue
+  "#d97706", // amber
+  "#e11d48", // rose
+  "#7c3aed", // violet
+  "#64748b", // slate (remainder)
 ];
 
 // SVG murni (~30 baris path) — tanpa library chart eksternal.
@@ -105,15 +105,22 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
             y={92}
             textAnchor="middle"
             className="fill-text"
-            fontSize={13}
+            fontSize={12}
             fontWeight={700}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {formatRupiah(total)}
           </text>
         </svg>
-        <ul className="flex flex-col gap-2 flex-1">
+        <ul className="flex flex-col gap-1 flex-1">
           {slices.map((s) => (
-            <li key={s.name} className="flex items-center gap-2">
+            <li
+              key={s.name}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 -mx-2"
+              style={{
+                background: `linear-gradient(to right, ${s.color}24 ${s.pct}%, transparent ${s.pct}%)`,
+              }}
+            >
               <span
                 className="h-3 w-3 shrink-0 rounded-full"
                 style={{ backgroundColor: s.color }}

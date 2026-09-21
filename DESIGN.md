@@ -104,6 +104,7 @@ konteks. Implementasi: `client/src/components/brand/Mascot.tsx`
 | Mood | Ciri | Dipakai saat |
 |---|---|---|
 | `happy` | senyum, kedip, melambai | default; empty state netral, sapaan |
+| `ok` | senyum, acungan jempol | rekomendasi aman baik-baik saja (SafeToSpend) |
 | `excited` | mata berbinar, mulut terbuka, memantul | user menyelesaikan sesuatu |
 | `thinking` | lirikan, mulut datar, gelembung "?" | filter kosong / tidak ketemu |
 | `worried` | alis naik, mulut zigzag, keringat | anggaran ≥90%, peringatan |
@@ -131,6 +132,7 @@ persis) — implementasi di `Mascot.tsx`:
 | Mood | Badan | Mata/tangan |
 |---|---|---|
 | `happy` | melayang 3.2s | kedip 4.4s, lambai 2.4s |
+| `ok` | melayang 3.6s | kedip 4.8s, tangan diam (pose jempol) |
 | `excited` | hop miring 1.6s | lambai lebar 1.2s, koin cepat |
 | `thinking` | goyang rotasi 5s (nyaris diam) | kedip lambat 6s, lambai pelan |
 | `worried` | gemetar 1.1s | kedip cepat 2.2s, keringat menetes |

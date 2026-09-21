@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, createElement } from "react";
 import Link from "next/link";
 import { listTransactions } from "@/lib/transactions";
 import type { Transaction, TransactionType } from "@/lib/types";
 import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
+import { getCategoryIcon } from "@/lib/category-icons";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { todayLocalISO } from "@/lib/date";
 import { Mascot } from "@/components/brand/Mascot";
@@ -234,7 +235,8 @@ export default function RiwayatPage() {
           <button
             key={m.value}
             onClick={() => handleMonthFilter(m.value)}
-            className={`px-4 h-9 rounded-full text-sm font-medium transition-all ${
+            aria-pressed={monthFilter === m.value}
+            className={`px-4 h-11 rounded-full text-sm font-medium transition-all ${
               monthFilter === m.value
                 ? "bg-accent text-accent-ink"
                 : "bg-surface-muted text-text hover:bg-surface-muted/80 active:scale-95"
@@ -249,7 +251,7 @@ export default function RiwayatPage() {
           value={monthFilter === "all" || monthFilter === thisMonth || monthFilter === lastMonth ? "" : monthFilter}
           max={thisMonth}
           onChange={(e) => e.target.value && handleMonthFilter(e.target.value)}
-          className="px-3 h-9 rounded-full text-sm font-medium border border-border bg-surface text-text"
+          className="px-3 h-11 rounded-full text-sm font-medium border border-border bg-surface text-text"
         />
       </div>
 
@@ -259,7 +261,8 @@ export default function RiwayatPage() {
           <button
             key={f}
             onClick={() => handleFilterChange(f)}
-            className={`px-4 h-9 rounded-full text-sm font-medium transition-all ${
+            aria-pressed={filter === f}
+            className={`px-4 h-11 rounded-full text-sm font-medium transition-all ${
               filter === f
                 ? "bg-accent text-accent-ink"
                 : "bg-surface-muted text-text hover:bg-surface-muted/80 active:scale-95"
@@ -272,7 +275,7 @@ export default function RiwayatPage() {
           type="button"
           onClick={() => setShowMore((v) => !v)}
           aria-expanded={showMore}
-          className={`px-4 h-9 rounded-full text-sm font-medium transition-all ${
+          className={`px-4 h-11 rounded-full text-sm font-medium transition-all ${
             hasClientFilter
               ? "bg-accent text-accent-ink"
               : "border border-border text-text hover:bg-surface-muted"
@@ -283,7 +286,7 @@ export default function RiwayatPage() {
         {hasAnyFilter && (
           <button
             onClick={handleResetFilter}
-            className="px-4 h-9 rounded-full text-sm font-medium text-muted hover:text-text transition-colors"
+            className="px-4 h-11 rounded-full text-sm font-medium text-muted hover:text-text transition-colors"
           >
             Reset
           </button>
@@ -300,7 +303,8 @@ export default function RiwayatPage() {
                 <button
                   key={s}
                   onClick={() => handleSourceFilter(s === "all" ? "all" : s)}
-                  className={`px-4 h-9 rounded-full text-sm font-medium transition-all ${
+                  aria-pressed={sourceFilter === (s === "all" ? "all" : s)}
+                  className={`px-4 h-11 rounded-full text-sm font-medium transition-all ${
                     sourceFilter === (s === "all" ? "all" : s)
                       ? "bg-accent text-accent-ink"
                       : "bg-surface-muted text-text hover:bg-surface-muted/80 active:scale-95"
@@ -318,7 +322,8 @@ export default function RiwayatPage() {
                 <button
                   key={d}
                   onClick={() => handleDebtFilter(d)}
-                  className={`px-4 h-9 rounded-full text-sm font-medium transition-all ${
+                  aria-pressed={debtFilter === d}
+                  className={`px-4 h-11 rounded-full text-sm font-medium transition-all ${
                     debtFilter === d
                       ? "bg-accent text-accent-ink"
                       : "bg-surface-muted text-text hover:bg-surface-muted/80 active:scale-95"
@@ -431,38 +436,10 @@ function TxRow({ tx }: { tx: Transaction }) {
       className="group flex items-center gap-3 py-3 px-1 hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
     >
       <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-text transition-colors">
-        {isIncome ? (
-          <svg
-            aria-hidden="true"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-        ) : (
-          <svg
-            aria-hidden="true"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 5v14M19 12l-7 7-7-7" />
-          </svg>
-        )}
+        {createElement(getCategoryIcon(tx.category.name), { className: "w-5 h-5", "aria-hidden": true })}
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <p className="text-sm font-semibold text-text truncate">
+        <p className="text-base font-medium text-text truncate">
           {tx.description || tx.category.name}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -481,7 +458,7 @@ function TxRow({ tx }: { tx: Transaction }) {
         </div>
       </div>
       <p
-        className={`text-sm font-bold tabular-nums shrink-0 ${
+        className={`text-base font-bold tabular-nums shrink-0 ${
           isIncome ? "text-income" : "text-expense"
         }`}
       >

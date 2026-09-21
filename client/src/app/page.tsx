@@ -80,7 +80,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Fitur */}
-        <section aria-label="Fitur utama" className="flex flex-col gap-4">
+        <section aria-label="Fitur utama" className="grid gap-4 md:grid-cols-3">
           {FEATURES.map((f) => (
             <div
               key={f.title}

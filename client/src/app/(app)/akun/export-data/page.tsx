@@ -55,7 +55,7 @@ export default function ExportDataPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-text">Export Data</h1>
+        <h1 className="text-xl font-bold text-text">Export Data</h1>
         <p className="text-sm text-muted">
           Download transaksi Anda dalam format CSV
         </p>

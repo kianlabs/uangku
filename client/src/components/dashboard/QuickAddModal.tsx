@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
@@ -11,6 +11,9 @@ interface QuickAddModalProps {
 }
 
 export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
+  const closeTimer = useRef<number | null>(null);
+  const [saved, setSaved] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
@@ -22,6 +25,10 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = prevOverflow;
+      if (closeTimer.current !== null) {
+        clearTimeout(closeTimer.current);
+        closeTimer.current = null;
+      }
     };
   }, [open, onClose]);
 
@@ -61,23 +68,37 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
-        <Mascot size={72} mood="happy" />
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h2 className="text-lg font-bold text-text">Catat cepat</h2>
-          <p className="text-sm text-muted">Ketik contoh: Makan siang 45k</p>
-        </div>
+        {!saved && <Mascot size={72} mood="happy" />}
+        {!saved && (
+          <div className="flex flex-col items-center gap-1 text-center">
+            <h2 className="text-lg font-bold text-text">Catat cepat</h2>
+          </div>
+        )}
         <QuickAddInline
           onSave={() => {
             window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
+            // Kasih waktu lihat Mochi celebrating, lalu tutup otomatis.
+            if (closeTimer.current !== null) clearTimeout(closeTimer.current);
+            closeTimer.current = window.setTimeout(onClose, 1400);
+          }}
+          onSuccessChange={(s) => {
+            setSaved(s);
+            // User pilih "Catat lagi" → batalkan tutup otomatis.
+            if (!s && closeTimer.current !== null) {
+              clearTimeout(closeTimer.current);
+              closeTimer.current = null;
+            }
           }}
         />
-        <Link
-          href="/transaksi/tambah"
-          onClick={onClose}
-          className="text-sm font-medium text-accent hover:underline"
-        >
-          atau isi form manual
-        </Link>
+        {!saved && (
+          <Link
+            href="/transaksi/tambah"
+            onClick={onClose}
+            className="text-sm font-medium text-accent hover:underline"
+          >
+            atau isi form manual
+          </Link>
+        )}
       </div>
     </div>
   );

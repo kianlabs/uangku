@@ -9,7 +9,7 @@ export default function AppLayout({
   return (
     <div className="min-h-screen flex flex-col bg-canvas">
       <main
-        className="flex-1 w-full max-w-lg mx-auto px-4 pt-6"
+        className="flex-1 w-full max-w-lg lg:max-w-4xl mx-auto px-4 lg:px-6 pt-6"
         style={{
           paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)",
         }}

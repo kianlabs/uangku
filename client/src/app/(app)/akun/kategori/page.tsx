@@ -76,9 +76,13 @@ export default function KategoriPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-text">Kategori</h1>
-        <p className="text-sm text-muted">Memuat…</p>
+      <div className="flex flex-col gap-6" role="status" aria-label="Memuat kategori">
+        <h1 className="text-xl font-bold text-text">Kategori</h1>
+        <div className="flex flex-col gap-3 animate-pulse">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-surface-muted" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -86,7 +90,7 @@ export default function KategoriPage() {
   if (error) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-text">Kategori</h1>
+        <h1 className="text-xl font-bold text-text">Kategori</h1>
         <p role="alert" className="text-sm text-danger">{error}</p>
         <Button variant="secondary" onClick={load}>
           Coba lagi
@@ -98,7 +102,7 @@ export default function KategoriPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text">Kategori</h1>
+        <h1 className="text-xl font-bold text-text">Kategori</h1>
         {!showAddForm && (
           <Button size="sm" onClick={() => setShowAddForm(true)}>
             Tambah
