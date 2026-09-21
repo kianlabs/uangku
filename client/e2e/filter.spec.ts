@@ -11,6 +11,7 @@
 
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 import { registerAndLogin, uniqueEmail } from "./helpers/auth";
+import { submitTransaksi } from "./helpers/forms";
 
 let sharedEmail: string;
 let ctx: BrowserContext;
@@ -36,8 +37,7 @@ test.describe("Filter Transaksi", () => {
     await (await waitCategory(page)).selectOption(await firstCatValue(page));
     await page.getByLabel("Tanggal").fill(today);
     await page.getByLabel("Catatan").fill("filter-income-seed");
-    await page.getByRole("button", { name: "Simpan Transaksi" }).click();
-    await page.waitForURL("**/beranda", { timeout: 10_000 });
+    await submitTransaksi(page);
 
     // Expense 1
     await page.goto("/transaksi/tambah");
@@ -45,8 +45,7 @@ test.describe("Filter Transaksi", () => {
     await (await waitCategory(page)).selectOption(await firstCatValue(page));
     await page.getByLabel("Tanggal").fill(today);
     await page.getByLabel("Catatan").fill("filter-expense-seed-1");
-    await page.getByRole("button", { name: "Simpan Transaksi" }).click();
-    await page.waitForURL("**/beranda", { timeout: 10_000 });
+    await submitTransaksi(page);
 
     // Expense 2
     await page.goto("/transaksi/tambah");
@@ -54,8 +53,7 @@ test.describe("Filter Transaksi", () => {
     await (await waitCategory(page)).selectOption(await firstCatValue(page));
     await page.getByLabel("Tanggal").fill(today);
     await page.getByLabel("Catatan").fill("filter-expense-seed-2");
-    await page.getByRole("button", { name: "Simpan Transaksi" }).click();
-    await page.waitForURL("**/beranda", { timeout: 10_000 });
+    await submitTransaksi(page);
 
     await page.close();
   });

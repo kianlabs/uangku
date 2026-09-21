@@ -11,6 +11,7 @@
 
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 import { registerAndLogin, uniqueEmail } from "./helpers/auth";
+import { submitTransaksi } from "./helpers/forms";
 
 // Satu user + satu sesi untuk semua test dalam describe ini
 let sharedEmail: string;
@@ -62,10 +63,9 @@ test.describe("Transaksi", () => {
       await page.getByLabel("Tanggal").fill(todayISO());
 
       // Submit
-      await page.getByRole("button", { name: "Simpan Transaksi" }).click();
+      await submitTransaksi(page);
 
       // Harus redirect ke /beranda setelah submit berhasil
-      await page.waitForURL("**/beranda", { timeout: 10_000 });
       await expect(page).toHaveURL(/\/beranda/);
     } finally {
       await page.close();
@@ -87,8 +87,7 @@ test.describe("Transaksi", () => {
 
       await page.getByLabel("Tanggal").fill(todayISO());
       await page.getByLabel("Catatan").fill(desc);
-      await page.getByRole("button", { name: "Simpan Transaksi" }).click();
-      await page.waitForURL("**/beranda", { timeout: 10_000 });
+      await submitTransaksi(page);
 
       // Cek di riwayat
       await page.goto("/riwayat");
@@ -161,8 +160,7 @@ test.describe("Transaksi", () => {
 
       await page.getByLabel("Tanggal").fill(todayISO());
       await page.getByLabel("Catatan").fill(desc);
-      await page.getByRole("button", { name: "Simpan Transaksi" }).click();
-      await page.waitForURL("**/beranda", { timeout: 10_000 });
+      await submitTransaksi(page);
 
       // Temukan transaksi di riwayat
       await page.goto("/riwayat");
@@ -200,9 +198,8 @@ test.describe("Transaksi", () => {
       await categorySelect.selectOption(await firstOption.getAttribute("value") ?? "");
 
       await page.getByLabel("Tanggal").fill(todayISO());
-      await page.getByRole("button", { name: "Simpan Transaksi" }).click();
+      await submitTransaksi(page);
 
-      await page.waitForURL("**/beranda", { timeout: 10_000 });
       await expect(page).toHaveURL(/\/beranda/);
     } finally {
       await page.close();
@@ -214,8 +211,8 @@ test.describe("Transaksi", () => {
     try {
       await page.goto("/transaksi/tambah");
 
-      // Coba submit tanpa isi nominal
-      await page.getByRole("button", { name: "Simpan Transaksi" }).click();
+      // Coba submit tanpa isi nominal (tanpa redirect)
+      await submitTransaksi(page, { waitRedirect: false });
 
       // Error validasi muncul
       await expect(page.getByText(/Nominal harus/i)).toBeVisible({ timeout: 3_000 });

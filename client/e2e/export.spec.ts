@@ -6,6 +6,7 @@
 
 import { test, expect } from "@playwright/test";
 import { registerAndLogin, uniqueEmail } from "./helpers/auth";
+import { submitTransaksi } from "./helpers/forms";
 
 let sharedEmail: string;
 
@@ -39,8 +40,7 @@ test.describe("Export", () => {
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     await page.getByLabel("Tanggal").fill(today);
-    await page.getByRole("button", { name: "Simpan Transaksi" }).click();
-    await page.waitForURL("**/beranda", { timeout: 10_000 });
+    await submitTransaksi(page);
 
     await page.goto("/akun/export-data");
     const downloadPromise = page.waitForEvent("download", { timeout: 15_000 });
