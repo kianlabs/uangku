@@ -30,3 +30,10 @@ scripts/orchestra.sh
 
 # Hermes (agent plans)
 .hermes/
+
+# Freebuff (metadata tool lokal)
+.freebuff/
+
+# Config & artefak audit visual (lokal saja)
+client/playwright.local.config.ts
+client/shot-*.png
