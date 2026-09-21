@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/categories";
 import { deleteBudget, listBudgets, upsertBudget } from "@/lib/budgets";
 import { formatRupiah } from "@/lib/format";
 import type { Budget, Category, TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { getCategoryColor, getCategoryIcon } from "@/lib/category-icons";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -362,13 +363,19 @@ function CategoryRow({
   return (
     <div className="flex flex-col gap-2 p-4">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col">
+        <div className="flex items-center gap-3 min-w-0">
+          {(() => {
+            const color = getCategoryColor(category.name);
+            return <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${color.background}`}>{createElement(getCategoryIcon(category.name), { className: `w-4 h-4 ${color.foreground}`, "aria-hidden": true })}</span>;
+          })()}
+          <div className="flex flex-col min-w-0">
           <span className="text-base text-text">{category.name}</span>
           {budget?.amount && (
             <span className="text-xs text-muted">
               Anggaran <span className="num">{formatRupiah(budget.amount)}</span>/bln
             </span>
           )}
+          </div>
         </div>
         <div className="flex gap-2">
             <button

@@ -72,6 +72,7 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
         <Mascot
           size={64}
           mood={isTight || isDailySpent ? "worried" : "ok"}
+          variant="peace"
           label="Mochi mempresentasikan rekomendasi belanja"
           className="shrink-0"
           delay={-1.3}

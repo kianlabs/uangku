@@ -88,8 +88,31 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 
 ### F. Navigasi Bawah (`BottomNav.tsx`) & FAB (`FAB.tsx`)
 
-- **BottomNav:** Fixed di bagian bawah layar berlatar `bg-white` dengan border atas `border-slate-200`. Item aktif ditandai dengan ikon berwarna `emerald-600` dan indikator pil halus.
-- **FAB:** Tombol `(+)` melayang di pojok kanan bawah berwarna `bg-emerald-600 hover:bg-emerald-700` dengan efek bayangan mencolok (`shadow-lg`).
+- **BottomNav:** Fixed di bagian bawah layar. Tiga tab: **Beranda**,
+  **Riwayat**, **Anggaran** — item aktif ditandai pil `accent` yang
+  meluncur halus antar ikon (layoutId, lihat §6).
+- **FAB:** Tombol `(+)` melayang di pojok kanan bawah. Saat dialog Catat
+  Cepat terbuka, ikon + berputar 45° menjadi ×.
+
+### G. Halaman Anggaran (`/anggaran`)
+
+- Tab ketiga navigasi — perencanaan bulanan (bukan status harian).
+- **Hero Mochi terpusat di atas** (`mood="excited"`, animasi aktif, judul
+  "Rencanakan belanjamu") — pola hero maskot §5, satu Mochi per layar.
+- **Kartu ringkasan:** total dianggarkan + progress bar total (emerald →
+  amber ≥75% → rose ≥90%, bahasa warna BudgetWarning §3D) + jumlah kategori
+  berisiko.
+- **Satu layar semua kategori pengeluaran** (urut abjad): input nominal
+  inline + progress mini per baris. Pola input uang: `Rp` prefix, angka
+  terformat `groupThousands`, **select-all saat fokus** (ketikan mengganti,
+  bukan menambah — cegah nilai korup), autosave on blur/Enter dengan flash
+  "Tersimpan". Kosongkan + blur = hapus anggaran.
+- Link "Kelola kategori" → `/pengaturan/kategori`.
+
+### H. Halaman Pengaturan (`/pengaturan`)
+
+- Profil, tanggal gajian, menu Kategori & Export, keluar. Diakses dari ikon
+  gear di Header (bukan tab navigasi).
 
 ---
 
@@ -172,6 +195,11 @@ persis) — implementasi di `Mascot.tsx`:
   `/beranda`: Mochi boleh tampil di beberapa kartu sekaligus (Header,
   SafeToSpend, tips refleksi, kartu streak) sebagai komposisi brand.
   Di halaman lain aturan ini tetap berlaku ketat.
+- **Hero maskot di sub-halaman (`/anggaran`, `/riwayat`):** Mochi terpusat
+  (88px, animasi aktif) di bawah judul halaman dengan satu kalimat konteks.
+  Ekspresi dibedakan per halaman — anggaran `excited`, riwayat `happy` —
+  agar tiap permukaan punya karakter sendiri. Di riwayat, hero disembunyikan
+  saat daftar kosong supaya Mochi empty-state tidak dobel di satu layar.
 - Selalu ditemani teks/aksi jelas — Mochi tidak pernah berdiri sendiri
   tanpa pesan atau next action.
 - Interaktif (tur, tips yang bisa ditutup) tidak boleh memblokir alur

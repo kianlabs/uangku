@@ -95,7 +95,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
         transition={{ duration: 0.2 }}
         className="flex flex-col items-center gap-2 py-4 text-center"
       >
-        <Mascot size={88} mood="celebrating" label="Mochi merayakan catatan tersimpan" />
+        <Mascot size={88} mood="celebrating" variant="sparkle" label="Mochi merayakan catatan tersimpan" />
         <p className="text-sm text-accent font-semibold">Tersimpan!</p>
         <button
           onClick={() => setShowSuccess(false)}

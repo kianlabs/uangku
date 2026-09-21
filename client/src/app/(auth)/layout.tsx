@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UangkuLogo } from "@/components/brand/UangkuLogo";
+import { PageTransition } from "@/components/ui/PageTransition";
 
 export default function AuthLayout({
   children,
@@ -34,7 +35,7 @@ export default function AuthLayout({
         <div className="w-full max-w-sm flex flex-col items-center gap-6">
           <UangkuLogo markWidth={132} priority />
           <div className="w-full rounded-2xl bg-surface border border-border shadow-sm p-6">
-            {children}
+            <PageTransition>{children}</PageTransition>
           </div>
         </div>
       </main>

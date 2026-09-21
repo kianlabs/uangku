@@ -199,7 +199,7 @@ export function MochiGuide() {
         style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
       >
         <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center">
-          <Mascot size={128} mood={current.mood} label="Mochi memandumu" />
+          <Mascot size={128} mood={current.mood} variant={step % 2 === 0 ? "bow" : "peace"} label="Mochi memandumu" />
           <div className="flex items-center gap-1.5" aria-hidden="true">
             {STEPS.map((s, i) => (
               <span

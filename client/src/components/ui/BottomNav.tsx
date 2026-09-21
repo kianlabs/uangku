@@ -50,8 +50,8 @@ const navItems = [
     ),
   },
   {
-    href: "/akun",
-    label: "Akun",
+    href: "/anggaran",
+    label: "Anggaran",
     icon: (
       <svg
         aria-hidden="true"
@@ -64,8 +64,9 @@ const navItems = [
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+        <path d="M21 12V7H5a2 2 0 010-4h14v4" />
+        <path d="M3 5v14a2 2 0 002 2h16v-5" />
+        <path d="M18 12a2 2 0 000 4h4v-4h-4z" />
       </svg>
     ),
   },
@@ -114,7 +115,7 @@ export function BottomNav() {
               aria-label="Catat cepat"
               aria-haspopup="dialog"
               aria-expanded={modalOpen}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:bg-accent/90 active:scale-95 transition-all select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="flex items-center justify-center w-14 h-14 rounded-full bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:bg-accent/90 active:scale-95 transition-all select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <svg
                 aria-hidden="true"

@@ -76,7 +76,7 @@ def test_list_returns_own_categories(client):
     r = client.get("/api/v1/categories")
     assert r.status_code == 200
     assert "items" in r.json()
-    assert len(r.json()["items"]) == 13  # default categories seeded on register
+    assert len(r.json()["items"]) == 22  # default categories seeded on register
 
 
 def test_list_filter_by_type_expense(client):

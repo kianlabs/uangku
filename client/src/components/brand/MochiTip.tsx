@@ -39,7 +39,7 @@ export function MochiTip({
     <div
       className={`flex gap-3 p-4 rounded-2xl bg-surface border border-border shadow-sm ${className}`}
     >
-      <Mascot size={56} mood={mood} animated={mascotAnimated} className="shrink-0" />
+      <Mascot size={56} mood={mood} variant="sparkle" animated={mascotAnimated} className="shrink-0" />
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         {title && (
           <p className="text-sm font-bold text-text">{title}</p>

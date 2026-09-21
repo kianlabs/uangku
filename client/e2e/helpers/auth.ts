@@ -95,7 +95,7 @@ export async function loginAs(
 
 /** Logout dari akun dan tunggu redirect ke /masuk. */
 export async function logout(page: Page): Promise<void> {
-  await page.goto("/akun");
+  await page.goto("/pengaturan");
   await page.getByRole("button", { name: /Keluar/i }).click();
   await page.waitForURL("**/masuk", { timeout: 10_000 });
 }

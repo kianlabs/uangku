@@ -152,17 +152,7 @@ export default function BerandaPage() {
   const hasMonthTransactions = data.recent_transactions && data.recent_transactions.length > 0;
   const streak = calculateStreak(metrics.transaction_dates);
   const showStreakMilestone = streak > 0 && (streak === 7 || streak === 30 || streak % 30 === 0);
-  const maxBudgetPct = budgets.reduce((m, b) => Math.max(m, b.percentage ?? 0), 0);
-
-  const monthlyIncomeNum = parseFloat(data.monthly_income) || 0;
   const monthlyExpenseNum = parseFloat(data.monthly_expense) || 0;
-  const expenseRatio = monthlyIncomeNum > 0 ? monthlyExpenseNum / monthlyIncomeNum : monthlyExpenseNum > 0 ? 1 : 0;
-  const weather =
-    maxBudgetPct >= 90 || parseFloat(metrics.safe_to_spend) <= 0
-      ? "hujan"
-      : maxBudgetPct >= 75 || expenseRatio >= 0.75
-        ? "berawan"
-        : "cerah";
 
   const weekTotal = parseFloat(metrics.week_expense_total) || 0;
   const hasExpense = data.expense_by_category.length > 0 && parseFloat(data.monthly_expense) > 0;
@@ -180,7 +170,7 @@ export default function BerandaPage() {
         className="flex flex-col gap-4 pb-4 lg:grid lg:grid-cols-6 lg:gap-5 lg:items-start"
       >
         <div className="lg:col-span-6 sticky top-0 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5">
-          <Header userName={user.email.split("@")[0] || user.email} currentDate={now} weather={weather} />
+          <Header userName={user.email.split("@")[0] || user.email} currentDate={now} />
         </div>
         {offlineBanner && <div className="lg:col-span-6">{offlineBanner}</div>}
 
@@ -216,8 +206,8 @@ export default function BerandaPage() {
               />
             </div>
 
-            <div className="flex items-center gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
-              <Mascot size={48} mood={streak > 0 ? "celebrating" : "happy"} />
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3">
+              <Mascot size={48} mood={streak > 0 ? "celebrating" : "happy"} variant="bow" />
               <Flag className="w-5 h-5 text-accent shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0">
                 <p className="num text-base font-bold text-slate-900">
@@ -228,7 +218,7 @@ export default function BerandaPage() {
             </div>
 
             {metrics.daily_expense_7d && metrics.daily_expense_7d.length === 7 && (
-              <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
+              <div className="p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3">
                 <Sparkline data={metrics.daily_expense_7d} label="Pengeluaran 7 hari" />
                 <p className="text-xs text-slate-500 mt-2">
                   Total minggu ini{" "}
@@ -242,6 +232,7 @@ export default function BerandaPage() {
                 <MochiTip
                   mood="worried"
                   title="Ups, hampir jebol!"
+                  mascotAnimated
                   message={`Kategori ${blownBudget.category_name} sudah ${Math.round(blownBudget.percentage ?? 0)}% dari anggaran. Rem dikit ya?`}
                   action={{ label: "Lihat riwayat", href: "/riwayat" }}
                 />
@@ -258,22 +249,8 @@ export default function BerandaPage() {
               </div>
             )}
 
-            {data.transaction_count > 0 && (
-              <div className="grid grid-cols-2 gap-4 lg:col-span-6 lg:grid-cols-6">
-                <div className="flex flex-col gap-1 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaksi</span>
-                  <span className="num text-xl font-bold text-slate-900">{data.transaction_count}×</span>
-                  <span className="text-xs text-slate-400">bulan ini</span>
-                </div>
-                <div className="flex flex-col gap-1 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Menuju gajian</span>
-                  <span className="num text-xl font-bold text-slate-900">{metrics.days_left} hari</span>
-                </div>
-              </div>
-            )}
-
             {momDelta !== null && (
-              <div className="flex items-center gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm lg:col-span-6">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 lg:col-span-6">
                 {momDelta < 0 ? (
                   <TrendingDown className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden="true" />
                 ) : momDelta > 0 ? (
@@ -310,7 +287,7 @@ export default function BerandaPage() {
               <section className={`flex flex-col gap-3 ${hasExpense ? "lg:col-span-3" : "lg:col-span-6"}`}>
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-slate-900">Anggaran</h2>
-                  <Link href="/akun/kategori" className="text-sm font-medium text-emerald-600 hover:underline">
+                  <Link href="/pengaturan/kategori" className="text-sm font-medium text-emerald-600 hover:underline">
                     Kelola
                   </Link>
                 </div>
@@ -345,14 +322,22 @@ export default function BerandaPage() {
                   mood="thinking"
                   mascotSize={88}
                   title="Belum ada catatan bulan ini"
-                  description="Pencet tombol + , contoh: Makan siang 45k"
+                  description="Mulai dari satu catatan kecil hari ini."
+                  actions={
+                    <Link
+                      href="/transaksi/tambah"
+                      className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+                    >
+                      Catat transaksi
+                    </Link>
+                  }
                 />
               )}
             </div>
           </>
         ) : (
           <div className="lg:col-span-6 flex flex-col items-center gap-4 py-12">
-            <Mascot size={128} mood="excited" delay={-2.2} />
+            <Mascot size={128} mood="excited" variant="peace" delay={-2.2} />
             <div className="flex flex-col items-center gap-1 text-center">
               <h2 className="text-xl font-bold text-slate-900">Mulai catat keuanganmu</h2>
               <p className="text-sm text-slate-500 leading-relaxed max-w-xs">

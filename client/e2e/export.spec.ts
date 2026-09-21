@@ -42,7 +42,7 @@ test.describe("Export", () => {
     await page.getByLabel("Tanggal").fill(today);
     await submitTransaksi(page);
 
-    await page.goto("/akun/export-data");
+    await page.goto("/pengaturan/export-data");
     const downloadPromise = page.waitForEvent("download", { timeout: 15_000 });
     await page.getByRole("button", { name: "Unduh CSV" }).click();
     const download = await downloadPromise;

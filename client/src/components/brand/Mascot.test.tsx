@@ -32,4 +32,12 @@ describe("Mascot", () => {
     render(<Mascot mood={mood} animated={false} />);
     expect(screen.getByRole("img", { name: "Maskot UangKu" })).toBeTruthy();
   });
+
+  it.each(["classic", "glasses", "peace", "cap", "bow", "sparkle"] as const)(
+    "renders %s variant",
+    (variant) => {
+      render(<Mascot variant={variant} animated={false} />);
+      expect(screen.getByRole("img").querySelector("svg")?.getAttribute("data-mascot-variant")).toBe(variant);
+    },
+  );
 });

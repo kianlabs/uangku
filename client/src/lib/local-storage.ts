@@ -9,6 +9,7 @@
  */
 
 import type { UserPreferences } from "./types";
+import type { CreateTransactionParams } from "./transactions";
 
 export interface TransactionSource {
   source: "Tunai" | "Bank" | "E-wallet";
@@ -30,6 +31,24 @@ const SOURCES_KEY = "uangku_tx_sources";
 const DEBT_TAGS_KEY = "uangku_debt_tags";
 const PAYDAY_KEY = "uangku_payday";
 const TEMPLATES_KEY = "uangku_templates";
+const OFFLINE_QUEUE_KEY = "uangku_offline_transactions";
+const RECURRING_KEY = "uangku_recurring_transactions";
+
+export interface OfflineTransaction {
+  id: string;
+  payload: CreateTransactionParams;
+  queuedAt: string;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  day: number;
+  active: boolean;
+  lastConfirmed?: string;
+}
 
 // ---------------------------------------------------------------------------
 // Hydration — seed localStorage dari data server (dipanggil di AuthContext)
@@ -82,6 +101,46 @@ export function clearLocalCache(): void {
   localStorage.removeItem(SOURCES_KEY);
   localStorage.removeItem(DEBT_TAGS_KEY);
   localStorage.removeItem(TEMPLATES_KEY);
+  localStorage.removeItem(OFFLINE_QUEUE_KEY);
+  localStorage.removeItem(RECURRING_KEY);
+}
+
+export function getRecurringTransactions(): RecurringTransaction[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const value = JSON.parse(localStorage.getItem(RECURRING_KEY) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch { return []; }
+}
+
+export function saveRecurringTransactions(items: RecurringTransaction[]): void {
+  localStorage.setItem(RECURRING_KEY, JSON.stringify(items));
+}
+
+export function enqueueOfflineTransaction(payload: CreateTransactionParams): OfflineTransaction {
+  const item = { id: crypto.randomUUID(), payload, queuedAt: new Date().toISOString() };
+  const queue = getOfflineTransactions();
+  queue.push(item);
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  window.dispatchEvent(new CustomEvent("uangku:offline-queue-changed"));
+  return item;
+}
+
+export function getOfflineTransactions(): OfflineTransaction[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function replaceOfflineTransactions(queue: OfflineTransaction[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  window.dispatchEvent(new CustomEvent("uangku:offline-queue-changed"));
 }
 
 // ---------------------------------------------------------------------------

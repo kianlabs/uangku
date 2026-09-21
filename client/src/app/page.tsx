@@ -49,19 +49,14 @@ export default async function LandingPage() {
         {/* Hero */}
         <section className="grid gap-10 pt-8 md:grid-cols-2 md:items-center md:pt-14">
           <div className="flex flex-col items-start gap-5">
-            <span className="inline-flex items-center gap-2 rounded-full bg-surface border border-border pl-1.5 pr-4 py-1.5 text-xs font-medium text-muted">
-              <Mascot size={28} animated={false} />
-              Ditemani Mochi, agen keuanganmu
-            </span>
-            <h1 className="text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight text-text">
-              Catat keuangan harianmu dengan tenang.
+            <h1 className="landing-reveal text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight text-text">
+              Catat yang masuk. Pahami yang keluar. Tetap tenang.
             </h1>
-            <p className="text-base text-muted leading-relaxed max-w-md">
-              UangKu expense tracker sederhana: catat pemasukan dan
-              pengeluaran dalam hitungan detik, pantau anggaran, dan tahu
-              batas aman belanjamu setiap hari.
+            <p className="landing-reveal landing-delay-1 text-base text-muted leading-relaxed max-w-md">
+              UangKu membantumu mencatat uang sehari-hari, melihat pola
+              pengeluaran, dan tahu kapan harus mengerem sebelum akhir bulan.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="landing-reveal landing-delay-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 href="/daftar"
                 className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
@@ -76,15 +71,18 @@ export default async function LandingPage() {
               </Link>
             </div>
           </div>
-          <LandingPhoneVideo />
+          <div className="landing-reveal landing-delay-1 landing-phone-float">
+            <LandingPhoneVideo />
+          </div>
         </section>
 
         {/* Fitur */}
-        <section aria-label="Fitur utama" className="grid gap-4 md:grid-cols-3">
+        <section aria-label="Fitur utama" className="landing-reveal landing-delay-2 grid gap-4 md:grid-cols-3">
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="flex gap-4 p-5 rounded-2xl bg-surface border border-border shadow-sm"
+              style={{ animationDelay: `${0.12 + FEATURES.indexOf(f) * 0.1}s` }}
+              className="landing-reveal flex gap-4 p-5 rounded-2xl bg-surface border border-border shadow-sm"
             >
               <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-accent/10 shrink-0">
                 <f.icon className="w-5 h-5 text-accent" aria-hidden="true" />
@@ -98,8 +96,8 @@ export default async function LandingPage() {
         </section>
 
         {/* CTA bawah */}
-        <section className="flex flex-col items-center gap-4 py-6 text-center">
-          <Mascot size={88} mood="excited" />
+        <section className="landing-reveal landing-delay-3 flex flex-col items-center gap-4 py-6 text-center">
+          <Mascot size={88} mood="excited" variant="peace" />
           <p className="text-lg font-bold text-text max-w-xs">
             Siap tahu ke mana perginya uangmu?
           </p>
@@ -110,6 +108,7 @@ export default async function LandingPage() {
             Buat akun gratis
           </Link>
         </section>
+
       </main>
 
       <footer className="border-t border-border py-6 text-center">

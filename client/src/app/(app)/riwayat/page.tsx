@@ -6,7 +6,7 @@ import { deleteTransaction, listTransactions } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import type { Category, Transaction, TransactionType } from "@/lib/types";
 import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
-import { getCategoryIcon } from "@/lib/category-icons";
+import { getCategoryColor, getCategoryIcon } from "@/lib/category-icons";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { todayLocalISO } from "@/lib/date";
@@ -336,6 +336,23 @@ export default function RiwayatPage() {
       </div>
       <h1 className="text-[32px] leading-[1.15] font-bold tracking-tight text-text">Riwayat</h1>
 
+      {/* Sembunyikan saat daftar kosong — Mochi empty-state yang tampil agar tetap satu maskot per layar (§5) */}
+      {!isLoading && filteredItems.length === 0 ? null : (
+        <div className="flex flex-col items-center gap-1.5 text-center pt-1 pb-2">
+          <Mascot
+            size={88}
+            mood="happy"
+            variant="glasses"
+            animated
+            label="Mochi menemanimu melihat riwayat"
+          />
+          <p className="text-base font-bold text-text">Perjalanan uangmu</p>
+          <p className="text-sm text-muted leading-relaxed max-w-xs">
+            Semua catatan masuk dan keluar — geser baris ke kiri untuk menghapus.
+          </p>
+        </div>
+      )}
+
       {/* Bulan */}
       <div className="flex flex-wrap gap-2 items-center">
         {(
@@ -509,6 +526,7 @@ export default function RiwayatPage() {
           <Mascot
             size={110}
             mood={hasAnyFilter ? "thinking" : "happy"}
+            variant="sparkle"
             label="Mochi memandumu di riwayat"
           />
           <div className="flex flex-col gap-1 items-center text-center max-w-xs">
@@ -716,8 +734,8 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
           }}
           className="group flex items-center gap-3 py-3 px-1 bg-surface hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
         >
-          <div className="w-10 h-10 rounded-xl bg-surface-muted flex items-center justify-center shrink-0 text-text transition-colors">
-            {createElement(getCategoryIcon(tx.category.name), { className: "w-5 h-5", "aria-hidden": true })}
+          <div className={`w-10 h-10 rounded-xl ${getCategoryColor(tx.category.name).background} flex items-center justify-center shrink-0 transition-colors`}>
+            {createElement(getCategoryIcon(tx.category.name), { className: `w-5 h-5 ${getCategoryColor(tx.category.name).foreground}`, "aria-hidden": true })}
           </div>
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             <p className="text-base font-medium text-text truncate">

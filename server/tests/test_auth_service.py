@@ -26,7 +26,7 @@ def test_register_creates_user(db):
 def test_register_creates_default_categories(db):
     user = register_user(db, "cat@example.com", "password123")
     cats = db.query(Category).filter(Category.user_id == user.id).all()
-    assert len(cats) == 13  # 8 expense + 5 income
+    assert len(cats) == 22  # 17 expense + 5 income
 
 
 def test_register_normalizes_email(db):

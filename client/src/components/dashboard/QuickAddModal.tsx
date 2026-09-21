@@ -76,7 +76,7 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
-        {!saved && <Mascot size={72} mood="happy" />}
+        {!saved && <Mascot size={72} mood="happy" variant="bow" />}
         {!saved && (
           <div className="flex flex-col items-center gap-1 text-center">
             <h2 className="text-lg font-bold text-text">Catat cepat</h2>

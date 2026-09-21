@@ -22,7 +22,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center gap-4 py-12 text-center">
-      <Mascot size={mascotSize} mood={mood} label="Mochi menemanimu" />
+      <Mascot size={mascotSize} mood={mood} variant="cap" label="Mochi menemanimu" />
       <div className="flex flex-col gap-1 items-center max-w-xs">
         <p className="text-base font-semibold text-text">{title}</p>
         {description && <p className="text-sm text-muted">{description}</p>}

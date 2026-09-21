@@ -89,3 +89,44 @@ body {
     transform: translateX(100%);
   }
 }
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(0.8deg);
+  }
+}
+
+.landing-reveal {
+  animation: landing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.landing-delay-2 {
+  animation-delay: 0.22s;
+}
+
+.landing-delay-3 {
+  animation-delay: 0.32s;
+}
+
+.landing-phone-float {
+  animation: landing-float 5.5s ease-in-out 0.8s infinite;
+}
