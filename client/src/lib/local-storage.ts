@@ -117,8 +117,18 @@ export function saveRecurringTransactions(items: RecurringTransaction[]): void {
   localStorage.setItem(RECURRING_KEY, JSON.stringify(items));
 }
 
+export function isRecurringDue(item: RecurringTransaction, today = new Date()): boolean {
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  if (!item.active || today.getDate() < Math.min(item.day, lastDay)) return false;
+  const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  return item.lastConfirmed?.startsWith(month) !== true;
+}
+
 export function enqueueOfflineTransaction(payload: CreateTransactionParams): OfflineTransaction {
-  const item = { id: crypto.randomUUID(), payload, queuedAt: new Date().toISOString() };
+  const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const item = { id, payload, queuedAt: new Date().toISOString() };
   const queue = getOfflineTransactions();
   queue.push(item);
   localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));

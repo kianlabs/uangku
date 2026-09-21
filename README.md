@@ -16,8 +16,10 @@ Personal finance tracking app for managing income and expenses.
 - Income & expense transactions (create, update, delete, filter, paginate)
 - Categories per type (income/expense) with ownership isolation
 - Monthly budgets per category with 75%/90% usage warnings
+- Offline transaction queue with automatic retry when the connection returns
+- Monthly recurring transaction reminders with manual confirmation
 - Onboarding tour + Mochi mascot guide (personal finance agent)
-- Dashboard monthly summary, CSV export with formula-injection sanitizing
+- Dashboard monthly summary, CSV API export, and formatted PDF export
 - Mobile-first UI with bottom navigation
 
 ## Prerequisites
@@ -105,4 +107,10 @@ from the client are never trusted for ownership.
   in production.
 - Session cookies are `httpOnly`, `SameSite=lax`, and expire with the browser
   session; logout clears the server-side session.
+- Offline transactions are queued in browser storage when the API is unreachable
+  and retried when the app opens online or the browser emits an `online` event.
+  The queue is device-local and should be treated as pending until the banner
+  disappears; the server remains the source of truth.
+- Recurring reminders are device-local monthly templates. They never create a
+  transaction automatically: the user must confirm each due reminder.
 - See `docs/architecture.md` and `docs/erd.md` for deeper design docs.

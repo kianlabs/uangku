@@ -2,8 +2,8 @@
  * UangKu Service Worker — minimal v1
  *
  * Hanya handle install + activate untuk memenuhi PWA installability requirement.
- * Offline-first tidak diimplementasi di v1 (sesuai architecture.md).
- * Caching dan offline sync dapat ditambahkan di versi mendatang.
+ * Offline transaction queue dikelola oleh aplikasi melalui localStorage.
+ * Service worker sengaja pass-through agar tidak menyimpan response finansial.
  */
 
 const SW_VERSION = "uangku-v1";
@@ -30,8 +30,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch: pass-through (tidak ada caching di v1)
+// Fetch: pass-through; jangan cache response finansial.
 self.addEventListener("fetch", () => {
-  // Biarkan browser menangani semua request secara normal
-  // Jangan intercept — tidak ada offline support di v1
+  // Biarkan browser menangani semua request secara normal.
 });

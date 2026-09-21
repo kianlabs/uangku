@@ -68,14 +68,6 @@ async function saldoVisible(page: Page): Promise<boolean> {
   return /^-?Rp[\s\u00A0][\d.,]+$/.test(text.trim()); // saldo bisa negatif: "-Rp 50.000"
 }
 
-function dotsVisible(page: Page): Promise<boolean> {
-  return page.evaluate(() =>
-    [...document.querySelectorAll("span")].some((s) =>
-      s.textContent?.includes("••••••")
-    )
-  );
-}
-
 // Geser baris ke kiri sejauh ~90px (lewat ambang buka 48px).
 // Scroll dulu ke baris — koordinat mouse itu viewport-absolute; kalau
 // baris di bawah fold, drag terjadi di ruang kosong tanpa efek.

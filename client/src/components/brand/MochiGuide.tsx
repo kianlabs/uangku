@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Mascot, type MascotMood } from "@/components/brand/Mascot";
 import { getPreferences, updatePreferences } from "@/lib/preferences";
 import { getPayday, setPayday } from "@/lib/local-storage";
@@ -188,7 +189,12 @@ export function MochiGuide() {
   const current = STEPS[step];
 
   return (
-    <div
+    <MotionConfig reducedMotion="user">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className="fixed inset-0 z-50 bg-canvas overflow-y-auto"
       role="dialog"
       aria-modal="true"
@@ -199,17 +205,29 @@ export function MochiGuide() {
         style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
       >
         <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center">
-          <Mascot size={128} mood={current.mood} variant={step % 2 === 0 ? "bow" : "peace"} label="Mochi memandumu" />
-          <div className="flex items-center gap-1.5" aria-hidden="true">
-            {STEPS.map((s, i) => (
-              <span
-                key={s.title}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === step ? "w-6 bg-accent" : "w-1.5 bg-border"
-                }`}
+          <div className="w-full max-w-[15rem]" aria-hidden="true">
+            <div className="relative h-1.5 rounded-full bg-border overflow-hidden">
+              <motion.span
+                className="absolute inset-y-0 left-0 rounded-full bg-accent"
+                animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+                transition={{ type: "spring", stiffness: 260, damping: 24 }}
               />
-            ))}
+            </div>
+            <div className="flex justify-between mt-2 text-[10px] font-semibold text-muted">
+              <span>Mulai</span>
+              <span>{step + 1} / {STEPS.length}</span>
+            </div>
           </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 28, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -20, scale: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full flex flex-col items-center gap-5"
+            >
+          <Mascot size={128} mood={current.mood} variant={step % 2 === 0 ? "bow" : "peace"} label="Mochi memandumu" />
           <div className="flex flex-col items-center gap-2">
             <h2 className="text-2xl font-bold text-text">{current.title}</h2>
             <p className="text-base text-muted leading-relaxed">{current.body}</p>
@@ -267,6 +285,8 @@ export function MochiGuide() {
               <p className="text-[11px] text-muted">Kosongkan kalau belum mau isi.</p>
             </div>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
         <div className="flex flex-col gap-2 pt-8">
           {step === STEPS.length - 1 && (
@@ -299,6 +319,7 @@ export function MochiGuide() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
+    </MotionConfig>
   );
 }

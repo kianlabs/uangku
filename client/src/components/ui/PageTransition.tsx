@@ -1,12 +1,13 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { usePathname } from "next/navigation";
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
+    <MotionConfig reducedMotion="user">
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={pathname}
@@ -19,5 +20,6 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         {children}
       </motion.div>
     </AnimatePresence>
+    </MotionConfig>
   );
 }

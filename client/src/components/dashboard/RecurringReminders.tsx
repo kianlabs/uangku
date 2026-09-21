@@ -5,7 +5,7 @@ import { Bell, Check, Plus, Trash2 } from "lucide-react";
 import { createTransaction } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
-import { getRecurringTransactions, saveRecurringTransactions, type RecurringTransaction } from "@/lib/local-storage";
+import { getRecurringTransactions, isRecurringDue, saveRecurringTransactions, type RecurringTransaction } from "@/lib/local-storage";
 
 export function RecurringReminders() {
   const [items, setItems] = useState<RecurringTransaction[]>(getRecurringTransactions);
@@ -37,16 +37,21 @@ export function RecurringReminders() {
     } catch { setMessage("Gagal mencatat. Coba lagi saat online."); }
   }
 
+  const today = new Date();
+
   return (
     <section aria-label="Transaksi berulang" className="flex flex-col gap-4 p-5 rounded-2xl bg-surface border border-border shadow-sm">
       <div className="flex items-center gap-2"><Bell className="w-4 h-4 text-accent" aria-hidden="true" /><h2 className="text-xs font-semibold text-muted uppercase tracking-wide">Pengingat transaksi</h2></div>
-      {items.map((item) => (
+      {items.map((item) => {
+        const due = isRecurringDue(item, today);
+        return (
         <div key={item.id} className="flex items-center gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
           <div className="min-w-0 flex-1"><p className="font-semibold text-text truncate">{item.name}</p><p className="text-xs text-muted">Rp {item.amount.toLocaleString("id-ID")} · tanggal {item.day}</p></div>
-          <button type="button" onClick={() => void confirm(item)} className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-accent text-accent-ink text-xs font-semibold"><Check className="w-3.5 h-3.5" aria-hidden="true" />Catat</button>
+          <button type="button" onClick={() => void confirm(item)} disabled={!due} className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-accent text-accent-ink text-xs font-semibold disabled:bg-surface-muted disabled:text-muted"><Check className="w-3.5 h-3.5" aria-hidden="true" />{due ? "Catat" : "Tersimpan"}</button>
           <button type="button" aria-label={`Hapus pengingat ${item.name}`} onClick={() => persist(items.filter((value) => value.id !== item.id))} className="p-2 text-muted hover:text-danger"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
         </div>
-      ))}
+        );
+      })}
       <div className="grid grid-cols-2 gap-2">
         <input aria-label="Nama pengingat" placeholder="Nama, mis. Internet" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="col-span-2 h-10 rounded-lg border border-border bg-surface px-3 text-sm" />
         <input aria-label="Nominal pengingat" inputMode="numeric" placeholder="Nominal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="h-10 rounded-lg border border-border bg-surface px-3 text-sm" />

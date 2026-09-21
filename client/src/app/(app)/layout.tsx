@@ -26,7 +26,7 @@ export default function AppLayout({
     function sync() {
       void flushOfflineTransactions().then(updateQueue);
     }
-    updateQueue();
+    sync();
     window.addEventListener("online", sync);
     window.addEventListener("uangku:offline-queue-changed", updateQueue);
     return () => {

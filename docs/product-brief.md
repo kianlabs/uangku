@@ -115,8 +115,17 @@ Default expense categories:
 - Belanja
 - Hiburan
 - Tagihan
+- Listrik & Air
+- Internet & Telepon
+- Langganan Digital
+- Cicilan & Pinjaman
+- Asuransi
+- Pajak & Administrasi
+- Kebutuhan Rumah
+- Pembayaran Digital
 - Kesehatan
 - Pendidikan
+- Donasi & Zakat
 - Lainnya
 
 Default income categories:
@@ -140,7 +149,15 @@ Filter berdasarkan:
 
 ### Export
 
-- CSV export
+- CSV export API
+- Formatted PDF export from Pengaturan
+
+### Offline and recurring transactions
+
+- Network failures while creating a transaction place it in a device-local queue.
+- The queue retries when the app opens online or the browser reconnects.
+- Monthly recurring reminders are confirmed manually before a transaction is created.
+- These features do not run as a background server scheduler or push notification.
 
 ### Budgets (simple)
 
@@ -182,7 +199,7 @@ Aturan produk:
 Bukan Mochi:
 
 - chatbot / AI advisor (tidak ada klaim analisis cerdas)
-- notifikasi push atau pengingat otomatis
+- notifikasi push atau pengingat otomatis berbasis server
 - gamifikasi (poin, streak reward, level)
 
 ## Mobile UX
@@ -275,7 +292,7 @@ Belum dibuat:
 - AI financial advisor
 - investment tracking
 - cryptocurrency
-- recurring transactions
+- server-side recurring transaction scheduler
 - complex budgeting
 - financial goals
 - family/shared account
@@ -293,7 +310,7 @@ UangKu v1 selesai ketika:
 - mobile UX nyaman
 - PWA dapat di-install jika environment mendukung
 - filter transaksi bekerja
-- export CSV bekerja
+- export CSV/PDF bekerja
 - server tests lulus
 - browser E2E flow lulus
 - lint dan build lulus

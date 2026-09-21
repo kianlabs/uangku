@@ -101,7 +101,7 @@ export default function BerandaPage() {
       cancelled = true;
       controller.abort();
     };
-  }, [currentMonth, fetchKey, router]);
+  }, [currentMonth, fetchKey, prevMonth, router]);
 
   useEffect(() => {
     function handleTxChanged() {
