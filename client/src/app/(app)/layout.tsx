@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { FAB } from "@/components/ui/FAB";
 
 export default function AppLayout({
   children,
@@ -21,12 +20,11 @@ export default function AppLayout({
           isWide ? "max-w-lg lg:max-w-4xl lg:px-6" : "max-w-lg"
         }`}
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 6rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 7.5rem)",
         }}
       >
         {children}
       </main>
-      <FAB />
       <BottomNav />
     </div>
   );

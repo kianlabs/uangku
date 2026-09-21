@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
 
 const navItems = [
   {
@@ -69,6 +71,28 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+
+  useEffect(() => {
+    function handleGuide(e: Event) {
+      setGuideOpen(
+        (e as CustomEvent<{ open?: boolean }>).detail?.open === true
+      );
+    }
+    window.addEventListener("uangku:guide-open", handleGuide);
+    return () => {
+      window.removeEventListener("uangku:guide-open", handleGuide);
+    };
+  }, []);
+
+  // Sembunyikan tombol aksi di halaman form (sudah ada CTA sendiri),
+  // dan seluruh bar saat panduan onboarding terbuka.
+  const hideAction =
+    pathname === "/transaksi/tambah" ||
+    /^\/transaksi\/[^/]+(\/edit)?$/.test(pathname);
+
+  if (guideOpen) return null;
 
   return (
     <nav
@@ -76,26 +100,58 @@ export function BottomNav() {
       className="fixed bottom-0 inset-x-0 z-40 px-4"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
     >
-      <ul className="flex h-16 max-w-md mx-auto list-none m-0 p-1.5 rounded-[28px] border border-white/60 bg-surface/70 shadow-[0_8px_30px_rgba(2,6,23,0.12)] backdrop-blur-xl backdrop-saturate-150">
-        {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <li key={item.href} className="flex-1 flex">
-              <Link
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                className={[
-                  "flex flex-1 flex-col items-center justify-center gap-1 transition-all select-none min-h-[44px] rounded-2xl",
-                  isActive ? "text-accent bg-accent/15 font-semibold" : "text-muted hover:text-text font-medium",
-                ].join(" ")}
+      <div className="relative max-w-md mx-auto">
+        {hideAction ? null : (
+          <div className="absolute left-1/2 -translate-x-1/2 -top-[60px] z-10">
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              aria-label="Catat cepat"
+              aria-haspopup="dialog"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:bg-accent/90 active:scale-95 transition-all select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              <svg
+                aria-hidden="true"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                {item.icon}
-                <span className="text-[11px]">{item.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
+        )}
+        <ul className="flex h-16 list-none m-0 p-1.5 rounded-[28px] border border-white/60 bg-surface/70 shadow-[0_8px_30px_rgba(2,6,23,0.12)] backdrop-blur-xl backdrop-saturate-150">
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <li key={item.href} className="flex-1 flex">
+                <Link
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={[
+                    "flex flex-1 flex-col items-center justify-center gap-1 transition-all select-none min-h-[44px] rounded-2xl",
+                    isActive ? "text-accent bg-accent/15 font-semibold" : "text-muted hover:text-text font-medium",
+                  ].join(" ")}
+                >
+                  {item.icon}
+                  <span className="text-[11px]">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <QuickAddModal
+        key={modalOpen ? "open" : "closed"}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </nav>
   );
 }

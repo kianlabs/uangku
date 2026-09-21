@@ -63,6 +63,7 @@ export default function RiwayatPage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [showMore, setShowMore] = useState(false);
+  const [compact, setCompact] = useState(false);
 
   const hasClientFilter = sourceFilter !== "all" || debtFilter !== "all";
   const hasAnyFilter =
@@ -179,6 +180,20 @@ export default function RiwayatPage() {
   }, [page, filter, categoryFilter, sourceFilter, debtFilter, monthFilter, reloadKey]);
 
   useEffect(() => {
+    let raf = 0;
+    function onScroll() {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setCompact(window.scrollY > 140));
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  useEffect(() => {
     function handleTxChanged() {
       setPage(1);
       setReloadKey((k) => k + 1);
@@ -248,7 +263,20 @@ export default function RiwayatPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-xl font-bold text-text">Riwayat</h1>
+      <div
+        aria-hidden="true"
+        className={`fixed top-0 inset-x-0 z-30 transition-transform duration-200 ${
+          compact ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        }`}
+      >
+        <div className="max-w-lg mx-auto px-4 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5 flex items-baseline justify-between">
+          <p className="text-base font-bold text-text">Riwayat</p>
+          {!isLoading && (
+            <p className="text-xs text-muted tabular-nums">{filteredItems.length} transaksi</p>
+          )}
+        </div>
+      </div>
+      <h1 className="text-[32px] leading-[1.15] font-bold tracking-tight text-text">Riwayat</h1>
 
       {/* Bulan */}
       <div className="flex flex-wrap gap-2 items-center">
