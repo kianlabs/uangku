@@ -70,7 +70,11 @@ export default function AnggaranPage() {
   useEffect(() => {
     const controller = new AbortController();
     // Deferred — hindari setState sinkron di jalur effect (cascading render).
-    const t = setTimeout(() => void load(controller.signal), 0);
+    // Skeleton saat pindah bulan mencegah data bulan lama tampak stale.
+    const t = setTimeout(() => {
+      setIsLoading(true);
+      void load(controller.signal);
+    }, 0);
     return () => {
       clearTimeout(t);
       controller.abort();
@@ -168,6 +172,8 @@ export default function AnggaranPage() {
   const totalSpent = withBudget.reduce((sum, r) => (r.spent != null ? sum + r.spent : sum), 0);
   const totalPct = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
   const riskCount = rows.filter((r) => (r.pct ?? 0) >= 90).length;
+  // Bulan lampau yang sama sekali tanpa anggaran: tampilan diganti empty-state.
+  const isEmptyPastMonth = isPastMonth && !isLoading && !loadError && totalBudget === 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -203,24 +209,27 @@ export default function AnggaranPage() {
         </button>
       </div>
 
-      <div className="flex flex-col items-center gap-1.5 text-center pt-1 pb-2">
-        <Mascot
-          size={88}
-          mood="excited"
-          variant="cap"
-          animated
-          label="Mochi menemanimu merencanakan anggaran"
-        />
-        <p className="text-base font-bold text-text">Rencanakan belanjamu</p>
-        <p className="text-sm text-muted leading-relaxed max-w-xs">
-          Tetapkan batas belanja per kategori untuk {monthLabelId(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
-        </p>
-      </div>
+      {!isEmptyPastMonth && (
+        <div className="flex flex-col items-center gap-1.5 text-center pt-1 pb-2">
+          <Mascot
+            size={88}
+            mood="excited"
+            variant="cap"
+            animated
+            label="Mochi menemanimu merencanakan anggaran"
+          />
+          <p className="text-base font-bold text-text">Rencanakan belanjamu</p>
+          <p className="text-sm text-muted leading-relaxed max-w-xs">
+            Tetapkan batas belanja per kategori untuk {monthLabelId(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
+          </p>
+        </div>
+      )}
 
-      <section
-        aria-label="Ringkasan anggaran"
-        className="flex flex-col gap-2 p-5 rounded-2xl bg-surface border border-border shadow-sm"
-      >
+      {!isEmptyPastMonth && (
+        <section
+          aria-label="Ringkasan anggaran"
+          className="flex flex-col gap-2 p-5 rounded-2xl bg-surface border border-border shadow-sm"
+        >
         {totalBudget > 0 ? (
           <>
             <div className="flex items-baseline justify-between gap-2">
@@ -258,12 +267,11 @@ export default function AnggaranPage() {
           </>
         ) : (
           <p className="text-sm text-muted">
-            {isPastMonth
-              ? `Belum ada anggaran pada ${monthLabelId(monthKey)}.`
-              : "Belum ada anggaran. Isi nominal di bawah — kategori kosong berarti tanpa batas."}
+            Belum ada anggaran. Isi nominal di bawah — kategori kosong berarti tanpa batas.
           </p>
         )}
       </section>
+      )}
 
       {isLoading ? (
         <div className="flex flex-col gap-3 py-4" role="status" aria-busy="true" aria-label="Memuat anggaran">
@@ -295,7 +303,31 @@ export default function AnggaranPage() {
             </Link>
           }
         />
-      ) : isPastMonth && visibleRows.length === 0 ? null : (
+      ) : isEmptyPastMonth ? (
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <Mascot
+            size={96}
+            mood="thinking"
+            variant="sparkle"
+            label="Mochi tidak menemukan anggaran pada bulan ini"
+          />
+          <div className="flex flex-col gap-1 items-center max-w-xs">
+            <p className="text-base font-semibold text-text">
+              Belum ada anggaran pada {monthLabelId(monthKey)}
+            </p>
+            <p className="text-sm text-muted">
+              Anggaran disetel per bulan — pindah ke bulan lain untuk melihatnya.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMonthKey(currentMonthKey())}
+            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+          >
+            Ke bulan ini
+          </button>
+        </div>
+      ) : (
         <div className="flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border">
           {visibleRows.map(({ cat, budget, spent, pct }) => (
             <BudgetRow
