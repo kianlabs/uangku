@@ -154,20 +154,15 @@ export default function TambahTransaksiPage() {
 
     setIsSubmitting(true);
     try {
-      const result = (await createTransaction({
+      await createTransaction({
         type: "expense",
         amount: template.amount.toFixed(2),
         category_id: category.id,
         transaction_date: today,
         description: template.name,
-      })) as { offlineQueued?: boolean };
-      if (result?.offlineQueued) {
-        showToast("Tersimpan di HP — terkirim otomatis saat online.", "info");
-        haptic.warning();
-      } else {
-        showToast("Transaksi tersimpan.", "success");
-        haptic.success();
-      }
+      });
+      showToast("Transaksi tersimpan.", "success");
+      haptic.success();
       router.push("/beranda");
     } catch {
       haptic.error();
@@ -236,17 +231,7 @@ export default function TambahTransaksiPage() {
         category_id: categoryId,
         transaction_date: date,
         description: description.trim() || undefined,
-      }, {
-        source: source || undefined,
-        debtTag: debtTag ? { tag: debtTag, settled: debtSettled } : undefined,
-      }) as { id?: string; offlineQueued?: boolean };
-      if (txData?.offlineQueued) {
-        // Sudah antre; toast + redirect, banner jadi sinyal menetap.
-        showToast("Tersimpan di HP — terkirim otomatis saat online.", "info");
-        haptic.warning();
-        router.push("/beranda");
-        return;
-      }
+      }) as { id?: string };
       if (source && txData?.id) setTransactionSource(txData.id, source);
       if (debtTag && txData?.id) {
         setDebtTag(txData.id, { tag: debtTag, settled: debtSettled });

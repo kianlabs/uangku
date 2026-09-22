@@ -2,7 +2,6 @@
  * UangKu Service Worker — minimal v1
  *
  * Hanya handle install + activate untuk memenuhi PWA installability requirement.
- * Offline transaction queue dikelola oleh aplikasi melalui localStorage.
  * Service worker sengaja pass-through agar tidak menyimpan response finansial.
  */
 

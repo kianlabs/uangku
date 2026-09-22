@@ -21,7 +21,7 @@ const KIND_ROLE: Record<ToastKind, "status" | "alert"> = {
 
 let nextId = 1;
 
-/** Menampilkan toast 4 detik, di atas banner antrean offline. */
+/** Menampilkan toast 4 detik. */
 export function Toaster() {
   const [toast, setToast] = useState<ToastItem | null>(null);
   const timer = useRef<number | null>(null);

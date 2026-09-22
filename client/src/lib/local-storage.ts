@@ -9,7 +9,6 @@
  */
 
 import type { UserPreferences } from "./types";
-import type { CreateTransactionParams } from "./transactions";
 
 export interface DebtTag {
   tag: "utang" | "piutang";
@@ -27,15 +26,6 @@ const SOURCES_KEY = "uangku_tx_sources";
 const DEBT_TAGS_KEY = "uangku_debt_tags";
 const PAYDAY_KEY = "uangku_payday";
 const TEMPLATES_KEY = "uangku_templates";
-const OFFLINE_QUEUE_KEY = "uangku_offline_transactions";
-
-export interface OfflineTransaction {
-  id: string;
-  payload: CreateTransactionParams;
-  source?: string;
-  debtTag?: DebtTag;
-  queuedAt: string;
-}
 
 // ---------------------------------------------------------------------------
 // Hydration — seed localStorage dari data server (dipanggil di AuthContext)
@@ -94,45 +84,9 @@ export function clearLocalCache(): void {
   localStorage.removeItem(SOURCES_KEY);
   localStorage.removeItem(DEBT_TAGS_KEY);
   localStorage.removeItem(TEMPLATES_KEY);
-  localStorage.removeItem(OFFLINE_QUEUE_KEY);
-}
-
-export function enqueueOfflineTransaction(
-  payload: CreateTransactionParams,
-  meta?: { source?: string; debtTag?: DebtTag },
-): OfflineTransaction {
-  const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const item: OfflineTransaction = {
-    id,
-    payload,
-    queuedAt: new Date().toISOString(),
-  };
-  if (meta?.source) item.source = meta.source;
-  if (meta?.debtTag) item.debtTag = meta.debtTag;
-  const queue = getOfflineTransactions();
-  queue.push(item);
-  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-  window.dispatchEvent(new CustomEvent("uangku:offline-queue-changed"));
-  return item;
-}
-
-export function getOfflineTransactions(): OfflineTransaction[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-export function replaceOfflineTransactions(queue: OfflineTransaction[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-  window.dispatchEvent(new CustomEvent("uangku:offline-queue-changed"));
+  // Legacy cleanup: antrean offline transaksi dihapus (app online-only) —
+  // sekalian buang sisa data dari install lama.
+  localStorage.removeItem("uangku_offline_transactions");
 }
 
 // ---------------------------------------------------------------------------
