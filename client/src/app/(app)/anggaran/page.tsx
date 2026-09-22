@@ -162,19 +162,12 @@ export default function AnggaranPage() {
         >
           ‹
         </button>
-        <label className="flex items-center gap-2 text-sm font-semibold text-text">
-          <span className="sr-only">Bulan</span>
-          <input
-            type="month"
-            value={monthKey}
-            max={currentMonthKey()}
-            onChange={(e) => {
-              if (e.target.value) setMonthKey(e.target.value);
-            }}
-            aria-label={`Bulan anggaran, saat ini ${monthLabelId(monthKey)}`}
-            className="h-11 rounded-xl bg-surface border border-border px-3 text-sm font-semibold text-text focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </label>
+        <span
+          aria-live="polite"
+          className="flex h-11 min-w-[7.5rem] items-center justify-center rounded-xl bg-surface border border-border px-4 text-sm font-semibold text-text"
+        >
+          {monthLabelId(monthKey)}
+        </span>
         <button
           type="button"
           onClick={() => setMonthKey((k) => shiftMonthKey(k, 1))}
