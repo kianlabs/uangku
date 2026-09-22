@@ -228,3 +228,78 @@ def test_delete_category_in_use_409(client, test_engine):
     r2 = client.delete(f"/api/v1/categories/{cat_id}")
     assert r2.status_code == 409
     assert r2.json()["error"]["code"] == "CATEGORY_IN_USE"
+
+
+def test_delete_last_category_409(test_engine):
+    """Kategori terakhir per tipe tidak boleh dihapus (jalan buntu)."""
+    from app.core import deps as deps_mod
+
+    def override_get_db():
+        db = Session(test_engine)
+        try:
+            yield db
+        finally:
+            db.close()
+
+    saved = dict(app.dependency_overrides)
+    app.dependency_overrides[deps_mod.get_db] = override_get_db
+    try:
+        with TestClient(app, raise_server_exceptions=True) as c:
+            c.post("/api/v1/auth/register", json={"email": "lastcat@test.com", "password": "pass1234"})
+            c.post("/api/v1/auth/login", json={"email": "lastcat@test.com", "password": "pass1234"})
+            cats = c.get("/api/v1/categories?type=expense").json()["items"]
+            assert len(cats) > 1
+            for cat in cats[:-1]:
+                assert c.delete(f"/api/v1/categories/{cat['id']}").status_code == 204
+            r = c.delete(f"/api/v1/categories/{cats[-1]['id']}")
+            assert r.status_code == 409
+            assert r.json()["error"]["code"] == "CATEGORY_IS_LAST"
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(saved)
+
+
+# --- transfer ---
+
+def _make_cat(client, name, type_="expense"):
+    r = client.post("/api/v1/categories", json={"name": name, "type": type_})
+    assert r.status_code == 201
+    return r.json()["id"]
+
+
+def test_transfer_moves_transactions_and_deletes_source(client):
+    src = _make_cat(client, "SrcAPI")
+    dst = _make_cat(client, "DstAPI")
+    r = client.post("/api/v1/transactions", json={
+        "type": "expense", "amount": "3000",
+        "category_id": src, "transaction_date": "2026-09-17",
+    })
+    assert r.status_code == 201
+    tx_id = r.json()["id"]
+    r2 = client.post(f"/api/v1/categories/{src}/transfer", json={"to_category_id": dst})
+    assert r2.status_code == 200
+    assert r2.json()["moved"] == 1
+    # Sumber hilang, transaksi ikut pindah
+    assert client.delete(f"/api/v1/categories/{src}").status_code == 404
+    tx = client.get(f"/api/v1/transactions/{tx_id}").json()
+    assert tx["category"]["id"] == dst
+
+
+def test_transfer_type_mismatch_422(client):
+    src = _make_cat(client, "SrcMismatch")
+    dst = _make_cat(client, "DstMismatch", type_="income")
+    r = client.post(f"/api/v1/categories/{src}/transfer", json={"to_category_id": dst})
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "TYPE_MISMATCH"
+
+
+def test_transfer_same_id_400(client):
+    src = _make_cat(client, "SrcSame")
+    r = client.post(f"/api/v1/categories/{src}/transfer", json={"to_category_id": src})
+    assert r.status_code == 400
+
+
+def test_transfer_nonexistent_404(client):
+    dst = _make_cat(client, "DstGhost")
+    r = client.post(f"/api/v1/categories/{uuid.uuid4()}/transfer", json={"to_category_id": dst})
+    assert r.status_code == 404

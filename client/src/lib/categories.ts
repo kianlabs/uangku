@@ -43,3 +43,10 @@ export async function updateCategory(
 export async function deleteCategory(id: string): Promise<void> {
   return apiFetch<void>(`/api/v1/categories/${id}`, { method: "DELETE" });
 }
+
+export async function transferCategory(id: string, toCategoryId: string): Promise<{ moved: number }> {
+  return apiFetch<{ moved: number }>(`/api/v1/categories/${id}/transfer`, {
+    method: "POST",
+    body: JSON.stringify({ to_category_id: toCategoryId }),
+  });
+}

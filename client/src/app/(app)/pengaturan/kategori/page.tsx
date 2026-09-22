@@ -1,7 +1,7 @@
 "use client";
 
 import { createElement, useEffect, useState } from "react";
-import { listCategories, createCategory, updateCategory, deleteCategory } from "@/lib/categories";
+import { listCategories, createCategory, updateCategory, deleteCategory, transferCategory } from "@/lib/categories";
 import { deleteBudget, listBudgets, upsertBudget } from "@/lib/budgets";
 import { formatRupiah } from "@/lib/format";
 import type { Budget, Category, TransactionType } from "@/lib/types";
@@ -154,7 +154,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pengeluaran</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {expenseItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} siblings={expenseItems.filter((c) => c.id !== cat.id)} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function KategoriPage() {
           <h2 className="text-sm font-semibold text-text">Pemasukan</h2>
           <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {incomeItems.map((cat) => (
-              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} onUpdate={load} />
+              <CategoryRow key={cat.id} category={cat} budget={budgets[cat.id]} siblings={incomeItems.filter((c) => c.id !== cat.id)} onUpdate={load} />
             ))}
           </div>
         </div>
@@ -190,10 +190,12 @@ export default function KategoriPage() {
 function CategoryRow({
   category,
   budget,
+  siblings,
   onUpdate,
 }: {
   category: Category;
   budget?: Budget;
+  siblings: Category[];
   onUpdate: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -203,6 +205,10 @@ function CategoryRow({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferTo, setTransferTo] = useState("");
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferError, setTransferError] = useState<string | null>(null);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetInput, setBudgetInput] = useState(budget?.amount ?? "");
   const [isSavingBudget, setIsSavingBudget] = useState(false);
@@ -246,16 +252,46 @@ function CategoryRow({
     } catch (err) {
       if (err instanceof ApiResponseError) {
         if (err.status === 409 && err.code === "CATEGORY_IN_USE") {
-          setDeleteError("Kategori sedang digunakan transaksi.");
+          // Ada jalan keluar: pindahkan transaksi ke kategori lain.
+          setShowDeleteConfirm(false);
+          setTransferTo(siblings[0]?.id ?? "");
+          setTransferError(null);
+          setShowTransfer(true);
+        } else if (err.status === 409 && err.code === "CATEGORY_IS_LAST") {
+          setDeleteError("Ini kategori terakhir. Buat pengganti dulu sebelum menghapus.");
+          setShowDeleteConfirm(false);
         } else {
           setDeleteError(err.message);
+          setShowDeleteConfirm(false);
         }
       } else {
         setDeleteError("Gagal menghapus kategori. Coba lagi.");
+        setShowDeleteConfirm(false);
       }
-      setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleTransfer() {
+    if (!transferTo) {
+      setTransferError("Pilih kategori tujuan.");
+      return;
+    }
+    setIsTransferring(true);
+    setTransferError(null);
+    try {
+      await transferCategory(category.id, transferTo);
+      setShowTransfer(false);
+      onUpdate();
+    } catch (err) {
+      setTransferError(
+        err instanceof ApiResponseError && err.message
+          ? err.message
+          : "Gagal memindahkan. Coba lagi."
+      );
+    } finally {
+      setIsTransferring(false);
     }
   }
 
@@ -330,11 +366,62 @@ function CategoryRow({
     );
   }
 
+  if (showTransfer) {
+    return (
+      <div className="flex flex-col gap-3 p-4">
+        <p className="text-sm text-text">
+          <strong>{category.name}</strong> dipakai transaksi. Pindahkan semuanya ke:
+        </p>
+        <Select
+          label="Kategori tujuan"
+          value={transferTo}
+          onChange={(e) => setTransferTo(e.target.value)}
+          error={transferError || undefined}
+        >
+          <option value="">Pilih kategori</option>
+          {siblings.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        {budget && (
+          <p className="text-xs text-muted">
+            Anggaran {formatRupiah(budget.amount)} ikut pindah (digabung bila tujuan sudah punya anggaran).
+          </p>
+        )}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={handleTransfer}
+            loading={isTransferring}
+            disabled={isTransferring || !transferTo}
+            className="flex-1"
+          >
+            Pindahkan & hapus
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowTransfer(false)}
+            disabled={isTransferring}
+            className="flex-1"
+          >
+            Batal
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (showDeleteConfirm) {
     return (
       <div className="flex flex-col gap-3 p-4">
         <p className="text-sm text-text">
           Hapus kategori <strong>{category.name}</strong>?
+          {budget && (
+            <> Anggaran {formatRupiah(budget.amount)} ikut terhapus.</>
+          )}
         </p>
         <div className="flex gap-2">
           <Button

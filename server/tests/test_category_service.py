@@ -5,14 +5,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.errors import LastCategoryError
 from app.models import Base, Category, Transaction, User  # noqa: F401
 from app.services.auth import register_user
+from app.services.budget import upsert_budget
 from app.services.category import (
     create_category,
     delete_category,
     list_categories,
+    transfer_category,
     update_category,
 )
+from app.services.transaction import create_transaction
 
 
 @pytest.fixture(scope="module")
@@ -108,3 +112,72 @@ def test_delete_category_in_use_raises(db, user):
     db.commit()
     with pytest.raises(ValueError, match="category_in_use"):
         delete_category(db, user, cat.id)
+
+
+def test_delete_last_category_of_type_raises(db):
+    fresh = register_user(db, f"{uuid.uuid4()}@last.com", "pass")
+    expense_cats = list_categories(db, fresh, type_filter="expense")
+    assert len(expense_cats) > 1
+    for cat in expense_cats[:-1]:
+        delete_category(db, fresh, cat.id)
+    with pytest.raises(LastCategoryError):
+        delete_category(db, fresh, expense_cats[-1].id)
+
+
+def test_transfer_moves_transactions_and_deletes_source(db):
+    from datetime import date
+    from decimal import Decimal
+
+    fresh = register_user(db, f"{uuid.uuid4()}@transfer.com", "pass")
+    src = create_category(db, fresh, name="SrcMove", type_="expense")
+    dst = create_category(db, fresh, name="DstMove", type_="expense")
+    tx = create_transaction(
+        db, fresh, type_="expense", amount=Decimal(5000),
+        category_id=src.id, transaction_date=date(2026, 9, 17),
+    )
+    moved = transfer_category(db, fresh, src.id, dst.id)
+    assert moved == 1
+    assert db.get(Category, src.id) is None
+    db.refresh(tx)
+    assert tx.category_id == dst.id
+
+
+def test_transfer_type_mismatch_raises(db):
+    from app.core.errors import TypeMismatchError
+
+    fresh = register_user(db, f"{uuid.uuid4()}@transfer2.com", "pass")
+    src = create_category(db, fresh, name="SrcExp", type_="expense")
+    dst = create_category(db, fresh, name="DstInc", type_="income")
+    with pytest.raises(TypeMismatchError):
+        transfer_category(db, fresh, src.id, dst.id)
+
+
+def test_transfer_same_id_raises(db):
+    from app.core.errors import DomainError
+
+    fresh = register_user(db, f"{uuid.uuid4()}@transfer3.com", "pass")
+    src = create_category(db, fresh, name="SrcSame", type_="expense")
+    with pytest.raises(DomainError):
+        transfer_category(db, fresh, src.id, src.id)
+
+
+def test_transfer_merges_budget(db):
+    from decimal import Decimal
+
+    from sqlalchemy import select
+
+    from app.models.budget import Budget
+
+    fresh = register_user(db, f"{uuid.uuid4()}@transfer4.com", "pass")
+    src = create_category(db, fresh, name="SrcBud", type_="expense")
+    dst = create_category(db, fresh, name="DstBud", type_="expense")
+    upsert_budget(db, fresh, src.id, Decimal(100000))
+    upsert_budget(db, fresh, dst.id, Decimal(50000))
+    transfer_category(db, fresh, src.id, dst.id)
+    merged = db.scalar(
+        select(Budget).where(
+            Budget.user_id == fresh.id, Budget.category_id == dst.id
+        )
+    )
+    assert merged is not None
+    assert Decimal(str(merged.amount)) == Decimal(150000)

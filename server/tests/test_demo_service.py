@@ -1,12 +1,17 @@
 import uuid
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 
 from app.core.config import settings
 from app.models import Base
+from app.models.category import Category
+from app.models.transaction import Transaction
 from app.services.auth import register_user
 from app.services.demo import seed_demo_data
+from app.services.transaction import create_transaction
 
 
 @pytest.fixture(scope="module")
@@ -35,3 +40,35 @@ def test_seed_rejects_user_that_already_has_transactions(db, user):
     # Test sebelumnya sudah mengisi data untuk user module-scoped ini.
     with pytest.raises(ValueError, match="already has transactions"):
         seed_demo_data(db, user, seed=42)
+
+
+def test_seed_replaces_opening_balance_only_user(db):
+    # Skenario onboarding: user isi saldo awal, lalu klik "Coba dengan contoh data".
+    # Harus berhasil dalam 1x seed (tanpa 409 dulu).
+    fresh = register_user(db, f"{uuid.uuid4()}@demo.com", "pass")
+    income_cat = db.scalar(
+        select(Category).where(
+            Category.user_id == fresh.id, Category.type == "income"
+        )
+    )
+    create_transaction(
+        db,
+        fresh,
+        type_="income",
+        amount=Decimal(500000),
+        category_id=income_cat.id,
+        transaction_date=datetime.now(UTC).date(),
+        description="Saldo awal",
+        is_opening_balance=True,
+    )
+
+    result = seed_demo_data(db, fresh, seed=42)
+
+    assert result["transactions"] >= 10
+    remaining_opening = db.scalars(
+        select(Transaction).where(
+            Transaction.user_id == fresh.id,
+            Transaction.is_opening_balance.is_(True),
+        )
+    ).all()
+    assert remaining_opening == []

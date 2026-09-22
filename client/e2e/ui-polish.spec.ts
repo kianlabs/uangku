@@ -17,10 +17,17 @@ let ctx: BrowserContext;
 const PASSWORD = "testpass1234";
 
 async function apiRegister(context: BrowserContext, email: string): Promise<void> {
-  const res = await context.request.post("/api/v1/auth/register", {
-    data: { email, password: PASSWORD },
-  });
-  if (res.status() !== 201) {
+  // Suite jalan 1 worker / 1 IP dengan limit 5 register/menit — spec yang
+  // jalan belakangan (file ini) bisa kena 429 dari sisa window spec lain.
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const res = await context.request.post("/api/v1/auth/register", {
+      data: { email, password: PASSWORD },
+    });
+    if (res.status() === 201) return;
+    if (res.status() === 429 && attempt < 4) {
+      await new Promise((r) => setTimeout(r, 15000 * attempt));
+      continue;
+    }
     throw new Error(`register gagal: ${res.status()} ${await res.text()}`);
   }
 }

@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from app.core.csrf import is_csrf_allowed
+from app.core.csrf import is_csrf_allowed, is_loopback_peer
 from app.main import app
 
 
@@ -39,6 +39,46 @@ def test_host_with_port():
     assert is_csrf_allowed(
         method="PATCH", host="localhost:8000", origin="http://localhost:8000", referer=None
     )
+
+
+def test_ipv6_host_with_port():
+    assert is_csrf_allowed(
+        method="POST", host="[::1]:8000", origin="http://[::1]:8000", referer=None
+    )
+    assert not is_csrf_allowed(
+        method="POST", host="[::1]:8000", origin="http://evil.test", referer=None
+    )
+
+
+def test_forwarded_host_allows_proxy_origin():
+    """Origin cocok X-Forwarded-Host (mis. akses via Tailscale lewat proxy)."""
+    assert is_csrf_allowed(
+        method="POST",
+        host="localhost:8000",
+        origin="http://100.100.100.100:3000",
+        referer=None,
+        forwarded_host="100.100.100.100:3000",
+    )
+
+
+def test_forwarded_host_mismatch_rejected():
+    assert not is_csrf_allowed(
+        method="POST",
+        host="localhost:8000",
+        origin="http://evil.test",
+        referer=None,
+        forwarded_host="100.100.100.100:3000",
+    )
+
+
+def test_loopback_peer_forms():
+    assert is_loopback_peer("127.0.0.1")
+    assert is_loopback_peer("::1")
+    assert is_loopback_peer("::ffff:127.0.0.1")
+    assert is_loopback_peer("localhost")
+    assert not is_loopback_peer("100.100.100.100")
+    assert not is_loopback_peer("testclient")
+    assert not is_loopback_peer("")
 
 
 def test_middleware_rejects_cross_origin_post():

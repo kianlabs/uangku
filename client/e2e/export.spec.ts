@@ -1,7 +1,7 @@
 /**
- * E2E: Export CSV flow
+ * E2E: Export PDF flow
  *
- * Covers: buat transaksi → export CSV mengunduh file.
+ * Covers: buat transaksi → export PDF mengunduh file.
  */
 
 import { test, expect } from "@playwright/test";
@@ -29,7 +29,7 @@ test.describe("Export", () => {
     await page.waitForURL("**/beranda", { timeout: 15_000 });
   });
 
-  test("unduh CSV setelah ada transaksi", async ({ page }) => {
+  test("unduh PDF setelah ada transaksi", async ({ page }) => {
     // Pastikan ada minimal 1 transaksi
     await page.goto("/transaksi/tambah");
     await page.getByLabel("Nominal").fill("25000");
@@ -44,10 +44,10 @@ test.describe("Export", () => {
 
     await page.goto("/pengaturan/export-data");
     const downloadPromise = page.waitForEvent("download", { timeout: 15_000 });
-    await page.getByRole("button", { name: "Unduh CSV" }).click();
+    await page.getByRole("button", { name: "Unduh PDF" }).click();
     const download = await downloadPromise;
     const path = await download.path();
     expect(path).toBeTruthy();
-    expect(download.suggestedFilename()).toMatch(/\.csv$/);
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
   });
 });

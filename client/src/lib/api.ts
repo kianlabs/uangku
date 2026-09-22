@@ -44,28 +44,69 @@ export class ApiResponseError extends Error {
   }
 }
 
+export const API_TIMEOUT_MS = 15_000;
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
   // Selalu relative URL — Next.js rewrite proxy ke server (dev & production)
+  const { signal: userSignal, ...rest } = options;
+
+  // Batas waktu agar loading tidak muter selamanya saat server hang.
+  // Signal dari pemanggil (mis. AbortController saat halaman di-unmount)
+  // tetap dihormati dan digabung dengan timeout ini.
+  const controller = new AbortController();
+  const timeoutError = new DOMException(
+    "Server terlalu lama merespons.",
+    "TimeoutError"
+  );
+  const timeoutId = setTimeout(
+    () => controller.abort(timeoutError),
+    API_TIMEOUT_MS
+  );
+  if (userSignal) {
+    if (userSignal.aborted) {
+      controller.abort(userSignal.reason);
+    } else {
+      userSignal.addEventListener(
+        "abort",
+        () => controller.abort(userSignal.reason),
+        { once: true }
+      );
+    }
+  }
+
   let response: Response;
 
   try {
     response = await fetch(path, {
-      ...options,
+      ...rest,
       credentials: "include",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
       },
     });
-  } catch {
+  } catch (err) {
+    if (
+      err === timeoutError ||
+      (err instanceof DOMException && err.name === "TimeoutError")
+    ) {
+      throw new ApiResponseError(
+        0,
+        "TIMEOUT_ERROR",
+        "Server terlalu lama merespons. Coba lagi."
+      );
+    }
     throw new ApiResponseError(
       0,
       "NETWORK_ERROR",
       "Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi."
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (response.status === 204) {

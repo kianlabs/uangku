@@ -60,3 +60,11 @@ class CategoryUpdatedResponse(BaseModel):
 
 class CategoryListResponse(BaseModel):
     items: list[CategoryResponse]
+
+
+class CategoryTransferRequest(BaseModel):
+    to_category_id: uuid.UUID
+
+
+class CategoryTransferResponse(BaseModel):
+    moved: int

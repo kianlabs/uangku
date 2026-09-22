@@ -1,13 +1,15 @@
 import uuid
 from datetime import date
 from decimal import Decimal
+from unittest import mock
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.errors import TypeMismatchError
+from app.core.errors import ExportTooLargeError, InvalidCategoryError, TypeMismatchError
 from app.models import Base, Category, Transaction, User  # noqa: F401
 from app.services.auth import register_user
 from app.services.category import create_category
@@ -15,6 +17,7 @@ from app.services.transaction import (
     create_transaction,
     delete_transaction,
     get_transaction,
+    get_transactions_for_export,
     list_transactions,
     update_transaction,
 )
@@ -250,3 +253,51 @@ def test_create_opening_balance_must_be_income(db, user, expense_cat):
         create_transaction(db, user, type_="expense", amount=Decimal(1000),
                            category_id=expense_cat.id, transaction_date=date(2026, 3, 1),
                            is_opening_balance=True)
+
+
+def test_export_limit_enforced(db):
+    """Export menolak saat baris melebihi limit."""
+    fresh = register_user(db, f"{uuid.uuid4()}@export.com", "pass")
+    cat = db.scalar(
+        select(Category).where(
+            Category.user_id == fresh.id, Category.type == "expense"
+        )
+    )
+    for _ in range(3):
+        create_transaction(db, fresh, type_="expense", amount=Decimal(1000),
+                           category_id=cat.id, transaction_date=date(2026, 9, 17))
+    with pytest.raises(ExportTooLargeError):
+        get_transactions_for_export(db, fresh, limit=2)
+    assert len(get_transactions_for_export(db, fresh, limit=10)) == 3
+
+
+def _integrity_error():
+    return IntegrityError("INSERT INTO transactions", {}, Exception("fk violation"))
+
+
+def test_create_race_category_deleted_returns_422(db, user, expense_cat):
+    """Kategori hilang antara validasi dan commit -> InvalidCategoryError (422)."""
+    with mock.patch.object(db, "commit", side_effect=_integrity_error()), \
+            pytest.raises(InvalidCategoryError):
+        create_transaction(
+            db, user,
+            type_="expense",
+            amount=Decimal(1000),
+            category_id=expense_cat.id,
+            transaction_date=date(2026, 9, 17),
+        )
+    db.rollback()
+
+
+def test_update_race_category_deleted_returns_422(db, user, expense_cat):
+    tx = create_transaction(
+        db, user,
+        type_="expense",
+        amount=Decimal(1000),
+        category_id=expense_cat.id,
+        transaction_date=date(2026, 9, 17),
+    )
+    with mock.patch.object(db, "commit", side_effect=_integrity_error()), \
+            pytest.raises(InvalidCategoryError):
+        update_transaction(db, user, tx.id, amount=Decimal(2000))
+    db.rollback()

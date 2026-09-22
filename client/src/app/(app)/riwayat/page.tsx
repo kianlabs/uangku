@@ -65,61 +65,61 @@ export default function RiwayatPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [showMore, setShowMore] = useState(false);
   const [compact, setCompact] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<{ tx: Transaction; index: number } | null>(null);
-  const pendingRef = useRef<{ tx: Transaction; index: number } | null>(null);
-  const undoTimer = useRef<number | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
+  const pendingRef = useRef(new Map<string, { tx: Transaction; index: number; timer: number }>());
 
-  /** Hapus optimistik: baris hilang seketika, commit ke server setelah jendela undo. */
+  /** Hapus optimistik: baris hilang seketika, commit ke server setelah jendela undo.
+   *  Tiap item punya timer sendiri sehingga hapus beruntun tidak saling menelan. */
   function beginDelete(tx: Transaction) {
     const index = items.findIndex((i) => i.id === tx.id);
-    if (index < 0) return;
+    if (index < 0 || pendingRef.current.has(tx.id)) return;
     setItems((prev) => prev.filter((i) => i.id !== tx.id));
-    const pd = { tx, index };
-    pendingRef.current = pd;
-    setPendingDelete(pd);
-    if (undoTimer.current !== null) clearTimeout(undoTimer.current);
-    undoTimer.current = window.setTimeout(() => void commitDelete(), 6000);
+    const timer = window.setTimeout(() => void commitDelete(tx.id), 6000);
+    pendingRef.current.set(tx.id, { tx, index, timer });
+    setPendingCount(pendingRef.current.size);
   }
 
-  function reinsert(pd: { tx: Transaction; index: number }) {
+  function reinsert(entries: { tx: Transaction; index: number }[]) {
+    const sorted = [...entries].sort((a, b) => a.index - b.index);
     setItems((prev) => {
       const next = [...prev];
-      next.splice(Math.min(pd.index, prev.length), 0, pd.tx);
+      for (const e of sorted) {
+        next.splice(Math.min(e.index, next.length), 0, e.tx);
+      }
       return next;
     });
   }
 
   function undoDelete() {
-    if (undoTimer.current !== null) {
-      clearTimeout(undoTimer.current);
-      undoTimer.current = null;
-    }
-    const pd = pendingRef.current;
-    pendingRef.current = null;
-    setPendingDelete(null);
-    if (pd) reinsert(pd);
+    const entries = [...pendingRef.current.values()];
+    for (const e of entries) clearTimeout(e.timer);
+    pendingRef.current.clear();
+    setPendingCount(0);
+    if (entries.length > 0) reinsert(entries);
   }
 
-  async function commitDelete() {
-    const pd = pendingRef.current;
+  async function commitDelete(id: string) {
+    const pd = pendingRef.current.get(id);
     if (!pd) return;
-    pendingRef.current = null;
-    setPendingDelete(null);
+    pendingRef.current.delete(id);
+    setPendingCount(pendingRef.current.size);
     try {
       await deleteTransaction(pd.tx.id);
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
       haptic.success();
     } catch {
       // Rollback: kembalikan baris & tampilkan error.
-      reinsert(pd);
+      reinsert([pd]);
       haptic.error();
       setError("Gagal menghapus transaksi. Coba lagi.");
     }
   }
 
   useEffect(() => {
+    const pending = pendingRef.current;
     return () => {
-      if (undoTimer.current !== null) clearTimeout(undoTimer.current);
+      for (const e of pending.values()) clearTimeout(e.timer);
+      pending.clear();
     };
   }, []);
 
@@ -562,17 +562,19 @@ export default function RiwayatPage() {
         </div>
       ) : (
         <>
-          {pendingDelete && (
+          {pendingCount > 0 && (
             <div
               role="status"
               aria-live="polite"
               className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-surface border border-border shadow-sm"
             >
-              <p className="text-sm text-text truncate">Transaksi dihapus.</p>
+              <p className="text-sm text-text truncate">
+                {pendingCount === 1 ? "Transaksi dihapus." : `${pendingCount} transaksi dihapus.`}
+              </p>
               <button
                 type="button"
                 onClick={undoDelete}
-                className="shrink-0 text-sm font-semibold text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded"
+                className="shrink-0 min-h-[44px] px-4 text-sm font-semibold text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded"
               >
                 Urungkan
               </button>

@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -180,6 +181,33 @@ def test_create_amount_negative_422(client, expense_cat_id):
         "category_id": expense_cat_id, "transaction_date": "2026-09-17",
     })
     assert r.status_code == 422
+
+
+def test_create_future_date_422(client, expense_cat_id):
+    r = client.post("/api/v1/transactions", json={
+        "type": "expense", "amount": "1000",
+        "category_id": expense_cat_id, "transaction_date": "2100-01-01",
+    })
+    assert r.status_code == 422
+    assert any(f["field"] == "transaction_date" for f in r.json()["error"]["fields"])
+
+
+def test_create_year_before_2000_422(client, expense_cat_id):
+    r = client.post("/api/v1/transactions", json={
+        "type": "expense", "amount": "1000",
+        "category_id": expense_cat_id, "transaction_date": "1999-12-31",
+    })
+    assert r.status_code == 422
+
+
+def test_create_tomorrow_allowed(client, expense_cat_id):
+    """Toleransi 1 hari untuk gaji yang dicatat duluan."""
+    tomorrow = (datetime.now(UTC).date() + timedelta(days=1)).isoformat()
+    r = client.post("/api/v1/transactions", json={
+        "type": "expense", "amount": "1000",
+        "category_id": expense_cat_id, "transaction_date": tomorrow,
+    })
+    assert r.status_code == 201
 
 
 def test_create_invalid_type_422(client, expense_cat_id):

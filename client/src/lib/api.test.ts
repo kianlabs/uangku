@@ -1,11 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { apiFetch } from "./api";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { apiFetch, API_TIMEOUT_MS } from "./api";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("apiFetch", () => {
@@ -32,5 +36,43 @@ describe("apiFetch", () => {
         category_id: "Pilih kategori.",
       },
     });
+  });
+
+  it("melempar TIMEOUT_ERROR saat server tidak merespons dalam batas waktu", async () => {
+    vi.useFakeTimers();
+    mockFetch.mockImplementationOnce(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(init.signal?.reason);
+          });
+        })
+    );
+
+    const pending = apiFetch("/api/test");
+    const assertion = expect(pending).rejects.toMatchObject({
+      code: "TIMEOUT_ERROR",
+    });
+    await vi.advanceTimersByTimeAsync(API_TIMEOUT_MS);
+    await assertion;
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+  });
+
+  it("tetap menghormati signal abort dari pemanggil", async () => {
+    const userController = new AbortController();
+    mockFetch.mockImplementationOnce(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        })
+    );
+
+    const pending = apiFetch("/api/test", { signal: userController.signal });
+    userController.abort();
+
+    await expect(pending).rejects.toMatchObject({ code: "NETWORK_ERROR" });
   });
 });

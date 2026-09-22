@@ -12,12 +12,6 @@ export interface UserPreferences {
   templates?: Array<{ id: string; name: string; amount: number; category: string }> | null;
 }
 
-export interface ApiError {
-  code: string;
-  message: string;
-  fields?: Record<string, string>;
-}
-
 export type TransactionType = "income" | "expense";
 
 export interface Category {
@@ -41,6 +35,7 @@ export interface Transaction {
   amount: string;
   description: string | null;
   transaction_date: string;
+  is_opening_balance?: boolean;
   category: Category;
   created_at: string;
 }

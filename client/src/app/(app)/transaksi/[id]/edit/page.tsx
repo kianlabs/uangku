@@ -7,7 +7,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { apiFetch, ApiResponseError } from "@/lib/api";
 import { updateTransaction } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
-import { todayLocalISO } from "@/lib/date";
+import { todayLocalISO, validateTransactionDate } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { Button } from "@/components/ui/Button";
@@ -110,7 +110,8 @@ export default function EditTransaksiPage() {
     const num = parseAmountInput(amount);
     if (!amount || isNaN(num) || num <= 0) e.amount = "Nominal harus lebih dari 0.";
     if (!categoryId) e.categoryId = "Pilih kategori.";
-    if (!date) e.date = "Tanggal harus diisi.";
+    const dateError = validateTransactionDate(date);
+    if (dateError) e.date = dateError;
     return e;
   }
 
@@ -331,7 +332,7 @@ export default function EditTransaksiPage() {
                 }}
                 placeholder="0"
                 autoComplete="off"
-                className="flex-1 min-w-0 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 focus:outline-none"
+                className="flex-1 min-w-0 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 aria-invalid={errors.amount ? "true" : undefined}
                 aria-describedby={errors.amount ? "amount-error" : undefined}
               />

@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UangKu Client
 
-## Getting Started
+Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4.
+Mobile-first PWA: bottom navigation, offline transaction queue, installable manifest.
 
-First, run the development server:
+## Development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```sh
+npm install
+cp .env.example .env.local   # optional, defaults to SERVER_URL=http://localhost:8000
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The client proxies `/api/*` to the FastAPI server via Next.js rewrites
+(`SERVER_URL` in `next.config.ts`, server-side only — no CORS needed, no
+`NEXT_PUBLIC_*` secrets). The `/api/*` middleware (`src/proxy.ts`) forwards
+the browser's host (`X-Forwarded-Host`, for the server CSRF check) and the
+outer client IP (`X-Forwarded-For`, for per-user rate limiting).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+npm test        # Vitest unit tests
+npm run lint    # ESLint
+npx tsc --noEmit
+npm run build   # production build
+npx playwright test        # E2E (needs client + server running)
+npx playwright install     # browsers, first time only
+```
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/` — routes: landing `/`, auth (`/masuk`, `/daftar`), app (`/beranda`,
+  `/riwayat`, `/anggaran`, `/pengaturan`, `/transaksi/...`)
+- `src/components/` — `ui/` (Button, Input, Select, BottomNav, EmptyState),
+  `brand/` (Mascot, SplashScreen, MochiGuide), `dashboard/`, `auth/`, `landing/`
+- `src/lib/` — API clients (`api.ts`, `transactions.ts`, ...), `local-storage.ts`
+  (device cache + offline queue, server is source of truth), `date.ts`, `format.ts`
+- `src/context/AuthContext.tsx` — session state, login/register/logout
+- `public/` — PWA manifest, icons, `sw.js`
+- `e2e/` — Playwright specs (unique `e2e+*@example.com` users per run)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Visual source of truth: `DESIGN.md` (repo root). Mascot spec: `DESIGN.md` §5.

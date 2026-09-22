@@ -123,3 +123,18 @@ def test_settings_trusted_proxy_set_multiple():
     from app.core.config import Settings
     s = Settings(trusted_proxy_ips="10.0.0.1, 10.0.0.2,  192.168.1.1")
     assert s.trusted_proxy_set == frozenset({"10.0.0.1", "10.0.0.2", "192.168.1.1"})
+
+
+# ---------------------------------------------------------------------------
+# Proxy loopback (Next rewrite satu container) — dipercaya implisit
+# ---------------------------------------------------------------------------
+
+
+def test_loopback_proxy_reads_xff():
+    """Peer loopback diperlakukan seperti trusted proxy (konsisten dgn CSRF)."""
+    for peer in ("127.0.0.1", "::1", "::ffff:127.0.0.1"):
+        request = _make_request(peer, x_forwarded_for="5.6.7.8")
+        with patch("app.core.rate_limit.settings") as mock_settings:
+            mock_settings.trusted_proxy_set = frozenset()
+            ip = get_client_ip(request)
+        assert ip == "5.6.7.8", f"peer {peer} harus percaya XFF"

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { createTransaction } from "@/lib/transactions";
-import { listCategories } from "@/lib/categories";
+import { listCategories, createCategory } from "@/lib/categories";
 import { ApiResponseError } from "@/lib/api";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
-import { todayLocalISO } from "@/lib/date";
+import { todayLocalISO, validateTransactionDate } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { setTransactionSource, setDebtTag, getTemplates, setTemplates, type SubscriptionTemplate } from "@/lib/local-storage";
@@ -43,12 +43,16 @@ export default function TambahTransaksiPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCatLoading, setIsCatLoading] = useState(true);
   const [catError, setCatError] = useState(false);
+  const [showNewCat, setShowNewCat] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [isCreatingCat, setIsCreatingCat] = useState(false);
   const [errors, setErrors] = useState<{
     amount?: string;
     categoryId?: string;
     date?: string;
   }>({});
   const [serverError, setServerError] = useState<string | null>(null);
+  const [offlineNotice, setOfflineNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -56,6 +60,8 @@ export default function TambahTransaksiPage() {
     async function loadCategories() {
       setIsCatLoading(true);
       setCatError(false);
+      setShowNewCat(false);
+      setNewCatName("");
       try {
         const res = await listCategories({ type });
         if (!cancelled) {
@@ -129,7 +135,8 @@ export default function TambahTransaksiPage() {
     const num = parseFloat(amount.replace(/\D/g, ""));
     if (!amount || isNaN(num) || num <= 0) e.amount = "Nominal harus lebih dari 0.";
     if (!categoryId) e.categoryId = "Pilih kategori.";
-    if (!date) e.date = "Tanggal harus diisi.";
+    const dateError = validateTransactionDate(date);
+    if (dateError) e.date = dateError;
     return e;
   }
 
@@ -185,9 +192,29 @@ export default function TambahTransaksiPage() {
     setTemplatesState(updated);
   }
 
+  async function handleCreateCategoryInline() {
+    const name = newCatName.trim();
+    if (!name || isCreatingCat) return;
+    setIsCreatingCat(true);
+    try {
+      const cat = await createCategory({ name, type });
+      setCategories([cat]);
+      setCategoryId(cat.id);
+      setNewCatName("");
+      setShowNewCat(false);
+      haptic.success();
+    } catch {
+      haptic.error();
+      setServerError("Gagal membuat kategori. Coba lagi.");
+    } finally {
+      setIsCreatingCat(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(null);
+    setOfflineNotice(false);
     const fieldErrors = validate();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
@@ -204,7 +231,18 @@ export default function TambahTransaksiPage() {
         category_id: categoryId,
         transaction_date: date,
         description: description.trim() || undefined,
-      }) as { id?: string };
+      }, {
+        source: source || undefined,
+        debtTag: debtTag ? { tag: debtTag, settled: debtSettled } : undefined,
+      }) as { id?: string; offlineQueued?: boolean };
+      if (txData?.offlineQueued) {
+        // Offline: antrean sudah menyimpan payload + sumber/kasbon.
+        // Jangan redirect seolah sukses — tampilkan status + biarkan user
+        // memutuskan (banner "menunggu koneksi" tampil di semua halaman).
+        setOfflineNotice(true);
+        haptic.warning();
+        return;
+      }
       if (source && txData?.id) setTransactionSource(txData.id, source);
       if (debtTag && txData?.id) {
         setDebtTag(txData.id, { tag: debtTag, settled: debtSettled });
@@ -336,6 +374,7 @@ export default function TambahTransaksiPage() {
                 }}
                 placeholder="0"
                 autoComplete="off"
+                className="flex-1 min-w-0 text-4xl leading-tight font-bold text-text tabular-nums bg-transparent border-none p-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 aria-invalid={errors.amount ? "true" : undefined}
                 aria-describedby={errors.amount ? "amount-error" : undefined}
               />
@@ -389,6 +428,42 @@ export default function TambahTransaksiPage() {
                 >
                   Coba lagi
                 </button>
+              </div>
+            )}
+            {!isCatLoading && !catError && categories.length === 0 && (
+              <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border p-3">
+                <p className="text-sm text-muted">
+                  Belum ada kategori {type === "expense" ? "pengeluaran" : "pemasukan"}. Buat dulu biar bisa simpan.
+                </p>
+                {showNewCat ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder="Nama kategori"
+                      aria-label="Nama kategori baru"
+                      maxLength={100}
+                      className="flex-1 h-11 px-4 rounded-xl bg-surface border border-border text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateCategoryInline}
+                      disabled={isCreatingCat || !newCatName.trim()}
+                      className="h-11 px-4 rounded-xl bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-50"
+                    >
+                      {isCreatingCat ? "Membuat…" : "Buat"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCat(true)}
+                    className="self-start min-h-[44px] px-4 text-sm font-semibold text-accent hover:underline rounded"
+                  >
+                    + Buat kategori
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -450,14 +525,14 @@ export default function TambahTransaksiPage() {
                           type="button"
                           onClick={() => handleTemplateClick(t)}
                           disabled={isSubmitting}
-                          className="px-4 h-9 rounded-full bg-surface-muted text-text text-sm font-medium hover:bg-surface-muted/80 active:scale-95 transition-all disabled:opacity-40"
+                          className="px-4 h-11 rounded-full bg-surface-muted text-text text-sm font-medium hover:bg-surface-muted/80 active:scale-95 transition-all disabled:opacity-40"
                         >
                           {t.name}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteTemplate(t.id)}
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-muted hover:bg-surface-muted hover:text-text transition-colors"
+                          className="w-11 h-11 rounded-full flex items-center justify-center text-muted hover:bg-surface-muted hover:text-text transition-colors"
                           aria-label={`Hapus ${t.name}`}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -470,7 +545,7 @@ export default function TambahTransaksiPage() {
                       <button
                         type="button"
                         onClick={() => setShowTemplateForm(true)}
-                        className="px-4 h-9 rounded-full border border-dashed border-border text-muted text-sm font-medium hover:border-text hover:text-text transition-colors"
+                        className="px-4 h-11 rounded-full border border-dashed border-border text-muted text-sm font-medium hover:border-text hover:text-text transition-colors"
                       >
                         + Tambah
                       </button>
@@ -481,22 +556,25 @@ export default function TambahTransaksiPage() {
                       <input
                         type="text"
                         placeholder="Nama template"
+                        aria-label="Nama template"
                         value={newTemplate.name}
                         onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="h-11 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
                       />
                       <input
                         type="text"
                         inputMode="decimal"
                         placeholder="Nominal"
+                        aria-label="Nominal template"
                         value={groupThousands(newTemplate.amount)}
                         onChange={(e) => setNewTemplate({ ...newTemplate, amount: e.target.value.replace(/\D/g, "") })}
-                        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="h-11 rounded-lg border border-border bg-surface px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
                       />
                       <select
                         value={newTemplate.category}
                         onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                        className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                        aria-label="Kategori template"
+                        className="h-11 rounded-lg border border-border bg-surface px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
                       >
                         <option value="">Pilih kategori</option>
                         {categories.map((c) => (
@@ -508,7 +586,7 @@ export default function TambahTransaksiPage() {
                           type="button"
                           onClick={handleAddTemplate}
                           disabled={!newTemplate.name || !newTemplate.amount || !newTemplate.category}
-                          className="flex-1 h-9 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="flex-1 h-11 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           Simpan
                         </button>
@@ -518,7 +596,7 @@ export default function TambahTransaksiPage() {
                             setShowTemplateForm(false);
                             setNewTemplate({ name: "", amount: "", category: "" });
                           }}
-                          className="px-4 h-9 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all"
+                          className="px-4 h-11 rounded-lg bg-surface border border-border text-sm font-semibold text-text hover:bg-surface-muted active:scale-95 transition-all"
                         >
                           Batal
                         </button>
@@ -582,6 +660,18 @@ export default function TambahTransaksiPage() {
               </div>
             )}
           </div>
+
+          {offlineNotice && (
+            <div
+              role="status"
+              className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+            >
+              <p>Tersimpan di HP — akan dikirim otomatis saat ada koneksi (termasuk sumber & kasbon).</p>
+              <Link href="/beranda" className="font-semibold text-accent hover:underline w-fit">
+                Ke beranda
+              </Link>
+            </div>
+          )}
 
           {serverError && (
             <div

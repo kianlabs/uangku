@@ -134,7 +134,13 @@ Contoh business rule yang wajib divalidasi server:
 - category milik user yang sama
 - transaction type sama dengan category type
 - amount lebih dari 0
-- category yang sedang digunakan tidak boleh sembarang dihapus
+- transaction_date maksimal besok (toleransi gaji) dan tahun >= 2000
+- category yang sedang digunakan tidak boleh sembarang dihapus: hapus
+  ditolak 409 (`CATEGORY_IN_USE`) kecuali via transfer atomik
+  (`POST /api/v1/categories/{id}/transfer` memindahkan transaksi + budget
+  lalu menghapus kategori asal dalam satu commit); kategori terakhir
+  per tipe tidak boleh dihapus (409 `CATEGORY_IS_LAST`)
+- hapus budget hanya lewat aksi eksplisit (bukan input dikosongkan)
 
 ## Database
 
@@ -161,8 +167,11 @@ Target:
 - cookie tidak dapat dibaca JavaScript
 - `Secure` aktif pada production
 - `SameSite` dikonfigurasi dengan tepat
+- sesi kedaluwarsa 7 hari: cookie `Max-Age=604800` + batas absolut `issued_at`
+  yang dicek server-side (cookie bisa refresh, cap absolut tidak)
 - password disimpan dalam bentuk hash
 - server menentukan current user dari credential yang valid
+- registrasi dapat dikunci dengan `INVITE_CODE` (production lingkup keluarga)
 
 Hindari menyimpan long-lived authentication token di `localStorage`.
 
@@ -215,6 +224,7 @@ Contoh resource:
 /api/v1/auth
 /api/v1/transactions
 /api/v1/categories
+/api/v1/categories/{id}/transfer
 /api/v1/dashboard
 /api/v1/export
 /api/v1/budgets
@@ -279,7 +289,10 @@ PWA responsibilities:
 
 Offline transaction sync is implemented as a small client-side queue: network
 failures while creating a transaction are queued in browser storage and retried
-when the app is online. The server remains the source of truth; queued data is
+when the app is online. The queue carries the full payload including source and
+debt-tag metadata, which are replayed onto the server-created transaction id on
+flush. The UI reports queued items honestly ("stored on device") instead of
+fake success. The server remains the source of truth; queued data is
 device-local and is not a substitute for server backup.
 
 Recurring transaction reminders are also client-side templates for now. They
@@ -312,6 +325,10 @@ Client harus membedakan:
 - network error
 
 User tidak boleh menerima raw stack trace.
+
+Envelope: `{"error": {"code": ..., "message": ...}}` (plus `fields` untuk 422).
+Error tak terduga menjadi 500 `INTERNAL_ERROR`, error database menjadi 503
+`SERVICE_UNAVAILABLE` — traceback hanya masuk log server.
 
 ## Testing Layers
 

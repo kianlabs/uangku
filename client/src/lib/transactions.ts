@@ -1,7 +1,14 @@
 import { apiFetch, ApiResponseError } from "./api";
 import type { TransactionListResponse, TransactionType } from "./types";
 import { jsPDF } from "jspdf";
-import { enqueueOfflineTransaction, getOfflineTransactions, replaceOfflineTransactions } from "./local-storage";
+import {
+  enqueueOfflineTransaction,
+  getOfflineTransactions,
+  replaceOfflineTransactions,
+  setDebtTag,
+  setTransactionSource,
+  type DebtTag,
+} from "./local-storage";
 
 export interface ListTransactionsParams {
   page?: number;
@@ -38,8 +45,14 @@ export interface CreateTransactionParams {
   is_opening_balance?: boolean;
 }
 
+export interface CreateTransactionMeta {
+  source?: string;
+  debtTag?: DebtTag;
+}
+
 export async function createTransaction(
-  params: CreateTransactionParams
+  params: CreateTransactionParams,
+  meta?: CreateTransactionMeta,
 ) {
   try {
     return await apiFetch("/api/v1/transactions", {
@@ -48,7 +61,7 @@ export async function createTransaction(
     });
   } catch (error) {
     if (error instanceof ApiResponseError && error.status === 0) {
-      enqueueOfflineTransaction(params);
+      enqueueOfflineTransaction(params, meta);
       return { offlineQueued: true };
     }
     throw error;
@@ -62,10 +75,15 @@ export async function flushOfflineTransactions(): Promise<number> {
   let synced = 0;
   for (const item of queue) {
     try {
-      await apiFetch("/api/v1/transactions", {
+      const created = (await apiFetch("/api/v1/transactions", {
         method: "POST",
         body: JSON.stringify(item.payload),
-      });
+      })) as { id?: string };
+      // Replay meta yang ikut antre (sumber/kasbon) ke id server yang baru.
+      if (created?.id) {
+        if (item.source) setTransactionSource(created.id, item.source);
+        if (item.debtTag) setDebtTag(created.id, item.debtTag);
+      }
       synced += 1;
     } catch {
       remaining.push(item);
@@ -85,7 +103,7 @@ export interface ExportTransactionsParams {
   date_to?: string;
 }
 
-export async function exportTransactionsCsv(
+async function exportTransactionsCsv(
   params: ExportTransactionsParams = {}
 ): Promise<{ blob: Blob; filename: string }> {
   const q = new URLSearchParams();

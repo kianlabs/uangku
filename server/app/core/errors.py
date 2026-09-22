@@ -39,6 +39,10 @@ class CategoryInUseError(DomainError):
     marker = "category_in_use"
 
 
+class LastCategoryError(DomainError):
+    marker = "last_category"
+
+
 class InvalidCategoryError(DomainError):
     marker = "invalid_category"
 

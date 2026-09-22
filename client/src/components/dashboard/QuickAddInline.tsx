@@ -20,6 +20,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [queuedOffline, setQueuedOffline] = useState(false);
 
   useEffect(() => {
     onSuccessChange?.(showSuccess);
@@ -28,6 +29,7 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setQueuedOffline(false);
 
     const parsed = parseQuickAdd(input);
     if (!parsed) {
@@ -74,7 +76,12 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
       haptic.success();
 
-      await promise; // error → catch → tampilkan pesan
+      const result = (await promise) as { offlineQueued?: boolean };
+      if (result?.offlineQueued) {
+        // Offline: antrean menyimpan payload; jangan klaim tersimpan penuh.
+        setQueuedOffline(true);
+        haptic.warning();
+      }
 
       setInput("");
       setShowSuccess(true);
@@ -96,9 +103,11 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
         className="flex flex-col items-center gap-2 py-4 text-center"
       >
         <Mascot size={88} mood="celebrating" variant="sparkle" label="Mochi merayakan catatan tersimpan" />
-        <p className="text-sm text-accent font-semibold">Tersimpan!</p>
+        <p className="text-sm text-accent font-semibold">
+          {queuedOffline ? "Tersimpan di HP, menunggu koneksi." : "Tersimpan!"}
+        </p>
         <button
-          onClick={() => setShowSuccess(false)}
+          onClick={() => { setShowSuccess(false); setQueuedOffline(false); }}
           className="text-sm text-muted hover:text-text underline min-h-[44px] px-4"
         >
           Catat lagi

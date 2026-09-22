@@ -71,10 +71,10 @@ Jika produk memiliki pengguna aktif dan kebutuhan native muncul, aplikasi React 
 
 ### Authentication
 
-- Register
+- Register (opsional kode undangan bila server set `INVITE_CODE`)
 - Login
 - Logout
-- User session
+- User session (kedaluwarsa 7 hari)
 - Password hashing
 - Data user terisolasi
 
@@ -104,7 +104,8 @@ Data:
 - amount
 - category
 - description
-- transaction date
+- transaction date (maksimal besok, tahun minimal 2000 — divalidasi server
+  dan client)
 
 ### Categories
 
@@ -138,6 +139,14 @@ Default income categories:
 
 User juga dapat membuat kategori sendiri.
 
+Aturan hapus:
+
+- kategori yang dipakai transaksi tidak bisa langsung dihapus — user memilih
+  kategori tujuan, transaksi + anggaran dipindahkan, baru kategori asal
+  dihapus (atomik; anggaran digabung bila tujuan sudah punya)
+- kategori terakhir per tipe tidak bisa dihapus (cegah jalan buntu)
+- dialog hapus menyebut bila ada anggaran yang ikut terhapus
+
 ### Transaction Filtering
 
 Filter berdasarkan:
@@ -155,6 +164,8 @@ Filter berdasarkan:
 ### Offline and recurring transactions
 
 - Network failures while creating a transaction place it in a device-local queue.
+- The queue carries source & debt-tag metadata and replays them on sync.
+- The UI reports queued items as "stored on device", never as server success.
 - The queue retries when the app opens online or the browser reconnects.
 - Monthly recurring reminders are confirmed manually before a transaction is created.
 - These features do not run as a background server scheduler or push notification.
@@ -166,6 +177,7 @@ Anggaran belanja bulanan per kategori:
 - satu batas per kategori, berlaku tiap bulan (tidak perlu isi ulang)
 - progress pemakaian dengan peringatan 75% / 90%
 - diatur dari halaman Kategori, dipantau dari Beranda
+- hapus hanya lewat tombol Hapus + konfirmasi (mengosongkan input = batal edit)
 
 Ini bukan complex budgeting (tanpa rollover, tanpa multi-periode) — batas
 tersebut tetap di luar cakupan v1.

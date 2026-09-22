@@ -8,6 +8,25 @@ const authPaths = ["/masuk", "/daftar"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Teruskan host yang dilihat browser ke backend via X-Forwarded-Host.
+  // Backend membandingkannya dengan Origin di CSRF check — penting untuk
+  // akses via IP/hostname lain (mis. Tailscale) di mana Host yang sampai
+  // ke backend selalu localhost:8000 karena rewrite proxy.
+  if (pathname.startsWith("/api/")) {
+    const headers = new Headers(request.headers);
+    const host = request.headers.get("host");
+    if (host) headers.set("x-forwarded-host", host);
+    // Teruskan IP asli dari proxy luar (mis. Fly edge) agar rate-limit
+    // backend dihitung per user, bukan per proxy. Tanpa ini semua user
+    // berbagi satu bucket 127.0.0.1.
+    const xff = request.headers.get("x-forwarded-for");
+    const flyIp = request.headers.get("fly-client-ip");
+    const clientIp = xff?.split(",")[0].trim() || flyIp;
+    if (clientIp) headers.set("x-forwarded-for", clientIp);
+    return NextResponse.next({ request: { headers } });
+  }
+
   const sessionCookie = request.cookies.get(SESSION_COOKIE);
   const hasSession = Boolean(sessionCookie?.value);
 
@@ -37,6 +56,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     "/beranda/:path*",
     "/riwayat/:path*",
     "/anggaran/:path*",

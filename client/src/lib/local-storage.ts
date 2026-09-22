@@ -11,10 +11,6 @@
 import type { UserPreferences } from "./types";
 import type { CreateTransactionParams } from "./transactions";
 
-export interface TransactionSource {
-  source: "Tunai" | "Bank" | "E-wallet";
-}
-
 export interface DebtTag {
   tag: "utang" | "piutang";
   settled: boolean;
@@ -37,6 +33,8 @@ const RECURRING_KEY = "uangku_recurring_transactions";
 export interface OfflineTransaction {
   id: string;
   payload: CreateTransactionParams;
+  source?: string;
+  debtTag?: DebtTag;
   queuedAt: string;
 }
 
@@ -63,16 +61,24 @@ export function seedLocalStorageFromPreferences(prefs: UserPreferences): void {
     // Server tidak punya nilai → buang sisa akun sebelumnya (shared browser).
     localStorage.removeItem(PAYDAY_KEY);
   }
-  // Merge, don't blind-overwrite: empty objects/arrays from server
-  // (new user) must not wipe local defaults (e.g. subscription templates).
+  // Overwrite penuh — server adalah source of truth. Key yang kosong/tidak
+  // ada di server DIHAPUS (bukan ditulis kosong) agar:
+  // (a) fallback default lokal (mis. template langganan) tetap berlaku, dan
+  // (b) sisa data akun sebelumnya tidak tertinggal di browser bersama.
   if (prefs.tx_sources != null && Object.keys(prefs.tx_sources).length > 0) {
     localStorage.setItem(SOURCES_KEY, JSON.stringify(prefs.tx_sources));
+  } else {
+    localStorage.removeItem(SOURCES_KEY);
   }
   if (prefs.debt_tags != null && Object.keys(prefs.debt_tags).length > 0) {
     localStorage.setItem(DEBT_TAGS_KEY, JSON.stringify(prefs.debt_tags));
+  } else {
+    localStorage.removeItem(DEBT_TAGS_KEY);
   }
   if (prefs.templates != null && prefs.templates.length > 0) {
     localStorage.setItem(TEMPLATES_KEY, JSON.stringify(prefs.templates));
+  } else {
+    localStorage.removeItem(TEMPLATES_KEY);
   }
 }
 
@@ -124,11 +130,20 @@ export function isRecurringDue(item: RecurringTransaction, today = new Date()): 
   return item.lastConfirmed?.startsWith(month) !== true;
 }
 
-export function enqueueOfflineTransaction(payload: CreateTransactionParams): OfflineTransaction {
+export function enqueueOfflineTransaction(
+  payload: CreateTransactionParams,
+  meta?: { source?: string; debtTag?: DebtTag },
+): OfflineTransaction {
   const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const item = { id, payload, queuedAt: new Date().toISOString() };
+  const item: OfflineTransaction = {
+    id,
+    payload,
+    queuedAt: new Date().toISOString(),
+  };
+  if (meta?.source) item.source = meta.source;
+  if (meta?.debtTag) item.debtTag = meta.debtTag;
   const queue = getOfflineTransactions();
   queue.push(item);
   localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));

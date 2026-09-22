@@ -5,8 +5,16 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getPayday, setPayday } from "@/lib/local-storage";
 import { haptic } from "@/lib/haptics";
-import { CalendarDays, ChevronRight, Download, LogOut, Tags } from "lucide-react";
+import { CalendarDays, Bell, ChevronRight, Download, LogOut, Tags } from "lucide-react";
 import { RecurringReminders } from "@/components/dashboard/RecurringReminders";
+import {
+  getNotifyPermission,
+  isInsecureContext,
+  isNotifyEnabled,
+  requestNotifyPermission,
+  setNotifyEnabled,
+  type NotifyPermission,
+} from "@/lib/reminder-notify";
 
 export default function PengaturanPage() {
   const { user, logoutUser } = useAuth();
@@ -15,6 +23,28 @@ export default function PengaturanPage() {
   const [editingPayday, setEditingPayday] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [paydayError, setPaydayError] = useState<string | null>(null);
+  const [perm, setPerm] = useState<NotifyPermission>(() => getNotifyPermission());
+  const [notifyOn, setNotifyOn] = useState(() => isNotifyEnabled());
+
+  async function handleNotifyToggle() {
+    if (perm === "unsupported" || perm === "denied") return;
+    if (perm === "default") {
+      const granted = await requestNotifyPermission();
+      setPerm(getNotifyPermission());
+      if (granted) {
+        setNotifyEnabled(true);
+        setNotifyOn(true);
+        haptic.success();
+      } else {
+        haptic.warning();
+      }
+      return;
+    }
+    const next = !notifyOn;
+    setNotifyEnabled(next);
+    setNotifyOn(next);
+    haptic.success();
+  }
 
   function handlePaydaySave(day: number) {
     if (day >= 1 && day <= 31) {
@@ -112,6 +142,43 @@ export default function PengaturanPage() {
               {paydayError}
             </p>
           )}
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-3 text-base font-medium text-text">
+              <Bell className="w-5 h-5 text-accent" aria-hidden="true" />
+              Notifikasi pengingat
+            </span>
+            {perm === "unsupported" ? (
+              <span className="text-xs text-muted text-right">
+                {isInsecureContext()
+                  ? "Butuh koneksi aman (HTTPS) — buka via alamat https agar notifikasi aktif"
+                  : "Browser tidak mendukung"}
+              </span>
+            ) : perm === "denied" ? (
+              <span className="text-xs text-muted text-right">Diblokir — aktifkan di pengaturan browser</span>
+            ) : perm === "default" ? (
+              <button
+                type="button"
+                onClick={() => void handleNotifyToggle()}
+                className="px-4 h-10 rounded-lg bg-accent text-accent-ink text-sm font-semibold hover:bg-accent/90 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                Nyalakan
+              </button>
+            ) : (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={notifyOn}
+                aria-label="Notifikasi pengingat"
+                onClick={() => void handleNotifyToggle()}
+                className={`relative w-12 h-7 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${notifyOn ? "bg-accent" : "bg-surface-muted border border-border"}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all ${notifyOn ? "left-[1.375rem]" : "left-0.5"}`}
+                />
+              </button>
+            )}
+          </div>
         </div>
       </section>
 

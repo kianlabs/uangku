@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   clearLocalCache,
   getPayday,
+  getTemplates,
   isRecurringDue,
   seedLocalStorageFromPreferences,
   setPayday,
@@ -29,6 +30,25 @@ describe("seedLocalStorageFromPreferences", () => {
     setPayday(25);
     seedLocalStorageFromPreferences({ payday: null });
     expect(getPayday()).toBe(1);
+  });
+
+  it("membuang tx_sources/template sisa akun lain saat server kosong", () => {
+    localStorage.setItem("uangku_tx_sources", JSON.stringify({ abc: "Tunai" }));
+    localStorage.setItem(
+      "uangku_templates",
+      JSON.stringify([{ id: "x", name: "Milik A", amount: 1, category: "Lainnya" }])
+    );
+    seedLocalStorageFromPreferences({ payday: 1, tx_sources: {}, templates: [] });
+    expect(localStorage.getItem("uangku_tx_sources")).toBeNull();
+    // Key dihapus -> fallback default lokal tetap berlaku
+    expect(getTemplates().map((t) => t.name)).toContain("Kos");
+  });
+
+  it("menulis tx_sources dari server saat ada isi", () => {
+    seedLocalStorageFromPreferences({ payday: 1, tx_sources: { abc: "Tunai" } });
+    expect(localStorage.getItem("uangku_tx_sources")).toBe(
+      JSON.stringify({ abc: "Tunai" })
+    );
   });
 });
 

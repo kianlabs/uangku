@@ -10,7 +10,9 @@ from app.core.errors import (
     CategoryInUseError,
     DomainError,
     DuplicateCategoryError,
+    LastCategoryError,
     NotFoundError,
+    TypeMismatchError,
 )
 from app.models.user import User
 from app.schemas.category import (
@@ -18,6 +20,8 @@ from app.schemas.category import (
     CategoryDetailResponse,
     CategoryListResponse,
     CategoryResponse,
+    CategoryTransferRequest,
+    CategoryTransferResponse,
     CategoryType,
     CategoryUpdatedResponse,
     CategoryUpdateRequest,
@@ -26,6 +30,7 @@ from app.services.category import (
     create_category,
     delete_category,
     list_categories,
+    transfer_category,
     update_category,
 )
 
@@ -90,6 +95,11 @@ def delete_category_endpoint(
 ):
     try:
         delete_category(db, current_user, category_id)
+    except LastCategoryError:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "CATEGORY_IS_LAST", "message": "Cannot delete the last category of this type."},
+        )
     except CategoryInUseError:
         raise HTTPException(
             status_code=409,
@@ -101,3 +111,35 @@ def delete_category_endpoint(
             detail={"code": "NOT_FOUND", "message": "Category not found."},
         )
     return Response(status_code=204)
+
+
+@router.post("/{category_id}/transfer", response_model=CategoryTransferResponse)
+def transfer_category_endpoint(
+    category_id: uuid.UUID,
+    body: CategoryTransferRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        moved = transfer_category(db, current_user, category_id, body.to_category_id)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "Category not found."},
+        )
+    except TypeMismatchError:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "TYPE_MISMATCH", "message": "Categories must be of the same type."},
+        )
+    except CategoryInUseError:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "CATEGORY_IN_USE", "message": "Category changed during transfer."},
+        )
+    except DomainError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "BAD_REQUEST", "message": str(exc)},
+        )
+    return {"moved": moved}

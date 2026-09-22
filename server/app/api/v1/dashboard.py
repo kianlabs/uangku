@@ -75,6 +75,8 @@ def create_demo_data(
     try:
         result = seed_demo_data(db, current_user)
     except ValueError as exc:
+        if "already has transactions" not in str(exc):
+            raise
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "ALREADY_HAS_DATA", "message": str(exc)},

@@ -10,7 +10,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
@@ -20,11 +20,18 @@ from app.models.user import User
 
 def seed_demo_data(db: Session, user: User, seed: int | None = None) -> dict[str, Any]:
     """Isi 3 minggu transaksi contoh. Return ringkasan jumlah baris."""
-    existing = db.scalar(
-        select(func.count(Transaction.id)).where(Transaction.user_id == user.id)
-    )
-    if (existing or 0) > 0:
-        raise ValueError("user already has transactions")
+    existing = db.scalars(
+        select(Transaction).where(Transaction.user_id == user.id)
+    ).all()
+    if existing:
+        if all(t.is_opening_balance for t in existing):
+            # Hanya saldo awal dari onboarding — ganti dengan contoh data
+            # agar tombol "Coba dengan contoh data" berhasil dalam 1 klik.
+            for t in existing:
+                db.delete(t)
+            db.flush()
+        else:
+            raise ValueError("user already has transactions")
 
     rng = random.Random(seed)
     today = datetime.now(UTC).date()
@@ -71,7 +78,7 @@ def seed_demo_data(db: Session, user: User, seed: int | None = None) -> dict[str
         prev_month_last = first_of_month - timedelta(days=1)
         _add_salary(prev_month_last.replace(day=25), "4500000")
     else:
-        prev = (first_of_month - timedelta(days=1)).replace(day=min(25, 28))
+        prev = (first_of_month - timedelta(days=1)).replace(day=25)
         _add_salary(prev, "4500000")
 
     # --- Pengeluaran 21 hari terakhir: kepadatan realistis ---

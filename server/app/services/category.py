@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.errors import (
     CategoryInUseError,
+    DomainError,
     DuplicateCategoryError,
+    LastCategoryError,
     NotFoundError,
+    TypeMismatchError,
 )
+from app.models.budget import Budget
 from app.models.category import Category
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -68,6 +73,15 @@ def delete_category(db: Session, user: User, category_id: uuid.UUID) -> None:
     )
     if not cat:
         raise NotFoundError()
+    remaining = db.scalar(
+        select(func.count())
+        .select_from(Category)
+        .where(Category.user_id == user.id, Category.type == cat.type)
+    ) or 0
+    if remaining <= 1:
+        # Kategori terakhir tipe ini — menghapusnya bikin tambah transaksi
+        # jalan buntu.
+        raise LastCategoryError()
     in_use = db.scalar(
         select(exists().where(
             Transaction.category_id == category_id,
@@ -76,9 +90,75 @@ def delete_category(db: Session, user: User, category_id: uuid.UUID) -> None:
     )
     if in_use:
         raise CategoryInUseError()
+    # Budget tidak dicek di atas (tidak ada transaksi belum tentu tidak ada
+    # budget). Hapus eksplisit: ORM tanpa cascade akan NULL-kan FK dan
+    # menabrak NOT NULL. UI wajib menyebut "anggaran ikut terhapus".
+    for budget in list(cat.budgets):
+        db.delete(budget)
     try:
         db.delete(cat)
         db.commit()
     except IntegrityError:
         db.rollback()
         raise CategoryInUseError()
+
+
+def transfer_category(
+    db: Session, user: User, category_id: uuid.UUID, to_category_id: uuid.UUID
+) -> int:
+    """Pindahkan semua transaksi dari satu kategori ke kategori lain lalu
+    hapus kategori asal. Atomik: satu commit. Budget ikut pindah (digabung
+    jika tujuan sudah punya budget) agar tidak hilang diam-diam."""
+    if category_id == to_category_id:
+        raise DomainError("cannot_transfer_to_itself")
+    src = db.scalar(
+        select(Category).where(
+            Category.id == category_id, Category.user_id == user.id
+        )
+    )
+    dst = db.scalar(
+        select(Category).where(
+            Category.id == to_category_id, Category.user_id == user.id
+        )
+    )
+    if not src or not dst:
+        raise NotFoundError()
+    if src.type != dst.type:
+        raise TypeMismatchError()
+
+    result = db.execute(
+        update(Transaction)
+        .where(
+            Transaction.user_id == user.id,
+            Transaction.category_id == src.id,
+        )
+        .values(category_id=dst.id)
+    )
+    moved = result.rowcount or 0
+
+    src_budget = db.scalar(
+        select(Budget).where(
+            Budget.user_id == user.id, Budget.category_id == src.id
+        )
+    )
+    if src_budget is not None:
+        dst_budget = db.scalar(
+            select(Budget).where(
+                Budget.user_id == user.id, Budget.category_id == dst.id
+            )
+        )
+        if dst_budget is not None:
+            dst_budget.amount = Decimal(str(dst_budget.amount)) + Decimal(
+                str(src_budget.amount)
+            )
+            # Hapus eksplisit agar tidak orphan (ORM tanpa cascade).
+            db.delete(src_budget)
+        else:
+            src_budget.category_id = dst.id
+    try:
+        db.delete(src)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise CategoryInUseError()
+    return moved

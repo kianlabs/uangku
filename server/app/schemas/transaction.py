@@ -1,12 +1,28 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from app.schemas.category import CategoryType
+
+
+def _today() -> date:
+    return datetime.now(UTC).date()
+
+
+def _validate_transaction_date(v: date | None) -> date | None:
+    """Tolak tanggal absurd: masa depan (> besok, toleransi untuk gaji
+    yang dicatat duluan) dan tahun < 2000."""
+    if v is None:
+        return v
+    if v > _today() + timedelta(days=1):
+        raise ValueError("transaction_date cannot be in the future")
+    if v.year < 2000:
+        raise ValueError("transaction_date year must be >= 2000")
+    return v
 
 
 class TransactionCreateRequest(BaseModel):
@@ -25,6 +41,13 @@ class TransactionCreateRequest(BaseModel):
             raise ValueError("amount must be greater than 0")
         return v
 
+    @field_validator("transaction_date")
+    @classmethod
+    def date_sane(cls, v: date) -> date:
+        result = _validate_transaction_date(v)
+        assert result is not None
+        return result
+
 
 class TransactionUpdateRequest(BaseModel):
     type: CategoryType | None = None
@@ -39,6 +62,11 @@ class TransactionUpdateRequest(BaseModel):
         if v is not None and v <= 0:
             raise ValueError("amount must be greater than 0")
         return v
+
+    @field_validator("transaction_date")
+    @classmethod
+    def date_sane(cls, v: date | None) -> date | None:
+        return _validate_transaction_date(v)
 
 
 def _serialize_money(v: Decimal) -> str:
@@ -59,6 +87,7 @@ class TransactionResponse(BaseModel):
     amount: Decimal
     description: str | None
     transaction_date: date
+    is_opening_balance: bool = False
     category: TransactionCategoryEmbed
     created_at: datetime
 
@@ -75,6 +104,7 @@ class TransactionDetailResponse(BaseModel):
     amount: Decimal
     description: str | None
     transaction_date: date
+    is_opening_balance: bool = False
     category: TransactionCategoryEmbed
 
     model_config = {"from_attributes": True}
@@ -90,6 +120,7 @@ class TransactionUpdatedResponse(BaseModel):
     amount: Decimal
     description: str | None
     transaction_date: date
+    is_opening_balance: bool = False
     updated_at: datetime
 
     model_config = {"from_attributes": True}

@@ -14,9 +14,15 @@ Personal finance tracking app for managing income and expenses.
 
 - Email registration/login with server-side sessions
 - Income & expense transactions (create, update, delete, filter, paginate)
-- Categories per type (income/expense) with ownership isolation
-- Monthly budgets per category with 75%/90% usage warnings
+- Categories per type (income/expense) with ownership isolation; transactions
+  can be bulk-moved to another category before deleting a used one
+  (`POST /api/v1/categories/{id}/transfer`); the last category of a type
+  cannot be deleted
+- Monthly budgets per category with 75%/90% usage warnings; deletion is
+  explicit with confirmation (clearing the input only cancels the edit)
 - Offline transaction queue with automatic retry when the connection returns
+  (source & debt tags are queued too and replayed on sync; the UI reports
+  "stored on device" instead of fake success)
 - Monthly recurring transaction reminders with manual confirmation
 - Onboarding tour + Mochi mascot guide (personal finance agent)
 - Dashboard monthly summary, CSV API export, and formatted PDF export
@@ -75,7 +81,8 @@ cd client && npx playwright install     # install browsers (first time)
 | `HTTPS_ONLY` | `false` | must be `true` in production (enforced) or session cookies go over HTTP |
 | `SERVER_URL` | `http://localhost:8000` | client env (`client/.env.local`, see `client/.env.example`), rewrite target (server-side only) |
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
-| `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting |
+| `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting. Loopback peers (e.g. the Next.js rewrite in the same container) are always trusted, so per-user buckets work out of the box on single-container deploys (Fly.io) |
+| `INVITE_CODE` | `` (empty = open) | when set, `/api/v1/auth/register` requires a matching `invite_code` (403 `INVALID_INVITE_CODE` otherwise); for family-scope production |
 
 ## Architecture
 
@@ -105,8 +112,18 @@ from the client are never trusted for ownership.
   `server/app/core/rate_limit.py`). For defense in depth, also put
   login/register behind reverse-proxy rate limiting (e.g. nginx `limit_req`)
   in production.
-- Session cookies are `httpOnly`, `SameSite=lax`, and expire with the browser
-  session; logout clears the server-side session.
+- Session cookies are `httpOnly`, `SameSite=lax`, and expire after 7 days
+  (cookie `Max-Age` + absolute `issued_at` cap enforced server-side; logout
+  clears the server-side session). Deploying this change logs out all existing
+  sessions once (forced re-login).
+- Set `INVITE_CODE` in family-scope production so only invited users can
+  register; the Daftar form has an optional invite-code field.
+- Transaction dates are validated server-side: at most tomorrow (payday
+  tolerance) and year >= 2000 (422 otherwise); the client mirrors the rule
+  with Indonesian messages.
+- Unhandled server errors return a stable envelope (`INTERNAL_ERROR` 500,
+  `SERVICE_UNAVAILABLE` 503) with the traceback logged server-side only —
+  never leaked to clients.
 - Offline transactions are queued in browser storage when the API is unreachable
   and retried when the app opens online or the browser emits an `online` event.
   The queue is device-local and should be treated as pending until the banner

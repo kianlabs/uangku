@@ -1,7 +1,10 @@
+import logging
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy.exc import DBAPIError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -14,6 +17,8 @@ from app.api.v1.transactions import router as transactions_router
 from app.api.v1.user import router as user_router
 from app.core.config import settings
 from app.core.rate_limit import limiter
+
+logger = logging.getLogger("uangku")
 
 app = FastAPI(title="UangKu API")
 app.state.limiter = limiter
@@ -48,13 +53,23 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 class CsrfOriginMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        from app.core.csrf import is_csrf_allowed
+        from app.core.csrf import is_csrf_allowed, is_loopback_peer
 
         host = request.headers.get("host", "")
         origin = request.headers.get("origin")
         referer = request.headers.get("referer")
+        # Percaya X-Forwarded-Host hanya dari proxy lokal/tepercaya
+        # (pola yang sama seperti get_client_ip di rate_limit.py).
+        peer = request.client.host if request.client else ""
+        forwarded_host = request.headers.get("x-forwarded-host")
+        if peer not in settings.trusted_proxy_set and not is_loopback_peer(peer):
+            forwarded_host = None
         if not is_csrf_allowed(
-            method=request.method, host=host, origin=origin, referer=referer
+            method=request.method,
+            host=host,
+            origin=origin,
+            referer=referer,
+            forwarded_host=forwarded_host,
         ):
             return JSONResponse(
                 status_code=403,
@@ -76,7 +91,7 @@ app.add_middleware(
     https_only=settings.https_only,
     same_site="lax",
     session_cookie="session",
-    max_age=None,
+    max_age=7 * 24 * 3600,
 )
 
 
@@ -115,6 +130,36 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
                 "code": "VALIDATION_ERROR",
                 "message": "Request validation failed.",
                 "fields": fields,
+            }
+        },
+    )
+
+
+@app.exception_handler(DBAPIError)
+async def db_error_handler(request: Request, exc: DBAPIError):
+    # DB down/timeout/integrity yang lolos guard service -> 503 agar client
+    # menampilkan "coba lagi", bukan hang sampai timeout.
+    logger.warning("DB error: %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": {
+                "code": "SERVICE_UNAVAILABLE",
+                "message": "Layanan sibuk, coba lagi.",
+            }
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled error: %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "Terjadi kesalahan server.",
             }
         },
     )

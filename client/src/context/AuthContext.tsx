@@ -19,7 +19,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   loginUser: (email: string, password: string) => Promise<void>;
-  registerUser: (email: string, password: string) => Promise<void>;
+  registerUser: (email: string, password: string, inviteCode?: string) => Promise<void>;
   logoutUser: () => Promise<void>;
 }
 
@@ -95,6 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginUser = useCallback(async (email: string, password: string) => {
     const u = await login(email, password);
     unauthorizedRef.current = false;
+    // Ganti akun di browser bersama — buang sisa cache akun sebelumnya
+    // sebelum hydrate dari server agar tidak bocor antar-akun.
+    clearLocalCache();
     setUser(u);
     window.dispatchEvent(new CustomEvent("uangku:auth-success"));
     // Hydrate localStorage dari server setelah login
@@ -103,8 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, []);
 
-  const registerUser = useCallback(async (email: string, password: string) => {
-    const u = await register(email, password);
+  const registerUser = useCallback(async (email: string, password: string, inviteCode?: string) => {
+    const u = await register(email, password, inviteCode);
     unauthorizedRef.current = false;
     // Akun baru di browser bersama — buang sisa cache akun sebelumnya
     clearLocalCache();

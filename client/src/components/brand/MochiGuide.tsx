@@ -101,22 +101,21 @@ export function MochiGuide() {
   async function handleSeed() {
     setSeeding(true);
     try {
-      const res = await apiFetch<{ transactions: number; budgets: number }>(
+      await apiFetch<{ transactions: number; budgets: number }>(
         "/api/v1/dashboard/demo-data",
         { method: "POST" }
       );
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
       haptic.success();
-      console.info(`Contoh data: ${res.transactions} transaksi, ${res.budgets} budget`);
       dismiss();
     } catch {
       haptic.error();
       try {
         const existing = await listTransactions({ page: 1, page_size: 50 });
-        for (const tx of existing.items.filter((t) => t.description === "Saldo awal")) {
+        for (const tx of existing.items.filter((t) => t.is_opening_balance || t.description === "Saldo awal")) {
           await deleteTransaction(tx.id);
         }
-        if (existing.items.some((t) => t.description === "Saldo awal")) {
+        if (existing.items.some((t) => t.is_opening_balance || t.description === "Saldo awal")) {
           window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
         }
       } catch {

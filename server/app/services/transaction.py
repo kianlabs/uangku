@@ -6,9 +6,11 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import Select, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.errors import (
+    ExportTooLargeError,
     InvalidAmountError,
     InvalidCategoryError,
     NotFoundError,
@@ -81,7 +83,13 @@ def create_transaction(
         is_opening_balance=is_opening_balance,
     )
     db.add(tx)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Race: kategori dihapus di tab lain antara validasi dan commit
+        # (FK RESTRICT) -> 422 rapi, bukan 500.
+        db.rollback()
+        raise InvalidCategoryError()
     db.refresh(tx)
     # Eager-load category to avoid extra lazy query in response serialization.
     db.refresh(tx, attribute_names=["category"])
@@ -180,7 +188,11 @@ def update_transaction(
     if transaction_date is not None:
         tx.transaction_date = transaction_date
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise InvalidCategoryError()
     db.refresh(tx)
     return tx
 
@@ -201,8 +213,6 @@ def get_transactions_for_export(
     date_to: date | None = None,
     limit: int = 10000,
 ) -> list[Transaction]:
-    from app.core.errors import ExportTooLargeError
-
     stmt = select(Transaction).where(Transaction.user_id == user.id)
     stmt = _apply_transaction_filters(
         stmt,

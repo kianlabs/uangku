@@ -34,3 +34,25 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", () => {
   // Biarkan browser menangani semua request secara normal.
 });
+
+// Notifikasi pengingat: ketuk → buka/fokus ke halaman pengingat.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const url = typeof data.url === "string" ? data.url : "/pengaturan";
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("navigate" in client && "focus" in client) {
+            return client.navigate(url).then((c) => c.focus());
+          }
+        }
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(url);
+        }
+        return undefined;
+      })
+  );
+});

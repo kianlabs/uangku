@@ -163,3 +163,51 @@ def test_login_429_rate_limited():
         body = r.json()
         assert body["error"]["code"] == "RATE_LIMITED"
         assert "Rate limit exceeded" in body["error"]["message"]
+
+
+def test_login_sets_session_max_age_7_days(client):
+    client.post("/api/v1/auth/register", json={"email": "sess@test.com", "password": "pass1234"})
+    r = client.post("/api/v1/auth/login", json={"email": "sess@test.com", "password": "pass1234"})
+    assert r.status_code == 200
+    assert "Max-Age=604800" in r.headers.get("set-cookie", "")
+
+
+def test_session_without_or_expired_issued_at_rejected(setup_db):
+    """Sesi lama (tanpa issued_at) atau kedaluwarsa (>7 hari) → 401."""
+    import uuid as uuid_mod
+
+    from fastapi import HTTPException, Request
+
+    from app.core.deps import get_current_user
+
+    test_engine = create_engine(settings.database_url_test)
+    with Session(test_engine) as db:
+        no_stamp = Request({"type": "http", "headers": [], "session": {"user_id": str(uuid_mod.uuid4())}})
+        with pytest.raises(HTTPException) as ei:
+            get_current_user(no_stamp, db)
+        assert ei.value.status_code == 401
+
+        expired = Request({"type": "http", "headers": [], "session": {
+            "user_id": str(uuid_mod.uuid4()), "issued_at": 1,
+        }})
+        with pytest.raises(HTTPException) as ei2:
+            get_current_user(expired, db)
+        assert ei2.value.status_code == 401
+
+
+def test_register_invite_code_enforced(client, monkeypatch):
+    monkeypatch.setattr(settings, "invite_code", "keluarga-50")
+    r = client.post("/api/v1/auth/register", json={"email": "nocode@test.com", "password": "pass1234"})
+    assert r.status_code == 403
+    assert r.json()["error"]["code"] == "INVALID_INVITE_CODE"
+    r = client.post("/api/v1/auth/register", json={"email": "wrong@test.com", "password": "pass1234", "invite_code": "salah"})
+    assert r.status_code == 403
+    r = client.post("/api/v1/auth/register", json={"email": "invited@test.com", "password": "pass1234", "invite_code": "keluarga-50"})
+    assert r.status_code == 201
+
+
+def test_register_open_when_no_invite_code(client):
+    """Default (INVITE_CODE kosong) = registrasi terbuka seperti dulu."""
+    assert settings.invite_code == ""
+    r = client.post("/api/v1/auth/register", json={"email": "open@test.com", "password": "pass1234"})
+    assert r.status_code == 201

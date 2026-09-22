@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Mascot } from "@/components/brand/Mascot";
 
@@ -15,6 +15,15 @@ function storageGet(): string | null {
   } catch {
     return null;
   }
+}
+
+function shouldShowSplash(): boolean {
+  if (typeof window === "undefined") return false;
+  if (typeof window.matchMedia !== "function") return false;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return false;
+  }
+  return storageGet() !== "1";
 }
 
 function storageSet(): void {
@@ -43,18 +52,15 @@ export function SplashScreen() {
     setShow(false);
   }, []);
 
-  useEffect(() => {
-    // setState di dalam timeout (bukan body effect) agar lolos lint
-    // react-hooks/set-state-in-effect; jeda 0 task tak terlihat user.
-    const t = setTimeout(() => {
-      if (typeof window.matchMedia !== "function") return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        return;
-      }
-      if (storageGet()) return;
+  // Tampil sebelum paint pertama agar konten tidak sempat berkedip
+  // (konten → splash → konten) di tab baru. Satu render ekstra sebelum
+  // paint tidak terlihat user; setTimeout di effect biasa justru telat
+  // 1–2 frame sehingga splash menampar konten yang sudah tampil.
+  useLayoutEffect(() => {
+    if (shouldShowSplash()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- disengaja: cegah kedip first-paint
       setShow(true);
-    }, 0);
-    return () => clearTimeout(t);
+    }
   }, []);
 
   useEffect(() => {

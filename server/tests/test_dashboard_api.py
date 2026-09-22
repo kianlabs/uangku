@@ -207,12 +207,16 @@ def test_summary_recent_transactions_month_filtered(client):
 
 
 def test_summary_december_boundary(client, expense_cat_id):
-    _post_tx(client, "expense", "100000.00", expense_cat_id, "2026-12-31")
-    r = client.get("/api/v1/dashboard/summary?month=2026-12")
+    # Desember terakhir yang sudah lewat (validasi menolak tanggal masa depan).
+    today = datetime.now(UTC).date()
+    dec_year = today.year if today.month == 12 else today.year - 1
+    jan_year = dec_year + 1
+    _post_tx(client, "expense", "100000.00", expense_cat_id, f"{dec_year}-12-31")
+    r = client.get(f"/api/v1/dashboard/summary?month={dec_year}-12")
     assert r.status_code == 200
     assert r.json()["transaction_count"] >= 1
-    # Jan 2027 should not see Dec transaction
-    r2 = client.get("/api/v1/dashboard/summary?month=2027-01")
+    # Januari berikutnya tidak boleh melihat transaksi Desember
+    r2 = client.get(f"/api/v1/dashboard/summary?month={jan_year}-01")
     assert r2.json()["transaction_count"] == 0
 
 
@@ -309,3 +313,44 @@ def test_metrics_own_data_only(client, other_client):
     body = r.json()
     # Our remaining_balance should NOT include the other user's 99999999 income
     assert float(body["remaining_balance"]) < 99999999
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/dashboard/demo-data
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def demo_client(test_engine):
+    def override_get_db():
+        db = Session(test_engine)
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[deps.get_db] = override_get_db
+    with TestClient(app, raise_server_exceptions=True) as c:
+        c.post("/api/v1/auth/register", json={"email": "dash_demo@test.com", "password": "pass1234"})
+        c.post("/api/v1/auth/login", json={"email": "dash_demo@test.com", "password": "pass1234"})
+        yield c
+    app.dependency_overrides.clear()
+
+
+def test_demo_data_seeds_new_user(demo_client):
+    """User baru dapat contoh data (201) + is_opening_balance terekspos."""
+    r = demo_client.post("/api/v1/dashboard/demo-data")
+    assert r.status_code == 201
+    body = r.json()
+    assert body["transactions"] >= 10
+    assert body["budgets"] == 2
+
+    r2 = demo_client.get("/api/v1/transactions?page=1&page_size=1")
+    assert "is_opening_balance" in r2.json()["items"][0]
+
+
+def test_demo_data_rejects_when_has_data(demo_client):
+    """Seed kedua ditolak 409 agar data asli tidak ketimpa."""
+    r = demo_client.post("/api/v1/dashboard/demo-data")
+    assert r.status_code == 409
+    assert r.json()["error"]["code"] == "ALREADY_HAS_DATA"

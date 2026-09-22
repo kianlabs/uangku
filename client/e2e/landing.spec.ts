@@ -8,7 +8,7 @@ test.describe("Landing", () => {
   test("menampilkan headline dan CTA", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: /catat keuangan harianmu/i })
+      page.getByRole("heading", { name: /catat yang masuk/i })
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Mulai gratis" })

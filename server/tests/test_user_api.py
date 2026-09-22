@@ -2,7 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.core import deps
@@ -152,6 +152,19 @@ def test_patch_unauthenticated():
     with TestClient(app) as fresh:
         r = fresh.patch("/api/v1/user/preferences", json={"preferences": {"payday": 1}})
     assert r.status_code == 401
+
+
+def test_get_preferences_corrupt_data_heals(client, test_engine):
+    """Preferensi korup di DB (mis. edit manual) tidak boleh 500."""
+    with Session(test_engine) as s:
+        user = s.scalar(select(User).where(User.email == "prefs_user@test.com"))
+        user.preferences = {"payday": 99, "kunci_ngawur": "x"}
+        s.commit()
+
+    r = client.get("/api/v1/user/preferences")
+    assert r.status_code == 200
+    prefs = r.json()["preferences"]
+    assert prefs.get("payday") is None
 
 
 # ---------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+import time
 import uuid
 from collections.abc import Generator
 
@@ -8,6 +9,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.models.user import User
+
+# Umur sesi absolut: 7 hari. Cookie max_age ikut 7 hari (lihat main.py) tapi
+# bisa refresh tiap respons — issued_at memastikan sesi lama tetap mati.
+SESSION_MAX_AGE_SECONDS = 7 * 24 * 3600
 
 engine = create_engine(settings.database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
@@ -30,7 +35,15 @@ def _unauthenticated() -> HTTPException:
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user_id = request.session.get("user_id")
+    issued_at = request.session.get("issued_at")
     if not user_id:
+        raise _unauthenticated()
+    if (
+        not isinstance(issued_at, (int, float))
+        or time.time() - issued_at > SESSION_MAX_AGE_SECONDS
+    ):
+        # Sesi tanpa cap waktu (dibuat sebelum fitur ini) atau kedaluwarsa
+        # → paksa login ulang.
         raise _unauthenticated()
     try:
         user_uuid = uuid.UUID(str(user_id))

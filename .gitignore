@@ -15,6 +15,10 @@ node_modules/
 .next/
 out/
 
+# Legacy (pra-restruktur, tidak dipakai — kode aktif: client/ + server/)
+/frontend/
+/backend/
+
 # Logs
 *.log
 
@@ -37,3 +41,7 @@ scripts/orchestra.sh
 # Config & artefak audit visual (lokal saja)
 client/playwright.local.config.ts
 client/shot-*.png
+
+# Artefak hasil run Playwright (lokal saja)
+test-results/
+server/test-results/

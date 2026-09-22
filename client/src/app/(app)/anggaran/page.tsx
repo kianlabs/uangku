@@ -24,6 +24,8 @@ export default function AnggaranPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
 
@@ -65,28 +67,24 @@ export default function AnggaranPage() {
     if (drafts[categoryId] === undefined) return; // belum diedit
     const digits = drafts[categoryId];
     const num = digits ? parseInt(digits, 10) : 0;
-    const hadBudget = Boolean(budgets[categoryId]);
+    if (num <= 0) {
+      // Dikosongkan = batal edit (kembalikan tampilan), BUKAN hapus.
+      // Hapus hanya lewat tombol Hapus eksplisit + konfirmasi.
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[categoryId];
+        return next;
+      });
+      return;
+    }
     setSavingId(categoryId);
     setRowErrors((prev) => ({ ...prev, [categoryId]: null }));
     try {
-      if (num <= 0) {
-        // Dikosongkan → hapus anggaran (kalau memang ada)
-        if (hadBudget) {
-          await deleteBudget(categoryId);
-          haptic.success();
-          setBudgets((prev) => {
-            const next = { ...prev };
-            delete next[categoryId];
-            return next;
-          });
-        }
-      } else {
-        const res = await upsertBudget(categoryId, String(num));
-        haptic.success();
-        setBudgets((prev) => ({ ...prev, [categoryId]: res }));
-        setSavedFlash(categoryId);
-        setTimeout(() => setSavedFlash((cur) => (cur === categoryId ? null : cur)), 2000);
-      }
+      const res = await upsertBudget(categoryId, String(num));
+      haptic.success();
+      setBudgets((prev) => ({ ...prev, [categoryId]: res }));
+      setSavedFlash(categoryId);
+      setTimeout(() => setSavedFlash((cur) => (cur === categoryId ? null : cur)), 2000);
       setDrafts((prev) => {
         const next = { ...prev };
         delete next[categoryId];
@@ -97,6 +95,27 @@ export default function AnggaranPage() {
       setRowErrors((prev) => ({ ...prev, [categoryId]: "Gagal menyimpan. Coba lagi." }));
     } finally {
       setSavingId(null);
+    }
+  }
+
+  async function handleDeleteBudget(categoryId: string) {
+    if (deletingId) return;
+    setDeletingId(categoryId);
+    setRowErrors((prev) => ({ ...prev, [categoryId]: null }));
+    try {
+      await deleteBudget(categoryId);
+      haptic.success();
+      setBudgets((prev) => {
+        const next = { ...prev };
+        delete next[categoryId];
+        return next;
+      });
+      setConfirmDeleteId(null);
+    } catch {
+      haptic.error();
+      setRowErrors((prev) => ({ ...prev, [categoryId]: "Gagal menghapus. Coba lagi." }));
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -224,10 +243,15 @@ export default function AnggaranPage() {
               spent={spent}
               pct={pct}
               saving={savingId === cat.id}
+              deleting={deletingId === cat.id}
+              confirmingDelete={confirmDeleteId === cat.id}
               error={rowErrors[cat.id] ?? null}
               flash={savedFlash === cat.id}
               onDraft={setDraft}
               onSave={handleSave}
+              onDeleteRequest={setConfirmDeleteId}
+              onDeleteCancel={() => setConfirmDeleteId(null)}
+              onDeleteConfirm={handleDeleteBudget}
             />
           ))}
         </div>
@@ -250,10 +274,15 @@ interface BudgetRowProps {
   spent: number | null;
   pct: number | null;
   saving: boolean;
+  deleting: boolean;
+  confirmingDelete: boolean;
   error: string | null;
   flash: boolean;
   onDraft: (categoryId: string, value: string) => void;
   onSave: (categoryId: string) => void;
+  onDeleteRequest: (categoryId: string) => void;
+  onDeleteCancel: () => void;
+  onDeleteConfirm: (categoryId: string) => void;
 }
 
 function BudgetRow({
@@ -263,10 +292,15 @@ function BudgetRow({
   spent,
   pct,
   saving,
+  deleting,
+  confirmingDelete,
   error,
   flash,
   onDraft,
   onSave,
+  onDeleteRequest,
+  onDeleteCancel,
+  onDeleteConfirm,
 }: BudgetRowProps) {
   const dirty = draft !== undefined;
   const display = dirty
@@ -332,6 +366,37 @@ function BudgetRow({
         </p>
       )}
       {flash && !error && <p className="text-xs text-accent">Tersimpan</p>}
+      {budget && !confirmingDelete && (
+        <button
+          type="button"
+          onClick={() => onDeleteRequest(category.id)}
+          disabled={saving || deleting}
+          className="self-start min-h-[44px] px-2 -ml-2 text-xs font-semibold text-danger hover:underline disabled:opacity-50 rounded"
+        >
+          Hapus anggaran
+        </button>
+      )}
+      {budget && confirmingDelete && (
+        <div className="flex items-center gap-2" role="group" aria-label={`Konfirmasi hapus anggaran ${category.name}`}>
+          <span className="text-xs text-text">Hapus anggaran {category.name}?</span>
+          <button
+            type="button"
+            onClick={() => onDeleteConfirm(category.id)}
+            disabled={deleting}
+            className="min-h-[44px] px-3 text-xs font-semibold text-danger hover:underline disabled:opacity-50 rounded"
+          >
+            {deleting ? "Menghapus…" : "Ya, hapus"}
+          </button>
+          <button
+            type="button"
+            onClick={onDeleteCancel}
+            disabled={deleting}
+            className="min-h-[44px] px-3 text-xs font-semibold text-muted hover:text-text disabled:opacity-50 rounded"
+          >
+            Batal
+          </button>
+        </div>
+      )}
     </div>
   );
 }
