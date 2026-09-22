@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_serializer
@@ -29,3 +30,6 @@ class BudgetResponse(BaseModel):
 class BudgetListResponse(BaseModel):
     items: list[BudgetResponse]
     month: str | None = None
+    # created_at anggaran tertua — klien memakai ini sebagai batas bawah
+    # navigasi bulan (bulan sebelum anggaran pertama tak relevan).
+    earliest_created_at: datetime | None = None

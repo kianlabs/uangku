@@ -115,4 +115,6 @@ export interface Budget {
 export interface BudgetListResponse {
   items: Budget[];
   month: string | null;
+  /** created_at anggaran tertua — batas bawah navigasi bulan. */
+  earliest_created_at: string | null;
 }

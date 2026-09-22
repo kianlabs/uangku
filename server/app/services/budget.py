@@ -65,6 +65,7 @@ def list_budgets(
         }
 
     items = []
+    earliest_created_at = None
     for b in budgets:
         amount = Decimal(str(b.amount))
         spent = spent_by_category.get(b.category_id)
@@ -73,6 +74,8 @@ def list_budgets(
             if spent is not None and amount > 0
             else None
         )
+        if earliest_created_at is None or b.created_at < earliest_created_at:
+            earliest_created_at = b.created_at
         items.append({
             "category_id": b.category_id,
             "category_name": b.category.name,
@@ -81,7 +84,11 @@ def list_budgets(
             "spent": spent,
             "percentage": percentage,
         })
-    return {"items": items, "month": month_str}
+    return {
+        "items": items,
+        "month": month_str,
+        "earliest_created_at": earliest_created_at,
+    }
 
 
 def upsert_budget(

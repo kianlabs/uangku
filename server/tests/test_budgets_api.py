@@ -121,7 +121,19 @@ def test_upsert_unknown_category_rejected(client):
 def test_list_budgets_empty_for_new_user(other_client):
     r = other_client.get("/api/v1/budgets")
     assert r.status_code == 200
-    assert r.json()["items"] == []
+    body = r.json()
+    assert body["items"] == []
+    assert body["earliest_created_at"] is None
+
+
+def test_list_budgets_reports_earliest_created_at(client, expense_cat_id):
+    client.put(f"/api/v1/budgets/{expense_cat_id}", json={"amount": "100000"})
+    r = client.get("/api/v1/budgets")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["earliest_created_at"] is not None
+    # created_at anggaran tunggal = earliest
+    assert body["earliest_created_at"][:4].isdigit()  # bentuk ISO datetime
 
 
 def test_list_budgets_with_month_spent(client, expense_cat_id):

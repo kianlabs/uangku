@@ -28,6 +28,8 @@ export default function AnggaranPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  // created_at anggaran tertua — batas bawah navigasi bulan.
+  const [earliestBudgetMonth, setEarliestBudgetMonth] = useState<string | null>(null);
 
   const expenseCats = useMemo(() => cats.filter((c) => c.type === "expense"), [cats]);
 
@@ -54,6 +56,11 @@ export default function AnggaranPage() {
       const map: Record<string, Budget> = {};
       for (const b of budRes.items) map[b.category_id] = b;
       setBudgets(map);
+      if (budRes.earliest_created_at) {
+        setEarliestBudgetMonth(toMonthKey(new Date(budRes.earliest_created_at)));
+      } else {
+        setEarliestBudgetMonth(null);
+      }
     } catch {
       if (!signal?.aborted) setLoadError("Gagal memuat anggaran. Coba lagi.");
     } finally {
@@ -172,9 +179,12 @@ export default function AnggaranPage() {
   const totalSpent = withBudget.reduce((sum, r) => (r.spent != null ? sum + r.spent : sum), 0);
   const totalPct = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
   const riskCount = rows.filter((r) => (r.pct ?? 0) >= 90).length;
-  // Anggaran berlaku lintas bulan: navigator bulan hanya relevan setelah ada
-  // anggaran — tanpa anggaran tidak ada yang bisa dilihat di bulan lain.
+  // Anggaran berlaku lintas bulan, tapi bulan SEBELUM anggaran pertama dibuat
+  // tidak relevan — tombol ‹ berhenti di situ. Tanpa anggaran: tanpa navigator.
   const hasAnyBudget = withBudget.length > 0;
+  const canGoPrev =
+    hasAnyBudget &&
+    (earliestBudgetMonth === null || monthKey > earliestBudgetMonth);
 
   return (
     <div className="flex flex-col gap-5">
@@ -189,8 +199,9 @@ export default function AnggaranPage() {
           <button
             type="button"
             onClick={() => setMonthKey((k) => shiftMonthKey(k, -1))}
+            disabled={!canGoPrev}
             aria-label="Bulan sebelumnya"
-            className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all"
+            className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-40"
           >
             ‹
           </button>
