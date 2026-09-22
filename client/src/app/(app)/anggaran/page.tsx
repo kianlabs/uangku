@@ -31,17 +31,33 @@ export default function AnggaranPage() {
 
   const expenseCats = useMemo(() => cats.filter((c) => c.type === "expense"), [cats]);
 
-  const load = useCallback(async () => {
+  // Kategori tidak bergantung bulan — dimuat sekali, bukan tiap ganti bulan
+  // (duplikasi request tiap navigasi rawan menyentuh rate-limit → "gagal memuat").
+  useEffect(() => {
+    let cancelled = false;
+    listCategories()
+      .then((res) => {
+        if (!cancelled) setCats(res.items);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError("Gagal memuat anggaran. Coba lagi.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const [catRes, budRes] = await Promise.all([listCategories(), listBudgets(monthKey)]);
-      setCats(catRes.items);
+      const budRes = await listBudgets(monthKey, signal);
+      if (signal?.aborted) return;
       const map: Record<string, Budget> = {};
       for (const b of budRes.items) map[b.category_id] = b;
       setBudgets(map);
     } catch {
-      setLoadError("Gagal memuat anggaran. Coba lagi.");
+      if (!signal?.aborted) setLoadError("Gagal memuat anggaran. Coba lagi.");
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) setIsLoading(false);
     }
   }, [monthKey]);
 
@@ -52,9 +68,13 @@ export default function AnggaranPage() {
   }
 
   useEffect(() => {
+    const controller = new AbortController();
     // Deferred — hindari setState sinkron di jalur effect (cascading render).
-    const t = setTimeout(load, 0);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => void load(controller.signal), 0);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
   }, [load]);
 
   useEffect(() => {
@@ -138,6 +158,10 @@ export default function AnggaranPage() {
           : null;
     return { cat: c, budget: b, spent, pct };
   });
+
+  // Bulan lampau tanpa anggaran tidak dirender kosong — cukup catatan.
+  const isPastMonth = monthKey < currentMonthKey();
+  const visibleRows = isPastMonth ? rows.filter((r) => r.budget) : rows;
 
   const withBudget = rows.filter((r) => r.budget);
   const totalBudget = withBudget.reduce((sum, r) => sum + Number(r.budget?.amount ?? 0), 0);
@@ -234,7 +258,9 @@ export default function AnggaranPage() {
           </>
         ) : (
           <p className="text-sm text-muted">
-            Belum ada anggaran. Isi nominal di bawah — kategori kosong berarti tanpa batas.
+            {isPastMonth
+              ? `Belum ada anggaran pada ${monthLabelId(monthKey)}.`
+              : "Belum ada anggaran. Isi nominal di bawah — kategori kosong berarti tanpa batas."}
           </p>
         )}
       </section>
@@ -269,9 +295,9 @@ export default function AnggaranPage() {
             </Link>
           }
         />
-      ) : (
+      ) : isPastMonth && visibleRows.length === 0 ? null : (
         <div className="flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border">
-          {rows.map(({ cat, budget, spent, pct }) => (
+          {visibleRows.map(({ cat, budget, spent, pct }) => (
             <BudgetRow
               key={cat.id}
               category={cat}
