@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ApiResponseError } from "@/lib/api";
-import { exportTransactionsPdf } from "@/lib/transactions";
+import { exportTransactionsPdf } from "@/lib/export-pdf";
 import type { TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";

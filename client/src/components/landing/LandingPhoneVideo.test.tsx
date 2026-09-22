@@ -17,11 +17,12 @@ function mockMatchMedia(matches: boolean) {
 }
 
 describe("LandingPhoneVideo", () => {
-  it("plays portrait video by default", () => {
+  it("tidak request video (file belum ada) — tampilkan statis", () => {
     mockMatchMedia(false);
-    render(<LandingPhoneVideo />);
-    const video = document.querySelector("video");
-    expect(video?.getAttribute("src")).toBe("/videos/UangKu_motiongraph.mp4");
+    const { container } = render(<LandingPhoneVideo />);
+    expect(container.querySelector("video")).toBeNull();
+    // Wrapper aria-hidden saat motion aktif — cek via alt, bukan role.
+    expect(screen.getByAltText("Logo UangKu")).toBeTruthy();
   });
 
   it("shows static logo when reduced motion is preferred", () => {

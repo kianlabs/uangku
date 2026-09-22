@@ -65,27 +65,25 @@ export default function BerandaPage() {
     const controller = new AbortController();
     const payday = getPayday();
 
+    // Fase kritis: tampilkan saldo + metrik secepatnya. Cek ada-tidaknya
+    // transaksi ikut fase kritis (1 baris, murah) agar empty-state vs
+    // dashboard tidak berkedip saat data susulan tiba.
     Promise.all([
       getMe(),
       getDashboardSummary(currentMonth, controller.signal),
       getDashboardMetrics(payday, controller.signal),
-      listBudgets(currentMonth).catch(() => ({ items: [], month: null })),
       listTransactions({ page: 1, page_size: 1, signal: controller.signal })
         .then((res) => res.pagination.total_items > 0)
         .catch(() => false),
-      getDashboardSummary(prevMonth, controller.signal).catch(() => null),
     ])
-      .then(([currentUser, summary, metricsData, budgetData, anyTx, prevSummary]) => {
-        if (!cancelled) {
-          setUser(currentUser);
-          setData(summary);
-          setMetrics(metricsData);
-          setBudgets(budgetData.items);
-          setHasAnyTransaction(anyTx);
-          setPrevData(prevSummary);
-          setLoadedAt(new Date());
-          setIsLoading(false);
-        }
+      .then(([currentUser, summary, metricsData, anyTx]) => {
+        if (cancelled) return;
+        setUser(currentUser);
+        setData(summary);
+        setMetrics(metricsData);
+        setHasAnyTransaction(anyTx);
+        setLoadedAt(new Date());
+        setIsLoading(false);
       })
       .catch((err) => {
         if (controller.signal.aborted || cancelled) return;
@@ -96,6 +94,16 @@ export default function BerandaPage() {
         setError("Gagal memuat data.");
         setIsLoading(false);
       });
+
+    // Fase susulan: tidak menahan tampilan utama (delta MoM, budget).
+    void Promise.all([
+      listBudgets(currentMonth).catch(() => ({ items: [], month: null })),
+      getDashboardSummary(prevMonth, controller.signal).catch(() => null),
+    ]).then(([budgetData, prevSummary]) => {
+      if (cancelled) return;
+      setBudgets(budgetData.items);
+      setPrevData(prevSummary);
+    });
 
     return () => {
       cancelled = true;

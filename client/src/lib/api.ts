@@ -80,14 +80,17 @@ export async function apiFetch<T>(
   let response: Response;
 
   try {
+    // Content-Type JSON hanya untuk request berbodi — GET/DELETE tanpa
+    // Content-Type menghindari preflight tak perlu.
+    const headers: Record<string, string> = { ...(options.headers as Record<string, string> | undefined) };
+    if (rest.body != null && !("Content-Type" in headers) && !("content-type" in headers)) {
+      headers["Content-Type"] = "application/json";
+    }
     response = await fetch(path, {
       ...rest,
       credentials: "include",
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
+      headers,
     });
   } catch (err) {
     if (

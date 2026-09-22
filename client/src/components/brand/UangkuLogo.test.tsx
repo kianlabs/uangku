@@ -16,7 +16,7 @@ describe("UangkuLogo", () => {
   it("renders mark image", () => {
     render(<UangkuLogo />);
     const img = screen.getByAltText("");
-    expect(img.getAttribute("src")).toContain("logo-uangku-mark.png");
+    expect(img.getAttribute("src")).toContain("logo-uangku-mark.webp");
   });
 
   it("renders without animation when animated is false", () => {

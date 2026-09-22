@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
 import { haptic } from "@/lib/haptics";
+
+// Modal tambah-cepat jarang dibuka (FAB) — muat malas agar tidak ikut
+// bundle awal semua halaman.
+const QuickAddModal = dynamic(
+  () => import("@/components/dashboard/QuickAddModal").then((m) => m.QuickAddModal),
+  { ssr: false }
+);
 
 const navItems = [
   {
@@ -163,11 +170,13 @@ export function BottomNav() {
           })}
         </ul>
       </div>
-      <QuickAddModal
-        key={modalOpen ? "open" : "closed"}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-      />
+      {modalOpen && (
+        <QuickAddModal
+          key="open"
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </nav>
   );
 }

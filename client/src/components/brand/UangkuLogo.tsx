@@ -16,7 +16,7 @@ interface UangkuLogoProps {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
- * Lockup resmi UangKu: ikon dompet+panah (PNG transparan) tersusun di atas
+ * Lockup resmi UangKu: ikon dompet+panah (WebP transparan) tersusun di atas
  * wordmark dua-warna + tagline — meniru susunan file desain asli.
  *
  * Animasi hanya saat masuk, bergantian (mark → kata → tagline), lalu diam
@@ -35,11 +35,12 @@ export function UangkuLogo({
     return (
       <span className={`inline-flex items-center gap-2 ${className}`}>
         <Image
-          src="/images/logo-uangku-mark.png"
+          src="/images/logo-uangku-mark.webp"
           alt=""
           aria-hidden="true"
           width={markWidth}
           height={markHeight}
+          sizes={`${markWidth}px`}
           priority={priority}
         />
         <span role="img" aria-label="UangKu" className="text-xl font-bold leading-none tracking-tight">
@@ -64,10 +65,11 @@ export function UangkuLogo({
           transition={{ duration: 0.55, ease: EASE }}
         >
           <Image
-            src="/images/logo-uangku-mark.png"
+            src="/images/logo-uangku-mark.webp"
             alt=""
             width={markWidth}
             height={markHeight}
+            sizes={`${markWidth}px`}
             priority={priority}
           />
         </motion.span>

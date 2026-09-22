@@ -5,9 +5,9 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Mascot } from "@/components/brand/Mascot";
 
 const SEEN_KEY = "uangku_splash_seen";
-const AUTH_SPLASH_MS = 3000;
-/** Splash standar web app: singkat, maksimal tampil 1,8 detik. */
-const MAX_MS = 1800;
+const AUTH_SPLASH_MS = 1200;
+/** Splash standar web app: maksimal tampil 3 detik. */
+const MAX_MS = 3000;
 
 function storageGet(): string | null {
   try {
