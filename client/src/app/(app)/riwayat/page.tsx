@@ -370,14 +370,14 @@ export default function RiwayatPage() {
             {m.label}
           </button>
         ))}
-        <input
-          type="month"
-          aria-label="Pilih bulan"
-          value={monthFilter === "all" || monthFilter === thisMonth || monthFilter === lastMonth ? "" : monthFilter}
-          max={thisMonth}
-          onChange={(e) => e.target.value && handleMonthFilter(e.target.value)}
-          className="px-3 h-11 rounded-full text-sm font-medium border border-border bg-surface text-text"
-        />
+        {monthFilter !== "all" && monthFilter !== thisMonth && monthFilter !== lastMonth && (
+          <span
+            aria-live="polite"
+            className="px-4 h-11 rounded-full text-sm font-medium bg-accent text-accent-ink inline-flex items-center"
+          >
+            {monthLabel(monthFilter)}
+          </span>
+        )}
       </div>
 
       {/* Jenis */}
