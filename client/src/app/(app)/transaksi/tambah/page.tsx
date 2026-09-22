@@ -11,6 +11,7 @@ import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO, validateTransactionDate } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
+import { showToast } from "@/lib/toast";
 import { setTransactionSource, setDebtTag, getTemplates, setTemplates, type SubscriptionTemplate } from "@/lib/local-storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -52,7 +53,6 @@ export default function TambahTransaksiPage() {
     date?: string;
   }>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  const [offlineNotice, setOfflineNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -154,14 +154,20 @@ export default function TambahTransaksiPage() {
 
     setIsSubmitting(true);
     try {
-      await createTransaction({
+      const result = (await createTransaction({
         type: "expense",
         amount: template.amount.toFixed(2),
         category_id: category.id,
         transaction_date: today,
         description: template.name,
-      });
-      haptic.success();
+      })) as { offlineQueued?: boolean };
+      if (result?.offlineQueued) {
+        showToast("Tersimpan di HP — terkirim otomatis saat online.", "info");
+        haptic.warning();
+      } else {
+        showToast("Transaksi tersimpan.", "success");
+        haptic.success();
+      }
       router.push("/beranda");
     } catch {
       haptic.error();
@@ -214,7 +220,6 @@ export default function TambahTransaksiPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(null);
-    setOfflineNotice(false);
     const fieldErrors = validate();
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
@@ -237,16 +242,17 @@ export default function TambahTransaksiPage() {
       }) as { id?: string; offlineQueued?: boolean };
       if (txData?.offlineQueued) {
         // Offline: antrean sudah menyimpan payload + sumber/kasbon.
-        // Jangan redirect seolah sukses — tampilkan status + biarkan user
-        // memutuskan (banner "menunggu koneksi" tampil di semua halaman).
-        setOfflineNotice(true);
+        // Toast + redirect — banner "menunggu koneksi" jadi sinyal menetap.
+        showToast("Tersimpan di HP — terkirim otomatis saat online.", "info");
         haptic.warning();
+        router.push("/beranda");
         return;
       }
       if (source && txData?.id) setTransactionSource(txData.id, source);
       if (debtTag && txData?.id) {
         setDebtTag(txData.id, { tag: debtTag, settled: debtSettled });
       }
+      showToast("Transaksi tersimpan.", "success");
       haptic.success();
       router.push("/beranda");
     } catch (err) {
@@ -660,18 +666,6 @@ export default function TambahTransaksiPage() {
               </div>
             )}
           </div>
-
-          {offlineNotice && (
-            <div
-              role="status"
-              className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-            >
-              <p>Tersimpan di HP — akan dikirim otomatis saat ada koneksi (termasuk sumber & kasbon).</p>
-              <Link href="/beranda" className="font-semibold text-accent hover:underline w-fit">
-                Ke beranda
-              </Link>
-            </div>
-          )}
 
           {serverError && (
             <div

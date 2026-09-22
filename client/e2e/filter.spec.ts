@@ -120,6 +120,8 @@ test.describe("Filter Transaksi", () => {
   });
 
   test("riwayat kosong menampilkan pesan jika tidak ada transaksi", async ({ browser }) => {
+    // Register fresh bisa kena 429 di ekor suite — beri ruang untuk retry helper.
+    test.setTimeout(180_000);
     // Buat user baru yang tidak punya transaksi, di context fresh terpisah.
     const freshCtx = await browser.newContext();
     const fresh = await freshCtx.newPage();

@@ -15,8 +15,22 @@ function currentMonthKey(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function shiftMonthKey(monthKey: string, delta: number): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function AnggaranPage() {
-  const monthKey = useMemo(() => currentMonthKey(), []);
+  const [monthKey, setMonthKey] = useState(() => currentMonthKey());
 
   const [cats, setCats] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Record<string, Budget>>({});
@@ -55,6 +69,15 @@ export default function AnggaranPage() {
     // Deferred — hindari setState sinkron di jalur effect (cascading render).
     const t = setTimeout(load, 0);
     return () => clearTimeout(t);
+  }, [load]);
+
+  useEffect(() => {
+    // Progress basi setelah tambah/hapus transaksi — muat ulang.
+    function onTxChanged() {
+      load();
+    }
+    window.addEventListener("uangku:tx-changed", onTxChanged);
+    return () => window.removeEventListener("uangku:tx-changed", onTxChanged);
   }, [load]);
 
   function setDraft(categoryId: string, value: string) {
@@ -142,6 +165,43 @@ export default function AnggaranPage() {
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-bold text-text">Anggaran</h1>
 
+      <div
+        className="flex items-center justify-between gap-2"
+        role="group"
+        aria-label="Pilih bulan anggaran"
+      >
+        <button
+          type="button"
+          onClick={() => setMonthKey((k) => shiftMonthKey(k, -1))}
+          aria-label="Bulan sebelumnya"
+          className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all"
+        >
+          ‹
+        </button>
+        <label className="flex items-center gap-2 text-sm font-semibold text-text">
+          <span className="sr-only">Bulan</span>
+          <input
+            type="month"
+            value={monthKey}
+            max={currentMonthKey()}
+            onChange={(e) => {
+              if (e.target.value) setMonthKey(e.target.value);
+            }}
+            aria-label={`Bulan anggaran, saat ini ${monthLabel(monthKey)}`}
+            className="h-11 rounded-xl bg-surface border border-border px-3 text-sm font-semibold text-text focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={() => setMonthKey((k) => shiftMonthKey(k, 1))}
+          disabled={monthKey >= currentMonthKey()}
+          aria-label="Bulan berikutnya"
+          className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-40"
+        >
+          ›
+        </button>
+      </div>
+
       <div className="flex flex-col items-center gap-1.5 text-center pt-1 pb-2">
         <Mascot
           size={88}
@@ -152,7 +212,7 @@ export default function AnggaranPage() {
         />
         <p className="text-base font-bold text-text">Rencanakan belanjamu</p>
         <p className="text-sm text-muted leading-relaxed max-w-xs">
-          Tetapkan batas belanja per kategori bulan ini. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
+          Tetapkan batas belanja per kategori untuk {monthLabel(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
         </p>
       </div>
 

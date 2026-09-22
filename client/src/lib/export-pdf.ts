@@ -44,11 +44,20 @@ function parseCsvRows(csv: string): string[][] {
   return rows;
 }
 
+/** Batas baris PDF agar HP tidak freeze — data besar pakai CSV. */
+export const PDF_MAX_ROWS = 2000;
+
 export async function exportTransactionsPdf(
   params: ExportTransactionsParams = {}
 ): Promise<{ blob: Blob; filename: string }> {
   const { blob } = await exportTransactionsCsv(params);
   const rows = parseCsvRows((await blob.text()).replace(/^\uFEFF/, ""));
+  const dataRows = rows.length > 0 ? rows.length - 1 : 0;
+  if (dataRows > PDF_MAX_ROWS) {
+    throw new Error(
+      `Terlalu banyak data untuk PDF (${dataRows} baris, maks ${PDF_MAX_ROWS}). Persempit rentang tanggal atau unduh CSV.`
+    );
+  }
   const { jsPDF } = await import("jspdf");
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -123,5 +132,8 @@ export async function exportTransactionsPdf(
   pdf.setTextColor(120, 120, 120);
   pdf.setFontSize(7);
   pdf.text(`Dibuat ${new Date().toLocaleDateString("id-ID")}`, margin, pageHeight - 7);
-  return { blob: pdf.output("blob"), filename: "uangku-transaksi.pdf" };
+  const today = new Date();
+  const stamp = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+  const kind = params.type ?? "semua";
+  return { blob: pdf.output("blob"), filename: `uangku-${stamp}-${kind}.pdf` };
 }

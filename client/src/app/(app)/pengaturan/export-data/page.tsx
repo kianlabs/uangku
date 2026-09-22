@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { ApiResponseError } from "@/lib/api";
 import { exportTransactionsPdf } from "@/lib/export-pdf";
+import { exportTransactionsCsv } from "@/lib/transactions";
 import type { TransactionType } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Mascot } from "@/components/brand/Mascot";
-import { FileDown } from "lucide-react";
+import { FileDown, FileSpreadsheet } from "lucide-react";
 
 type FilterType = "all" | TransactionType;
 
@@ -19,31 +20,42 @@ export default function ExportDataPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
 
-  async function handleExport() {
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoke after 60s so large downloads aren't killed mid-save.
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 60000);
+  }
+
+  function currentParams() {
+    return {
+      type: filter === "all" ? undefined : filter,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+    };
+  }
+
+  async function handleExportPdf() {
     setError(null);
     setSuccess(null);
     setIsExporting(true);
     try {
-      const { blob, filename } = await exportTransactionsPdf({
-        type: filter === "all" ? undefined : filter,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const { blob, filename } = await exportTransactionsPdf(currentParams());
+      downloadBlob(blob, filename);
       setSuccess(`Berhasil mengunduh ${filename}.`);
-      // Revoke after 60s so large downloads aren't killed mid-save.
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 60000);
     } catch (err) {
       if (err instanceof ApiResponseError) {
+        setError(err.message);
+      } else if (err instanceof Error && err.message) {
         setError(err.message);
       } else {
         setError("Gagal mengekspor data. Coba lagi.");
@@ -53,12 +65,32 @@ export default function ExportDataPage() {
     }
   }
 
+  async function handleExportCsv() {
+    setError(null);
+    setSuccess(null);
+    setIsExportingCsv(true);
+    try {
+      const { blob, filename } = await exportTransactionsCsv(currentParams());
+      downloadBlob(blob, filename);
+      setSuccess(`Berhasil mengunduh ${filename}.`);
+    } catch (err) {
+      if (err instanceof ApiResponseError) {
+        setError(err.message);
+      } else {
+        setError("Gagal mengekspor data. Coba lagi.");
+      }
+    } finally {
+      setIsExportingCsv(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-bold text-text">Export Data</h1>
         <p className="text-sm text-muted">
-          Download transaksi Anda dalam format PDF yang siap dibaca atau dicetak.
+          Unduh transaksi sebagai PDF siap baca/cetak, atau CSV untuk diolah
+          di spreadsheet. PDF dibatasi 2000 baris — data besar pakai CSV.
         </p>
       </div>
 
@@ -73,7 +105,7 @@ export default function ExportDataPage() {
           <option value="income">Pemasukan</option>
         </Select>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Dari tanggal"
             type="date"
@@ -114,11 +146,22 @@ export default function ExportDataPage() {
         type="button"
         variant="primary"
         loading={isExporting}
-        onClick={handleExport}
+        onClick={handleExportPdf}
         className="w-full"
       >
         <FileDown className="w-5 h-5" aria-hidden="true" />
         Unduh PDF
+      </Button>
+
+      <Button
+        type="button"
+        variant="secondary"
+        loading={isExportingCsv}
+        onClick={handleExportCsv}
+        className="w-full"
+      >
+        <FileSpreadsheet className="w-5 h-5" aria-hidden="true" />
+        Unduh CSV
       </Button>
     </div>
   );

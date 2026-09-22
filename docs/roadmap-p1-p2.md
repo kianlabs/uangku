@@ -45,14 +45,14 @@ P1-Fitur → P1-UX → P2 dari feedback**.
 
 ## P1-Fitur
 
-- [ ] **8. Anggaran: navigasi bulan + auto-refresh.** Tambah month picker
+- [x] **8. Anggaran: navigasi bulan + auto-refresh.** Tambah month picker
       (seperti riwayat; server `list_budgets(month)` sudah mendukung) dan
       listener `uangku:tx-changed` + `reloadKey` di `anggaran/page.tsx`.
-- [ ] **9. Export CSV + batas PDF.** Dua tombol di `export-data/page.tsx`
+- [x] **9. Export CSV + batas PDF.** Dua tombol di `export-data/page.tsx`
       ("Unduh PDF" + "Unduh CSV" langsung dari blob); PDF dibatasi ±2000 baris
       dengan pesan "persempit rentang / pakai CSV"; filename
       `uangku-YYYYMMDD-jenis.pdf`.
-- [ ] **10. Toast global.** Satu komponen toast (success/error/info, ikon +
+- [x] **10. Toast global.** Satu komponen toast (success/error/info, ikon +
       warna konsisten); sukses create tampilkan toast sebelum redirect;
       `offlineQueued` → toast info "Tersimpan offline, akan dikirim otomatis".
 - [ ] **11. Recurring naik ke server (terbesar).** Satukan
