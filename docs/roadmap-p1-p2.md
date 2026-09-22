@@ -48,6 +48,10 @@ P1-Fitur → P1-UX → P2 dari feedback**.
 - [x] **8. Anggaran: navigasi bulan + auto-refresh.** Tambah month picker
       (seperti riwayat; server `list_budgets(month)` sudah mendukung) dan
       listener `uangku:tx-changed` + `reloadKey` di `anggaran/page.tsx`.
+      Revisi 2026-09-23: picker tanggal diganti tombol ‹ ›; navigator
+      hanya tampil setelah ada anggaran dan berhenti di bulan anggaran
+      pertama (`earliest_created_at` dari `GET /budgets`); bulan lampau
+      tanpa form kosong.
 - [x] **9. Export CSV + batas PDF.** Dua tombol di `export-data/page.tsx`
       ("Unduh PDF" + "Unduh CSV" langsung dari blob); PDF dibatasi ±2000 baris
       dengan pesan "persempit rentang / pakai CSV"; filename

@@ -143,6 +143,10 @@ Contoh business rule yang wajib divalidasi server:
 - recurring: type cocok dengan kategori; confirm idempotent per bulan
   (409 `ALREADY_CONFIRMED`), template nonaktif ditolak (409)
 - hapus budget hanya lewat aksi eksplisit (bukan input dikosongkan)
+- `GET /budgets` mengirim `earliest_created_at` (created_at anggaran
+  tertua); klien memakainya sebagai batas bawah navigasi bulan — bulan
+  sebelum anggaran pertama dibuat tidak dapat diakses karena anggaran
+  berlaku lintas bulan sehingga bulan itu tidak punya makna
 
 ## Database
 

@@ -179,7 +179,9 @@ Anggaran belanja bulanan per kategori:
 - satu batas per kategori, berlaku tiap bulan (tidak perlu isi ulang)
 - progress pemakaian dengan peringatan 75% / 90%
 - diatur dari halaman Kategori, dipantau dari Beranda
-- navigasi bulan (lihat/audit bulan lalu; input dibatasi bulan berjalan)
+- navigasi bulan ‹ › yang muncul setelah anggaran pertama dibuat dan
+  berhenti di bulan tersebut (bulan sebelumnya tidak dapat diakses);
+  bulan lampau hanya menampilkan kategori yang beranggaran
 - progress refresh otomatis setelah tambah/hapus transaksi
 - hapus hanya lewat tombol Hapus + konfirmasi (mengosongkan input = batal edit)
 

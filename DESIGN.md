@@ -108,6 +108,10 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
   bukan menambah — cegah nilai korup), autosave on blur/Enter dengan flash
   "Tersimpan". Kosongkan + blur = hapus anggaran.
 - Link "Kelola kategori" → `/pengaturan/kategori`.
+- **Navigasi bulan ‹ ›** di bawah judul: muncul hanya setelah user punya
+  anggaran, dan berhenti (disabled) di bulan anggaran pertama dibuat —
+  bulan lampau hanya menampilkan kategori yang beranggaran (tanpa form
+  kosong). Label bulan memakai teks, bukan input tanggal/tahun.
 
 ### H. Halaman Pengaturan (`/pengaturan`)
 

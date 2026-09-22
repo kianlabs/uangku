@@ -20,7 +20,10 @@ Personal finance tracking app for managing income and expenses.
   cannot be deleted
 - Monthly budgets per category with 75%/90% usage warnings; deletion is
   explicit with confirmation (clearing the input only cancels the edit);
-  month picker for past months, auto-refresh on transaction changes
+  month navigation (‹ ›) appears once a budget exists and stops at the
+  first budget's month — months before it are not browsable; past months
+  show only budgeted categories (no empty forms); auto-refresh on
+  transaction changes
 - Online-only mutation flows: network failures show a clear retryable error
   and are never queued on the device; the server is the single source of truth
 - Global toast notifications (success/error/info) for user feedback
