@@ -2,12 +2,13 @@
 
 ## Overview
 
-UangKu v1 menggunakan empat entity utama:
+UangKu v1 menggunakan lima entity utama:
 
 - User
 - Category
 - Transaction
 - Budget
+- RecurringTemplate
 
 Setiap data keuangan harus dimiliki oleh user tertentu agar data antar pengguna tetap terisolasi.
 
@@ -22,8 +23,9 @@ Fields:
 - `password_hash` — string, required
 - `preferences` — JSONB, required (default `{}`); kunci opsional:
   `payday` (1–31), `onboarding_done` (bool, status tur Mochi),
-    `tx_sources`, `debt_tags`, `templates`. Offline queue dan recurring
-    reminder templates saat ini disimpan device-locally di browser.
+    `tx_sources`, `debt_tags`, `templates`. Offline queue disimpan
+    device-locally di browser; pengingat berulang sudah naik ke server
+    (RecurringTemplate).
 - `created_at` — timestamp
 - `updated_at` — timestamp
 
@@ -32,6 +34,7 @@ Relationships:
 - satu User memiliki banyak Category
 - satu User memiliki banyak Transaction
 - satu User memiliki banyak Budget
+- satu User memiliki banyak RecurringTemplate
 
 ## Category
 
@@ -82,8 +85,10 @@ erDiagram
     USERS ||--o{ CATEGORIES : owns
     USERS ||--o{ TRANSACTIONS : owns
     USERS ||--o{ BUDGETS : owns
+    USERS ||--o{ RECURRING_TEMPLATES : owns
     CATEGORIES ||--o{ TRANSACTIONS : classifies
     CATEGORIES ||--o| BUDGETS : limits
+    CATEGORIES ||--o{ RECURRING_TEMPLATES : schedules
 
     USERS {
         uuid id PK
@@ -123,6 +128,20 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    RECURRING_TEMPLATES {
+        uuid id PK
+        uuid user_id FK
+        uuid category_id FK
+        string type
+        string name
+        numeric amount
+        int day
+        bool active
+        date last_confirmed
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ## Business Rules
@@ -155,9 +174,11 @@ Contoh tidak valid:
 
 9. Email harus unique dan dinormalisasi sebelum disimpan.
 
-10. Category yang masih digunakan Transaction tidak boleh langsung dihapus.
+10. Category yang masih digunakan Transaction atau RecurringTemplate tidak
+boleh langsung dihapus.
 
-Untuk v1, delete category ditolak jika masih memiliki transaksi terkait.
+Untuk v1, delete category ditolak jika masih memiliki transaksi atau
+pengingat terkait (pindahkan dulu via transfer).
 
 11. Kombinasi `user_id + category_id` pada Budget harus unik (satu anggaran
     per kategori per user). `amount` harus lebih besar dari `0`.
@@ -203,9 +224,27 @@ Saat akun baru dibuat, UangKu dapat membuat kategori default milik user tersebut
 
 ## Current client-local features
 
-Offline transaction queue and recurring reminder templates intentionally do not
-have database entities yet. Offline items are pending client writes, while a
-recurring reminder is only materialized as a Transaction after user confirmation.
+Offline transaction queue intentionally has no database entity yet (pending
+client writes). Recurring reminders naik ke server sebagai RecurringTemplate;
+confirm manual membuat satu Transaction + cap `last_confirmed` bulan itu
+(idempotent per bulan, maks satu confirm per bulan).
+
+## RecurringTemplate
+
+Pengingat transaksi berulang per user — manual, bukan auto-debit.
+
+Fields:
+
+- `id` — UUID, primary key
+- `user_id` — UUID, foreign key ke User (RESTRICT)
+- `category_id` — UUID, foreign key ke Category (RESTRICT)
+- `type` — `income` atau `expense`, harus sama dengan type Category
+- `name` — string, required
+- `amount` — numeric/decimal, required, harus > 0
+- `day` — int 1–31
+- `active` — bool (pause tanpa hapus)
+- `last_confirmed` — date, nullable
+- `created_at` / `updated_at` — timestamp
 
 ## Future Schema
 

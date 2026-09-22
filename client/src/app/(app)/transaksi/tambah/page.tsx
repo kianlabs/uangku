@@ -241,8 +241,7 @@ export default function TambahTransaksiPage() {
         debtTag: debtTag ? { tag: debtTag, settled: debtSettled } : undefined,
       }) as { id?: string; offlineQueued?: boolean };
       if (txData?.offlineQueued) {
-        // Offline: antrean sudah menyimpan payload + sumber/kasbon.
-        // Toast + redirect — banner "menunggu koneksi" jadi sinyal menetap.
+        // Sudah antre; toast + redirect, banner jadi sinyal menetap.
         showToast("Tersimpan di HP — terkirim otomatis saat online.", "info");
         haptic.warning();
         router.push("/beranda");

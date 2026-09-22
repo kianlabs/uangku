@@ -64,8 +64,7 @@ export default function RiwayatPage() {
   const [pendingCount, setPendingCount] = useState(0);
   const pendingRef = useRef(new Map<string, { tx: Transaction; index: number; timer: number }>());
 
-  /** Hapus optimistik: baris hilang seketika, commit ke server setelah jendela undo.
-   *  Tiap item punya timer sendiri sehingga hapus beruntun tidak saling menelan. */
+  /** Hapus optimistik per item; tiap item punya timer undo sendiri. */
   function beginDelete(tx: Transaction) {
     const index = items.findIndex((i) => i.id === tx.id);
     if (index < 0 || pendingRef.current.has(tx.id)) return;

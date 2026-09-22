@@ -52,10 +52,7 @@ export function SplashScreen() {
     setShow(false);
   }, []);
 
-  // Tampil sebelum paint pertama agar konten tidak sempat berkedip
-  // (konten → splash → konten) di tab baru. Satu render ekstra sebelum
-  // paint tidak terlihat user; setTimeout di effect biasa justru telat
-  // 1–2 frame sehingga splash menampar konten yang sudah tampil.
+  // Sebelum paint pertama agar tak kedip.
   useLayoutEffect(() => {
     if (shouldShowSplash()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- disengaja: cegah kedip first-paint

@@ -168,7 +168,9 @@ Filter berdasarkan:
 - The queue carries source & debt-tag metadata and replays them on sync.
 - The UI reports queued items as "stored on device", never as server success.
 - The queue retries when the app opens online or the browser reconnects.
-- Monthly recurring reminders are confirmed manually before a transaction is created.
+- Monthly recurring reminders live on the server (synced across devices):
+  edit, pause/resume, income or expense, manual confirm creates one
+  transaction per month (idempotent).
 - These features do not run as a background server scheduler or push notification.
 
 ### Budgets (simple)

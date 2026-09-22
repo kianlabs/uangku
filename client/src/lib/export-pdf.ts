@@ -1,10 +1,4 @@
-/**
- * export-pdf.ts — render PDF laporan transaksi, dimuat malas (lazy).
- *
- * `jspdf` (~350KB gzip) hanya diunduh saat user membuka halaman Export dan
- * menekan "Unduh PDF" — tidak ikut bundle awal. Modul ini TIDAK boleh
- * diimpor statis dari halaman lain selain export-data.
- */
+/** PDF laporan; jspdf dimuat malas. Jangan impor statis di luar export-data. */
 
 import { exportTransactionsCsv, type ExportTransactionsParams } from "./transactions";
 import { toCompactDate } from "./date";

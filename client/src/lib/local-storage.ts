@@ -28,7 +28,6 @@ const DEBT_TAGS_KEY = "uangku_debt_tags";
 const PAYDAY_KEY = "uangku_payday";
 const TEMPLATES_KEY = "uangku_templates";
 const OFFLINE_QUEUE_KEY = "uangku_offline_transactions";
-const RECURRING_KEY = "uangku_recurring_transactions";
 
 export interface OfflineTransaction {
   id: string;
@@ -36,16 +35,6 @@ export interface OfflineTransaction {
   source?: string;
   debtTag?: DebtTag;
   queuedAt: string;
-}
-
-export interface RecurringTransaction {
-  id: string;
-  name: string;
-  amount: number;
-  category: string;
-  day: number;
-  active: boolean;
-  lastConfirmed?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,10 +50,8 @@ export function seedLocalStorageFromPreferences(prefs: UserPreferences): void {
     // Server tidak punya nilai → buang sisa akun sebelumnya (shared browser).
     localStorage.removeItem(PAYDAY_KEY);
   }
-  // Overwrite penuh — server adalah source of truth. Key yang kosong/tidak
-  // ada di server DIHAPUS (bukan ditulis kosong) agar:
-  // (a) fallback default lokal (mis. template langganan) tetap berlaku, dan
-  // (b) sisa data akun sebelumnya tidak tertinggal di browser bersama.
+  // Server menang. Key kosong DIHAPUS (bukan ditulis kosong) agar default
+  // lokal berlaku dan tak ada sisa akun lain.
   if (prefs.tx_sources != null && Object.keys(prefs.tx_sources).length > 0) {
     localStorage.setItem(SOURCES_KEY, JSON.stringify(prefs.tx_sources));
   } else {
@@ -108,26 +95,6 @@ export function clearLocalCache(): void {
   localStorage.removeItem(DEBT_TAGS_KEY);
   localStorage.removeItem(TEMPLATES_KEY);
   localStorage.removeItem(OFFLINE_QUEUE_KEY);
-  localStorage.removeItem(RECURRING_KEY);
-}
-
-export function getRecurringTransactions(): RecurringTransaction[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const value = JSON.parse(localStorage.getItem(RECURRING_KEY) || "[]");
-    return Array.isArray(value) ? value : [];
-  } catch { return []; }
-}
-
-export function saveRecurringTransactions(items: RecurringTransaction[]): void {
-  localStorage.setItem(RECURRING_KEY, JSON.stringify(items));
-}
-
-export function isRecurringDue(item: RecurringTransaction, today = new Date()): boolean {
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  if (!item.active || today.getDate() < Math.min(item.day, lastDay)) return false;
-  const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  return item.lastConfirmed?.startsWith(month) !== true;
 }
 
 export function enqueueOfflineTransaction(

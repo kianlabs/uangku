@@ -10,16 +10,12 @@ import {
   showReminderNotification,
   wasNotifiedToday,
 } from "./reminder-notify";
-import type { RecurringTransaction } from "./local-storage";
+import type { ReminderItem } from "./reminder-notify";
 
-function makeItem(overrides: Partial<RecurringTransaction> = {}): RecurringTransaction {
+function makeItem(overrides: Partial<ReminderItem> = {}): ReminderItem {
   return {
-    id: "r1",
     name: "Internet",
     amount: 150000,
-    category: "Tagihan",
-    day: 5,
-    active: true,
     ...overrides,
   };
 }
@@ -46,8 +42,8 @@ describe("reminder-notify", () => {
 
   it("membuat ringkasan banyak tagihan + total", () => {
     const summary = buildReminderSummary([
-      makeItem({ id: "r1", amount: 150000 }),
-      makeItem({ id: "r2", name: "Listrik", amount: 200000 }),
+      makeItem({ amount: 150000 }),
+      makeItem({ name: "Listrik", amount: 200000 }),
     ]);
     expect(summary.title).toBe("2 tagihan jatuh tempo");
     expect(summary.body).toContain("350");
@@ -82,9 +78,9 @@ describe("reminder-notify", () => {
   });
 
   it("flag sekali-sehari per tanggal + daftar id", () => {
-    expect(wasNotifiedToday(["r1"])).toBe(false);
-    markNotifiedToday(["r1"]);
-    expect(wasNotifiedToday(["r1"])).toBe(true);
+    expect(wasNotifiedToday(["Internet"])).toBe(false);
+    markNotifiedToday(["Internet"]);
+    expect(wasNotifiedToday(["Internet"])).toBe(true);
     expect(wasNotifiedToday(["r1", "r2"])).toBe(false);
   });
 
@@ -95,7 +91,7 @@ describe("reminder-notify", () => {
     stubNotification("granted");
     setNotifyEnabled(false);
     await expect(showReminderNotification([makeItem()])).resolves.toBe(false);
-    expect(wasNotifiedToday(["r1"])).toBe(false);
+    expect(wasNotifiedToday(["Internet"])).toBe(false);
   });
 
   it("mengirim via service worker bila tersedia", async () => {
@@ -107,7 +103,7 @@ describe("reminder-notify", () => {
 
     await expect(showReminderNotification([makeItem()])).resolves.toBe(true);
     expect(showNotification).toHaveBeenCalledOnce();
-    expect(wasNotifiedToday(["r1"])).toBe(true);
+    expect(wasNotifiedToday(["Internet"])).toBe(true);
   });
 
   it("fallback ke Notification biasa tanpa service worker", async () => {
@@ -124,6 +120,6 @@ describe("reminder-notify", () => {
     await expect(showReminderNotification([makeItem()])).resolves.toBe(true);
     expect(constructed).toHaveLength(1);
     expect(constructed[0][0]).toBe("Tagihan jatuh tempo");
-    expect(wasNotifiedToday(["r1"])).toBe(true);
+    expect(wasNotifiedToday(["Internet"])).toBe(true);
   });
 });

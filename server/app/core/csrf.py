@@ -28,11 +28,7 @@ def _normalize_host(host: str) -> str:
 
 
 def is_loopback_peer(peer: str) -> bool:
-    """True jika koneksi langsung berasal dari mesin sendiri.
-
-    Meliputi 127.0.0.1, ::1, bentuk IPv4-mapped (::ffff:127.0.0.1 yang
-    dilaporkan uvicorn saat diakses via proxy lokal), dan "localhost".
-    """
+    """True untuk 127.0.0.1, ::1, ::ffff:127.0.0.1, dan localhost."""
     if peer == "localhost":
         return True
     try:

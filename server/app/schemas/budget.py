@@ -6,10 +6,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, field_serializer
 
 from app.schemas.category import CategoryType
-
-
-def _serialize_money(v: Decimal) -> str:
-    return f"{v:.2f}"
+from app.schemas.common import serialize_money
 
 
 class BudgetUpsertRequest(BaseModel):
@@ -26,7 +23,7 @@ class BudgetResponse(BaseModel):
 
     @field_serializer("amount", "spent", when_used="unless-none")
     def serialize_money(self, v: Decimal) -> str:
-        return _serialize_money(v)
+        return serialize_money(v)
 
 
 class BudgetListResponse(BaseModel):

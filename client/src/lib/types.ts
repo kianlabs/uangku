@@ -52,6 +52,19 @@ export interface TransactionListResponse {
   pagination: PaginationMeta;
 }
 
+export interface RecurringTemplate {
+  id: string;
+  name: string;
+  amount: string;
+  type: TransactionType;
+  category_id: string;
+  category_name: string;
+  day: number;
+  active: boolean;
+  last_confirmed: string | null;
+  created_at: string;
+}
+
 export interface ExpenseByCategoryItem {
   category_id: string;
   category_name: string;

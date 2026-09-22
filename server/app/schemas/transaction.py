@@ -1,28 +1,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from app.schemas.category import CategoryType
-
-
-def _today() -> date:
-    return datetime.now(UTC).date()
-
-
-def _validate_transaction_date(v: date | None) -> date | None:
-    """Tolak tanggal absurd: masa depan (> besok, toleransi untuk gaji
-    yang dicatat duluan) dan tahun < 2000."""
-    if v is None:
-        return v
-    if v > _today() + timedelta(days=1):
-        raise ValueError("transaction_date cannot be in the future")
-    if v.year < 2000:
-        raise ValueError("transaction_date year must be >= 2000")
-    return v
+from app.schemas.common import serialize_money, validate_transaction_date
 
 
 class TransactionCreateRequest(BaseModel):
@@ -44,7 +29,7 @@ class TransactionCreateRequest(BaseModel):
     @field_validator("transaction_date")
     @classmethod
     def date_sane(cls, v: date) -> date:
-        result = _validate_transaction_date(v)
+        result = validate_transaction_date(v)
         assert result is not None
         return result
 
@@ -66,11 +51,7 @@ class TransactionUpdateRequest(BaseModel):
     @field_validator("transaction_date")
     @classmethod
     def date_sane(cls, v: date | None) -> date | None:
-        return _validate_transaction_date(v)
-
-
-def _serialize_money(v: Decimal) -> str:
-    return f"{v:.2f}"
+        return validate_transaction_date(v)
 
 
 class TransactionCategoryEmbed(BaseModel):
@@ -95,7 +76,7 @@ class TransactionResponse(BaseModel):
 
     @field_serializer("amount")
     def serialize_amount(self, v: Decimal) -> str:
-        return _serialize_money(v)
+        return serialize_money(v)
 
 
 class TransactionDetailResponse(BaseModel):
@@ -111,7 +92,7 @@ class TransactionDetailResponse(BaseModel):
 
     @field_serializer("amount")
     def serialize_amount(self, v: Decimal) -> str:
-        return _serialize_money(v)
+        return serialize_money(v)
 
 
 class TransactionUpdatedResponse(BaseModel):
@@ -127,7 +108,7 @@ class TransactionUpdatedResponse(BaseModel):
 
     @field_serializer("amount")
     def serialize_amount(self, v: Decimal) -> str:
-        return _serialize_money(v)
+        return serialize_money(v)
 
 
 class PaginationMeta(BaseModel):

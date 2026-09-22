@@ -252,7 +252,6 @@ function CategoryRow({
     } catch (err) {
       if (err instanceof ApiResponseError) {
         if (err.status === 409 && err.code === "CATEGORY_IN_USE") {
-          // Ada jalan keluar: pindahkan transaksi ke kategori lain.
           setShowDeleteConfirm(false);
           setTransferTo(siblings[0]?.id ?? "");
           setTransferError(null);
@@ -370,7 +369,7 @@ function CategoryRow({
     return (
       <div className="flex flex-col gap-3 p-4">
         <p className="text-sm text-text">
-          <strong>{category.name}</strong> dipakai transaksi. Pindahkan semuanya ke:
+          <strong>{category.name}</strong> dipakai transaksi atau pengingat. Pindahkan semuanya ke:
         </p>
         <Select
           label="Kategori tujuan"

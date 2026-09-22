@@ -276,7 +276,6 @@ def _integrity_error():
 
 
 def test_create_race_category_deleted_returns_422(db, user, expense_cat):
-    """Kategori hilang antara validasi dan commit -> InvalidCategoryError (422)."""
     with mock.patch.object(db, "commit", side_effect=_integrity_error()), \
             pytest.raises(InvalidCategoryError):
         create_transaction(

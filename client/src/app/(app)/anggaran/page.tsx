@@ -58,7 +58,6 @@ export default function AnggaranPage() {
   }, [load]);
 
   useEffect(() => {
-    // Progress basi setelah tambah/hapus transaksi — muat ulang.
     function onTxChanged() {
       load();
     }
@@ -77,8 +76,7 @@ export default function AnggaranPage() {
     const digits = drafts[categoryId];
     const num = digits ? parseInt(digits, 10) : 0;
     if (num <= 0) {
-      // Dikosongkan = batal edit (kembalikan tampilan), BUKAN hapus.
-      // Hapus hanya lewat tombol Hapus eksplisit + konfirmasi.
+      // Dikosongkan = batal edit, bukan hapus.
       setDrafts((prev) => {
         const next = { ...prev };
         delete next[categoryId];

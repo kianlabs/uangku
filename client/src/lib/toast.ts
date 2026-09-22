@@ -1,4 +1,4 @@
-/** Toast global minimal: event-based agar bisa dipanggil dari mana saja. */
+/** Toast global: event-based agar bisa dipanggil dari mana saja. */
 
 export type ToastKind = "success" | "error" | "info";
 

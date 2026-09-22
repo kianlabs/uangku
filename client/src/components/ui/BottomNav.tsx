@@ -7,8 +7,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { haptic } from "@/lib/haptics";
 
-// Modal tambah-cepat jarang dibuka (FAB) — muat malas agar tidak ikut
-// bundle awal semua halaman.
+// Modal FAB jarang dibuka — muat malas agar tak ikut bundle awal.
 const QuickAddModal = dynamic(
   () => import("@/components/dashboard/QuickAddModal").then((m) => m.QuickAddModal),
   { ssr: false }

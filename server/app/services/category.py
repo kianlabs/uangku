@@ -17,6 +17,7 @@ from app.core.errors import (
 )
 from app.models.budget import Budget
 from app.models.category import Category
+from app.models.recurring import RecurringTemplate
 from app.models.transaction import Transaction
 from app.models.user import User
 
@@ -79,20 +80,21 @@ def delete_category(db: Session, user: User, category_id: uuid.UUID) -> None:
         .where(Category.user_id == user.id, Category.type == cat.type)
     ) or 0
     if remaining <= 1:
-        # Kategori terakhir tipe ini — menghapusnya bikin tambah transaksi
-        # jalan buntu.
         raise LastCategoryError()
     in_use = db.scalar(
         select(exists().where(
             Transaction.category_id == category_id,
             Transaction.user_id == user.id,
         ))
+    ) or db.scalar(
+        select(exists().where(
+            RecurringTemplate.category_id == category_id,
+            RecurringTemplate.user_id == user.id,
+        ))
     )
     if in_use:
         raise CategoryInUseError()
-    # Budget tidak dicek di atas (tidak ada transaksi belum tentu tidak ada
-    # budget). Hapus eksplisit: ORM tanpa cascade akan NULL-kan FK dan
-    # menabrak NOT NULL. UI wajib menyebut "anggaran ikut terhapus".
+    # Budget dihapus eksplisit: ORM tanpa cascade akan NULL-kan FK (NOT NULL).
     for budget in list(cat.budgets):
         db.delete(budget)
     try:
@@ -106,9 +108,8 @@ def delete_category(db: Session, user: User, category_id: uuid.UUID) -> None:
 def transfer_category(
     db: Session, user: User, category_id: uuid.UUID, to_category_id: uuid.UUID
 ) -> int:
-    """Pindahkan semua transaksi dari satu kategori ke kategori lain lalu
-    hapus kategori asal. Atomik: satu commit. Budget ikut pindah (digabung
-    jika tujuan sudah punya budget) agar tidak hilang diam-diam."""
+    """Pindahkan transaksi, budget, dan pengingat ke kategori lain lalu
+    hapus asal. Atomik: satu commit."""
     if category_id == to_category_id:
         raise DomainError("cannot_transfer_to_itself")
     src = db.scalar(
@@ -136,6 +137,15 @@ def transfer_category(
     )
     moved = result.rowcount or 0
 
+    db.execute(
+        update(RecurringTemplate)
+        .where(
+            RecurringTemplate.user_id == user.id,
+            RecurringTemplate.category_id == src.id,
+        )
+        .values(category_id=dst.id)
+    )
+
     src_budget = db.scalar(
         select(Budget).where(
             Budget.user_id == user.id, Budget.category_id == src.id
@@ -151,7 +161,6 @@ def transfer_category(
             dst_budget.amount = Decimal(str(dst_budget.amount)) + Decimal(
                 str(src_budget.amount)
             )
-            # Hapus eksplisit agar tidak orphan (ORM tanpa cascade).
             db.delete(src_budget)
         else:
             src_budget.category_id = dst.id

@@ -1,16 +1,12 @@
 import { formatRupiah } from "./format";
-import type { RecurringTransaction } from "./local-storage";
 
-/**
- * Notifikasi lokal untuk pengingat transaksi.
- *
- * Prinsip UX:
- * - Izin TIDAK diminta saat app dibuka — hanya saat ada tagihan jatuh tempo
- *   (ditawarkan inline di kartu pengingat).
- * - Maksimal 1 notifikasi per hari (flag tanggal + daftar id).
- * - User bisa mematikan via Pengaturan tanpa mencabut izin browser.
- * - Kalau izin ditolak / browser tidak mendukung → diam, kartu tetap jalan.
- */
+export interface ReminderItem {
+  id?: string;
+  name: string;
+  amount: string | number;
+}
+
+/** Notifikasi lokal pengingat: izin hanya ditawarkan inline, maks 1x sehari. */
 
 const PREF_KEY = "uangku_notify_reminders"; // "0" = mati, selain itu nyala
 const NOTIFIED_KEY = "uangku_reminders_notified"; // "YYYY-MM-DD:id,id"
@@ -84,7 +80,7 @@ export function markNotifiedToday(dueIds: string[]): void {
 }
 
 export function buildReminderSummary(
-  due: RecurringTransaction[]
+  due: ReminderItem[]
 ): { title: string; body: string } {
   if (due.length === 1) {
     return {
@@ -92,7 +88,7 @@ export function buildReminderSummary(
       body: `${due[0].name} • ${formatRupiah(due[0].amount)}. Ketuk untuk mencatat.`,
     };
   }
-  const total = due.reduce((sum, item) => sum + item.amount, 0);
+  const total = due.reduce((sum, item) => sum + Number(item.amount), 0);
   return {
     title: `${due.length} tagihan jatuh tempo`,
     body: `Total ${formatRupiah(total)} hari ini. Ketuk untuk melihat.`,
@@ -104,7 +100,7 @@ export function buildReminderSummary(
  * Return true hanya jika benar-benar tampil (sudah ditandai hari ini).
  */
 export async function showReminderNotification(
-  due: RecurringTransaction[]
+  due: ReminderItem[]
 ): Promise<boolean> {
   if (due.length === 0 || !isNotifyEnabled()) return false;
   if (getNotifyPermission() !== "granted") return false;
@@ -127,6 +123,6 @@ export async function showReminderNotification(
     return false;
   }
 
-  markNotifiedToday(due.map((item) => item.id));
+  markNotifiedToday(due.map((item) => item.id ?? item.name));
   return true;
 }

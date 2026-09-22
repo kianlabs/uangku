@@ -53,9 +53,7 @@ export async function apiFetch<T>(
   // Selalu relative URL — Next.js rewrite proxy ke server (dev & production)
   const { signal: userSignal, ...rest } = options;
 
-  // Batas waktu agar loading tidak muter selamanya saat server hang.
-  // Signal dari pemanggil (mis. AbortController saat halaman di-unmount)
-  // tetap dihormati dan digabung dengan timeout ini.
+  // Batas waktu agar loading tak muter selamanya; signal pemanggil digabung.
   const controller = new AbortController();
   const timeoutError = new DOMException(
     "Server terlalu lama merespons.",
@@ -80,8 +78,7 @@ export async function apiFetch<T>(
   let response: Response;
 
   try {
-    // Content-Type JSON hanya untuk request berbodi — GET/DELETE tanpa
-    // Content-Type menghindari preflight tak perlu.
+    // Content-Type JSON hanya bila ada body (hindari preflight).
     const headers: Record<string, string> = { ...(options.headers as Record<string, string> | undefined) };
     if (rest.body != null && !("Content-Type" in headers) && !("content-type" in headers)) {
       headers["Content-Type"] = "application/json";

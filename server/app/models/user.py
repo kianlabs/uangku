@@ -13,6 +13,7 @@ from app.models import Base
 if TYPE_CHECKING:
     from app.models.budget import Budget
     from app.models.category import Category
+    from app.models.recurring import RecurringTemplate
     from app.models.transaction import Transaction
 
 
@@ -41,3 +42,4 @@ class User(Base):
     categories: Mapped[list[Category]] = relationship(back_populates="user")
     transactions: Mapped[list[Transaction]] = relationship(back_populates="user")
     budgets: Mapped[list[Budget]] = relationship(back_populates="user")
+    recurring_templates: Mapped[list[RecurringTemplate]] = relationship(back_populates="user")

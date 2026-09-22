@@ -65,3 +65,11 @@ class InvalidAmountError(DomainError):
 
 class ExportTooLargeError(DomainError):
     marker = "export_too_large"
+
+
+class AlreadyConfirmedError(DomainError):
+    marker = "already_confirmed"
+
+
+class RecurringInactiveError(DomainError):
+    marker = "recurring_inactive"

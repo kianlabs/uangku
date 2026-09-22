@@ -13,6 +13,7 @@ from app.api.v1.budgets import router as budgets_router
 from app.api.v1.categories import router as categories_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.export import router as export_router
+from app.api.v1.recurring import router as recurring_router
 from app.api.v1.transactions import router as transactions_router
 from app.api.v1.user import router as user_router
 from app.core.config import settings
@@ -137,8 +138,6 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
 
 @app.exception_handler(DBAPIError)
 async def db_error_handler(request: Request, exc: DBAPIError):
-    # DB down/timeout/integrity yang lolos guard service -> 503 agar client
-    # menampilkan "coba lagi", bukan hang sampai timeout.
     logger.warning("DB error: %s %s: %s", request.method, request.url.path, exc)
     return JSONResponse(
         status_code=503,
@@ -171,6 +170,7 @@ app.include_router(categories_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(transactions_router, prefix="/api/v1")
 app.include_router(export_router, prefix="/api/v1")
+app.include_router(recurring_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 
 

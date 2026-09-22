@@ -33,9 +33,8 @@ def get_client_ip(request: Request) -> str:
     """Return the real client IP, accounting for trusted reverse proxies."""
     direct_ip = request.client.host if request.client else "unknown"
 
-    # Only read X-Forwarded-For when the direct connection is from a trusted
-    # proxy (eksplisit via TRUSTED_PROXY_IPS, atau proxy lokal seperti Next
-    # rewrite di container yang sama — konsisten dengan CSRF middleware).
+    # X-Forwarded-For hanya dari proxy tepercaya (eksplisit atau loopback,
+    # konsisten dengan CSRF middleware).
     if direct_ip in settings.trusted_proxy_set or is_loopback_peer(direct_ip):
         forwarded_for = request.headers.get("X-Forwarded-For", "")
         if forwarded_for:

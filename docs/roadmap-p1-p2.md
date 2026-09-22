@@ -55,11 +55,12 @@ P1-Fitur → P1-UX → P2 dari feedback**.
 - [x] **10. Toast global.** Satu komponen toast (success/error/info, ikon +
       warna konsisten); sukses create tampilkan toast sebelum redirect;
       `offlineQueued` → toast info "Tersimpan offline, akan dikirim otomatis".
-- [ ] **11. Recurring naik ke server (terbesar).** Satukan
-      `SubscriptionTemplate` + `RecurringTransaction` jadi satu model
-      `templates` server-side (`day, active, type, category_id`); tambah edit +
-      toggle aktif; `confirm` hormati `type`; dokumentasikan "pengingat manual,
-      bukan auto-debit".
+- [ ] **11. Recurring naik ke server (SELESAI).** ✓ Model `RecurringTemplate`
+       (`day, active, type, category_id, last_confirmed`); ✓ CRUD + confirm
+       (idempotent per bulan, 409 `ALREADY_CONFIRMED`); ✓ client component
+       `RecurringReminders` + notifikasi + migration legacy; ✓ transfer kategori
+       pindah pengingat; ✓ dokumentasi ERD + architecture. Pendulum:
+       pengingat manual, bukan auto-debit.
 - [ ] **12. Offline edit/hapus ikut antre.** Queue `update/delete` juga
       (atau disable tombol offline dengan jelas); tambah drawer "Antrean
       offline" (lihat/batal/kirim ulang).

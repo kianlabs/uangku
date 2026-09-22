@@ -18,11 +18,7 @@ function getServerSnapshot() {
   return false;
 }
 
-/**
- * Video portrait di dalam bingkai HP. File MP4 belum tersedia sehingga
- * komponen menampilkan gambar statis TANPA request 404 (jangan render
- * <video> sampai file ada di public/videos/ + poster disiapkan).
- */
+/** Bingkai HP: statis sampai file MP4 + poster tersedia (tanpa request 404). */
 const VIDEO_SRC: string | null = null;
 
 export function LandingPhoneVideo() {

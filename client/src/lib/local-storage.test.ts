@@ -3,7 +3,6 @@ import {
   clearLocalCache,
   getPayday,
   getTemplates,
-  isRecurringDue,
   seedLocalStorageFromPreferences,
   setPayday,
 } from "./local-storage";
@@ -40,7 +39,6 @@ describe("seedLocalStorageFromPreferences", () => {
     );
     seedLocalStorageFromPreferences({ payday: 1, tx_sources: {}, templates: [] });
     expect(localStorage.getItem("uangku_tx_sources")).toBeNull();
-    // Key dihapus -> fallback default lokal tetap berlaku
     expect(getTemplates().map((t) => t.name)).toContain("Kos");
   });
 
@@ -59,15 +57,5 @@ describe("clearLocalCache", () => {
     clearLocalCache();
     expect(getPayday()).toBe(1);
     expect(localStorage.getItem("uangku_tx_sources")).toBeNull();
-  });
-});
-
-describe("recurring transaction due dates", () => {
-  it("hanya jatuh tempo setelah tanggal dan sekali per bulan", () => {
-    const item = { id: "1", name: "Internet", amount: 100000, category: "Tagihan", day: 20, active: true };
-    expect(isRecurringDue(item, new Date(2026, 8, 19))).toBe(false);
-    expect(isRecurringDue(item, new Date(2026, 8, 20))).toBe(true);
-    expect(isRecurringDue({ ...item, lastConfirmed: "2026-09-20T10:00:00Z" }, new Date(2026, 8, 25))).toBe(false);
-    expect(isRecurringDue({ ...item, day: 31 }, new Date(2026, 1, 28))).toBe(true);
   });
 });

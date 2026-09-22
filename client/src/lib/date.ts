@@ -6,11 +6,7 @@ export function todayLocalISO(): string {
   return `${today.getFullYear()}-${month}-${day}`;
 }
 
-/**
- * Validasi tanggal transaksi, selaras dengan server
- * (TransactionCreate/UpdateRequest): boleh maksimal besok, tahun >= 2000.
- * Mengembalikan pesan error Indonesia atau null bila valid.
- */export function validateTransactionDate(value: string): string | null {
+/** Selaras server: maks besok, tahun >= 2000. Pesan Indonesia, null bila valid. */export function validateTransactionDate(value: string): string | null {
   if (!value) return "Tanggal harus diisi.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "Format tanggal tidak valid.";
   const [y, m, d] = value.split("-").map(Number);

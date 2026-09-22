@@ -65,9 +65,7 @@ export default function BerandaPage() {
     const controller = new AbortController();
     const payday = getPayday();
 
-    // Fase kritis: tampilkan saldo + metrik secepatnya. Cek ada-tidaknya
-    // transaksi ikut fase kritis (1 baris, murah) agar empty-state vs
-    // dashboard tidak berkedip saat data susulan tiba.
+    // Kritis dulu (cek 1 baris ikut agar empty-state tak kedip).
     Promise.all([
       getMe(),
       getDashboardSummary(currentMonth, controller.signal),
@@ -95,7 +93,7 @@ export default function BerandaPage() {
         setIsLoading(false);
       });
 
-    // Fase susulan: tidak menahan tampilan utama (delta MoM, budget).
+    // Susulan setelah paint: delta MoM + budget.
     void Promise.all([
       listBudgets(currentMonth).catch(() => ({ items: [], month: null })),
       getDashboardSummary(prevMonth, controller.signal).catch(() => null),

@@ -15,13 +15,7 @@ interface UangkuLogoProps {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-/**
- * Lockup resmi UangKu: ikon dompet+panah (WebP transparan) tersusun di atas
- * wordmark dua-warna + tagline — meniru susunan file desain asli.
- *
- * Animasi hanya saat masuk, bergantian (mark → kata → tagline), lalu diam
- * total. Hormat prefers-reduced-motion via MotionConfig.
- */
+/** Lockup UangKu: mark + wordmark dua-warna + tagline. Animasi sekali saat masuk. */
 export function UangkuLogo({
   markWidth = 120,
   animated = true,

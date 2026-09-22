@@ -25,7 +25,8 @@ Personal finance tracking app for managing income and expenses.
   (source & debt tags are queued too and replayed on sync; the UI reports
   "stored on device" instead of fake success)
 - Global toast notifications (success/error/info) for user feedback
-- Monthly recurring transaction reminders with manual confirmation
+- Monthly recurring transaction reminders (server-side, synced across devices):
+  edit, pause/resume, income or expense, manual confirm (one transaction/month)
 - Onboarding tour + Mochi mascot guide (personal finance agent)
 - Dashboard monthly summary; export as formatted PDF (2.000-row cap) or CSV
 - Mobile-first UI with bottom navigation

@@ -86,8 +86,7 @@ def create_transaction(
     try:
         db.commit()
     except IntegrityError:
-        # Race: kategori dihapus di tab lain antara validasi dan commit
-        # (FK RESTRICT) -> 422 rapi, bukan 500.
+        # Kategori dihapus antar validasi dan commit (race antar tab).
         db.rollback()
         raise InvalidCategoryError()
     db.refresh(tx)

@@ -10,8 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
 from app.models.user import User
 
-# Umur sesi absolut: 7 hari. Cookie max_age ikut 7 hari (lihat main.py) tapi
-# bisa refresh tiap respons — issued_at memastikan sesi lama tetap mati.
+# Cap absolut 7 hari (cookie max_age bisa refresh tiap respons).
 SESSION_MAX_AGE_SECONDS = 7 * 24 * 3600
 
 engine = create_engine(settings.database_url, pool_pre_ping=True)
@@ -42,8 +41,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         not isinstance(issued_at, (int, float))
         or time.time() - issued_at > SESSION_MAX_AGE_SECONDS
     ):
-        # Sesi tanpa cap waktu (dibuat sebelum fitur ini) atau kedaluwarsa
-        # → paksa login ulang.
+        # Tanpa cap (sesi lama) atau kedaluwarsa → login ulang.
         raise _unauthenticated()
     try:
         user_uuid = uuid.UUID(str(user_id))

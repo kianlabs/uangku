@@ -95,8 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginUser = useCallback(async (email: string, password: string) => {
     const u = await login(email, password);
     unauthorizedRef.current = false;
-    // Ganti akun di browser bersama — buang sisa cache akun sebelumnya
-    // sebelum hydrate dari server agar tidak bocor antar-akun.
+    // Buang cache akun sebelumnya sebelum hydrate (browser bersama).
     clearLocalCache();
     setUser(u);
     window.dispatchEvent(new CustomEvent("uangku:auth-success"));

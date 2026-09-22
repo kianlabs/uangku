@@ -69,16 +69,12 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
         description: parsed.description,
       });
 
-      // Terasa instan: beri tahu halaman lain SEKARANG (mereka me-refetch
-      // dari server — sumber kebenaran tetap satu). Kalau create gagal,
-      // catch di bawah menampilkan error dan refetch berikutnya sudah
-      // mengembalikan state yang benar (rollback efektif tanpa duplikasi).
+      // Optimistik: halaman lain refetch; gagal → catch + refetch mengembalikan.
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
       haptic.success();
 
       const result = (await promise) as { offlineQueued?: boolean };
       if (result?.offlineQueued) {
-        // Offline: antrean menyimpan payload; jangan klaim tersimpan penuh.
         setQueuedOffline(true);
         haptic.warning();
       }

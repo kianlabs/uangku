@@ -138,8 +138,10 @@ Contoh business rule yang wajib divalidasi server:
 - category yang sedang digunakan tidak boleh sembarang dihapus: hapus
   ditolak 409 (`CATEGORY_IN_USE`) kecuali via transfer atomik
   (`POST /api/v1/categories/{id}/transfer` memindahkan transaksi + budget
-  lalu menghapus kategori asal dalam satu commit); kategori terakhir
-  per tipe tidak boleh dihapus (409 `CATEGORY_IS_LAST`)
+  + pengingat lalu menghapus kategori asal dalam satu commit); kategori
+  terakhir per tipe tidak boleh dihapus (409 `CATEGORY_IS_LAST`)
+- recurring: type cocok dengan kategori; confirm idempotent per bulan
+  (409 `ALREADY_CONFIRMED`), template nonaktif ditolak (409)
 - hapus budget hanya lewat aksi eksplisit (bukan input dikosongkan)
 
 ## Database
@@ -225,6 +227,7 @@ Contoh resource:
 /api/v1/transactions
 /api/v1/categories
 /api/v1/categories/{id}/transfer
+/api/v1/recurring
 /api/v1/dashboard
 /api/v1/export
 /api/v1/budgets
@@ -295,9 +298,9 @@ flush. The UI reports queued items honestly ("stored on device") instead of
 fake success. The server remains the source of truth; queued data is
 device-local and is not a substitute for server backup.
 
-Recurring transaction reminders are also client-side templates for now. They
-require explicit user confirmation before creating a server transaction and do
-not require a database migration yet.
+Recurring transaction reminders live on the server (`recurring_templates`).
+They require explicit user confirmation before creating a server transaction
+(one per month, idempotent) and do not require a background scheduler.
 
 ## State Management
 
