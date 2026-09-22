@@ -5,28 +5,14 @@ import Link from "next/link";
 import { listCategories } from "@/lib/categories";
 import { listBudgets, upsertBudget, deleteBudget } from "@/lib/budgets";
 import { formatRupiah, groupThousands } from "@/lib/format";
+import { monthLabelId, shiftMonthKey, toMonthKey } from "@/lib/date";
 import { haptic } from "@/lib/haptics";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Mascot } from "@/components/brand/Mascot";
 import type { Budget, Category } from "@/lib/types";
 
 function currentMonthKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function shiftMonthKey(monthKey: string, delta: number): string {
-  const [y, m] = monthKey.split("-").map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function monthLabel(monthKey: string): string {
-  const [y, m] = monthKey.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("id-ID", {
-    month: "long",
-    year: "numeric",
-  });
+  return toMonthKey(new Date());
 }
 
 export default function AnggaranPage() {
@@ -187,7 +173,7 @@ export default function AnggaranPage() {
             onChange={(e) => {
               if (e.target.value) setMonthKey(e.target.value);
             }}
-            aria-label={`Bulan anggaran, saat ini ${monthLabel(monthKey)}`}
+            aria-label={`Bulan anggaran, saat ini ${monthLabelId(monthKey)}`}
             className="h-11 rounded-xl bg-surface border border-border px-3 text-sm font-semibold text-text focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </label>
@@ -212,7 +198,7 @@ export default function AnggaranPage() {
         />
         <p className="text-base font-bold text-text">Rencanakan belanjamu</p>
         <p className="text-sm text-muted leading-relaxed max-w-xs">
-          Tetapkan batas belanja per kategori untuk {monthLabel(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
+          Tetapkan batas belanja per kategori untuk {monthLabelId(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
         </p>
       </div>
 

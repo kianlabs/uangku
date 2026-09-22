@@ -16,6 +16,7 @@ import { getPayday } from "@/lib/local-storage";
 import { listTransactions } from "@/lib/transactions";
 import type { Budget, DashboardMetrics, DashboardSummary, RecentTransactionItem, User } from "@/lib/types";
 import { formatRupiah, formatDate } from "@/lib/format";
+import { toMonthKey } from "@/lib/date";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { BudgetWarning } from "@/components/dashboard/BudgetWarning";
@@ -45,9 +46,8 @@ export default function BerandaPage() {
   }, []);
 
   const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonth = toMonthKey(now);
+  const prevMonth = toMonthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const [data, setData] = useState<DashboardSummary | null>(null);

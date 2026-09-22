@@ -19,13 +19,15 @@ Personal finance tracking app for managing income and expenses.
   (`POST /api/v1/categories/{id}/transfer`); the last category of a type
   cannot be deleted
 - Monthly budgets per category with 75%/90% usage warnings; deletion is
-  explicit with confirmation (clearing the input only cancels the edit)
+  explicit with confirmation (clearing the input only cancels the edit);
+  month picker for past months, auto-refresh on transaction changes
 - Offline transaction queue with automatic retry when the connection returns
   (source & debt tags are queued too and replayed on sync; the UI reports
   "stored on device" instead of fake success)
+- Global toast notifications (success/error/info) for user feedback
 - Monthly recurring transaction reminders with manual confirmation
 - Onboarding tour + Mochi mascot guide (personal finance agent)
-- Dashboard monthly summary, CSV API export, and formatted PDF export
+- Dashboard monthly summary; export as formatted PDF (2.000-row cap) or CSV
 - Mobile-first UI with bottom navigation
 
 ## Prerequisites

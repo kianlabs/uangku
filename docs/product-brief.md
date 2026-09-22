@@ -158,8 +158,9 @@ Filter berdasarkan:
 
 ### Export
 
-- CSV export API
-- Formatted PDF export from Pengaturan
+- CSV export API + tombol Unduh CSV di Pengaturan
+- Formatted PDF export from Pengaturan (dibatasi 2000 baris; data besar
+  pakai CSV; filename `uangku-YYYYMMDD-jenis.pdf`)
 
 ### Offline and recurring transactions
 
@@ -177,6 +178,8 @@ Anggaran belanja bulanan per kategori:
 - satu batas per kategori, berlaku tiap bulan (tidak perlu isi ulang)
 - progress pemakaian dengan peringatan 75% / 90%
 - diatur dari halaman Kategori, dipantau dari Beranda
+- navigasi bulan (lihat/audit bulan lalu; input dibatasi bulan berjalan)
+- progress refresh otomatis setelah tambah/hapus transaksi
 - hapus hanya lewat tombol Hapus + konfirmasi (mengosongkan input = batal edit)
 
 Ini bukan complex budgeting (tanpa rollover, tanpa multi-periode) — batas

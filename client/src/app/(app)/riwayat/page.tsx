@@ -9,16 +9,12 @@ import { getTransactionSource, getDebtTag } from "@/lib/local-storage";
 import { getCategoryColor, getCategoryIcon } from "@/lib/category-icons";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
-import { todayLocalISO } from "@/lib/date";
+import { todayLocalISO, toMonthKey } from "@/lib/date";
 import { Mascot } from "@/components/brand/Mascot";
 
 const PAGE_SIZE = 20;
 
 type FilterType = "all" | TransactionType;
-
-function toMonthStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
 
 function monthRange(month: string): { date_from: string; date_to: string } {
   const [y, m] = month.split("-").map(Number);
@@ -127,8 +123,8 @@ export default function RiwayatPage() {
   const hasAnyFilter =
     hasClientFilter || monthFilter !== "all" || filter !== "all" || categoryFilter !== "all";
 
-  const thisMonth = toMonthStr(new Date());
-  const lastMonth = toMonthStr(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
+  const thisMonth = toMonthKey(new Date());
+  const lastMonth = toMonthKey(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
 
   const filteredItems = useMemo(() => {
     let result = items;

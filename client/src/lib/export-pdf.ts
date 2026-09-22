@@ -7,6 +7,7 @@
  */
 
 import { exportTransactionsCsv, type ExportTransactionsParams } from "./transactions";
+import { toCompactDate } from "./date";
 
 function parseCsvRows(csv: string): string[][] {
   const rows: string[][] = [];
@@ -45,7 +46,7 @@ function parseCsvRows(csv: string): string[][] {
 }
 
 /** Batas baris PDF agar HP tidak freeze — data besar pakai CSV. */
-export const PDF_MAX_ROWS = 2000;
+const PDF_MAX_ROWS = 2000;
 
 export async function exportTransactionsPdf(
   params: ExportTransactionsParams = {}
@@ -132,8 +133,7 @@ export async function exportTransactionsPdf(
   pdf.setTextColor(120, 120, 120);
   pdf.setFontSize(7);
   pdf.text(`Dibuat ${new Date().toLocaleDateString("id-ID")}`, margin, pageHeight - 7);
-  const today = new Date();
-  const stamp = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+  const stamp = toCompactDate(new Date());
   const kind = params.type ?? "semua";
   return { blob: pdf.output("blob"), filename: `uangku-${stamp}-${kind}.pdf` };
 }

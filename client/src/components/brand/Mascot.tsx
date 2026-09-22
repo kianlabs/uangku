@@ -12,7 +12,7 @@ export type MascotMood =
   | "ok"
   | "firm";
 
-export type MascotVariant =
+type MascotVariant =
   | "classic"
   | "glasses"
   | "peace"

@@ -40,7 +40,7 @@ export interface Transaction {
   created_at: string;
 }
 
-export interface PaginationMeta {
+interface PaginationMeta {
   page: number;
   page_size: number;
   total_items: number;

@@ -10,8 +10,7 @@ export function todayLocalISO(): string {
  * Validasi tanggal transaksi, selaras dengan server
  * (TransactionCreate/UpdateRequest): boleh maksimal besok, tahun >= 2000.
  * Mengembalikan pesan error Indonesia atau null bila valid.
- */
-export function validateTransactionDate(value: string): string | null {
+ */export function validateTransactionDate(value: string): string | null {
   if (!value) return "Tanggal harus diisi.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "Format tanggal tidak valid.";
   const [y, m, d] = value.split("-").map(Number);
@@ -25,5 +24,31 @@ export function validateTransactionDate(value: string): string | null {
   const tISO = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
   if (value > tISO) return "Tanggal tidak boleh lebih dari besok.";
   return null;
+}
+
+/** "YYYY-MM" dari Date (zona lokal). */
+export function toMonthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Geser "YYYY-MM" sejauh delta bulan (negatif = mundur). */
+export function shiftMonthKey(monthKey: string, delta: number): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return toMonthKey(d);
+}
+
+/** Label Indonesia: "2026-09" → "September 2026". */
+export function monthLabelId(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/** "YYYYMMDD" untuk filename/stamp. */
+export function toCompactDate(d: Date): string {
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { todayLocalISO, validateTransactionDate } from "./date";
+import { todayLocalISO, validateTransactionDate, toMonthKey, shiftMonthKey, monthLabelId, toCompactDate } from "./date";
 
 function plusDaysISO(days: number): string {
   const d = new Date();
@@ -36,5 +36,26 @@ describe("validateTransactionDate", () => {
   it("menolak tanggal tidak valid", () => {
     expect(validateTransactionDate("2026-02-30")).toBe("Tanggal tidak valid.");
     expect(validateTransactionDate("abc")).toBe("Format tanggal tidak valid.");
+  });
+});
+
+describe("month helpers", () => {
+  it("toMonthKey format YYYY-MM", () => {
+    expect(toMonthKey(new Date(2026, 8, 22))).toBe("2026-09");
+    expect(toMonthKey(new Date(2026, 0, 5))).toBe("2026-01");
+  });
+
+  it("shiftMonthKey mundur/maju lewat batas tahun", () => {
+    expect(shiftMonthKey("2026-09", -1)).toBe("2026-08");
+    expect(shiftMonthKey("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonthKey("2026-12", 1)).toBe("2027-01");
+  });
+
+  it("monthLabelId bahasa Indonesia", () => {
+    expect(monthLabelId("2026-09")).toBe("September 2026");
+  });
+
+  it("toCompactDate format YYYYMMDD", () => {
+    expect(toCompactDate(new Date(2026, 8, 5))).toBe("20260905");
   });
 });
