@@ -1,7 +1,8 @@
 # UangKu Client
 
 Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4.
-Mobile-first PWA: bottom navigation, offline transaction queue, installable manifest.
+Mobile-first PWA: bottom navigation, installable manifest. Online-only —
+no offline transaction queue.
 
 ## Development
 
@@ -35,7 +36,7 @@ npx playwright install     # browsers, first time only
 - `src/components/` — `ui/` (Button, Input, Select, BottomNav, EmptyState),
   `brand/` (Mascot, SplashScreen, MochiGuide), `dashboard/`, `auth/`, `landing/`
 - `src/lib/` — API clients (`api.ts`, `transactions.ts`, ...), `local-storage.ts`
-  (device cache + offline queue, server is source of truth), `date.ts`, `format.ts`
+  (device cache for preferences, server is source of truth), `date.ts`, `format.ts`
 - `src/context/AuthContext.tsx` — session state, login/register/logout
 - `public/` — PWA manifest, icons, `sw.js`
 - `e2e/` — Playwright specs (unique `e2e+*@example.com` users per run)

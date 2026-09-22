@@ -23,9 +23,9 @@ Fields:
 - `password_hash` — string, required
 - `preferences` — JSONB, required (default `{}`); kunci opsional:
   `payday` (1–31), `onboarding_done` (bool, status tur Mochi),
-    `tx_sources`, `debt_tags`, `templates`. Offline queue disimpan
-    device-locally di browser; pengingat berulang sudah naik ke server
-    (RecurringTemplate).
+    `tx_sources`, `debt_tags`, `templates`. Pengingat berulang sudah naik
+    ke server (RecurringTemplate); antrean offline transaksi dihapus —
+    aplikasi online-only.
 - `created_at` — timestamp
 - `updated_at` — timestamp
 
@@ -222,12 +222,14 @@ Saat akun baru dibuat, UangKu dapat membuat kategori default milik user tersebut
 - Penjualan
 - Lainnya
 
-## Current client-local features
+## Client-local data
 
-Offline transaction queue intentionally has no database entity yet (pending
-client writes). Recurring reminders naik ke server sebagai RecurringTemplate;
-confirm manual membuat satu Transaction + cap `last_confirmed` bulan itu
-(idempotent per bulan, maks satu confirm per bulan).
+Antrean offline transaksi dihapus (keputusan 2026-09-22): aplikasi
+online-only, tidak ada data transaksi pending di device. Preferensi
+`tx_sources`, `debt_tags`, `templates` tetap client-side dan disinkronkan
+ke `users.preferences`. Recurring reminders naik ke server sebagai
+RecurringTemplate; confirm manual membuat satu Transaction + cap
+`last_confirmed` bulan itu (idempotent per bulan, maks satu confirm per bulan).
 
 ## RecurringTemplate
 

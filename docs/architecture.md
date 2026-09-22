@@ -290,13 +290,10 @@ PWA responsibilities:
 - icons
 - responsive mobile UI
 
-Offline transaction sync is implemented as a small client-side queue: network
-failures while creating a transaction are queued in browser storage and retried
-when the app is online. The queue carries the full payload including source and
-debt-tag metadata, which are replayed onto the server-created transaction id on
-flush. The UI reports queued items honestly ("stored on device") instead of
-fake success. The server remains the source of truth; queued data is
-device-local and is not a substitute for server backup.
+The app is online-only (decision 2026-09-22, offline queue removed): network
+failures surface as regular API errors with a clear retryable message —
+nothing is queued or replayed on the device. The server remains the single
+source of truth for all transaction data.
 
 Recurring transaction reminders live on the server (`recurring_templates`).
 They require explicit user confirmation before creating a server transaction

@@ -162,12 +162,11 @@ Filter berdasarkan:
 - Formatted PDF export from Pengaturan (dibatasi 2000 baris; data besar
   pakai CSV; filename `uangku-YYYYMMDD-jenis.pdf`)
 
-### Offline and recurring transactions
+### Connectivity and recurring transactions
 
-- Network failures while creating a transaction place it in a device-local queue.
-- The queue carries source & debt-tag metadata and replays them on sync.
-- The UI reports queued items as "stored on device", never as server success.
-- The queue retries when the app opens online or the browser reconnects.
+- The app is online-only: network failures while saving show a clear,
+  retryable error — nothing is queued on the device and nothing is sent
+  automatically later.
 - Monthly recurring reminders live on the server (synced across devices):
   edit, pause/resume, income or expense, manual confirm creates one
   transaction per month (idempotent).

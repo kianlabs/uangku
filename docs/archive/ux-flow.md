@@ -366,9 +366,9 @@ Saat aplikasi di-install:
 - warna browser/theme konsisten
 - aplikasi tetap usable sebagai browser biasa
 
-Catatan implementasi saat ini: transaksi yang gagal karena network dapat masuk
-queue device-local dan dicoba ulang saat koneksi kembali. Ini bukan background
-sync service worker atau server scheduler.
+Catatan implementasi saat ini: aplikasi online-only — transaksi yang gagal
+karena network tampil sebagai error biasa dengan pesan yang jelas, tidak
+ada antrean device-local (dihapus, keputusan 2026-09-22).
 
 ## Core User Journey
 

@@ -21,9 +21,8 @@ Personal finance tracking app for managing income and expenses.
 - Monthly budgets per category with 75%/90% usage warnings; deletion is
   explicit with confirmation (clearing the input only cancels the edit);
   month picker for past months, auto-refresh on transaction changes
-- Offline transaction queue with automatic retry when the connection returns
-  (source & debt tags are queued too and replayed on sync; the UI reports
-  "stored on device" instead of fake success)
+- Online-only mutation flows: network failures show a clear retryable error
+  and are never queued on the device; the server is the single source of truth
 - Global toast notifications (success/error/info) for user feedback
 - Monthly recurring transaction reminders (server-side, synced across devices):
   edit, pause/resume, income or expense, manual confirm (one transaction/month)
@@ -127,10 +126,9 @@ from the client are never trusted for ownership.
 - Unhandled server errors return a stable envelope (`INTERNAL_ERROR` 500,
   `SERVICE_UNAVAILABLE` 503) with the traceback logged server-side only —
   never leaked to clients.
-- Offline transactions are queued in browser storage when the API is unreachable
-  and retried when the app opens online or the browser emits an `online` event.
-  The queue is device-local and should be treated as pending until the banner
-  disappears; the server remains the source of truth.
+- The app is online-only: when the API is unreachable, mutations fail with a
+  clear error and are not queued or auto-retried; the server remains the
+  source of truth.
 - Recurring reminders are device-local monthly templates. They never create a
   transaction automatically: the user must confirm each due reminder.
 - See `docs/architecture.md` and `docs/erd.md` for deeper design docs.

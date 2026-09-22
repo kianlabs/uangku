@@ -54,16 +54,18 @@ P1-Fitur → P1-UX → P2 dari feedback**.
       `uangku-YYYYMMDD-jenis.pdf`.
 - [x] **10. Toast global.** Satu komponen toast (success/error/info, ikon +
       warna konsisten); sukses create tampilkan toast sebelum redirect;
-      `offlineQueued` → toast info "Tersimpan offline, akan dikirim otomatis".
+      `offlineQueued` → toast info "Tersimpan offline, akan dikirim otomatis"
+      *(bagian offline sudah dihapus — lihat item 12)*.
 - [ ] **11. Recurring naik ke server (SELESAI).** ✓ Model `RecurringTemplate`
        (`day, active, type, category_id, last_confirmed`); ✓ CRUD + confirm
        (idempotent per bulan, 409 `ALREADY_CONFIRMED`); ✓ client component
        `RecurringReminders` + notifikasi + migration legacy; ✓ transfer kategori
        pindah pengingat; ✓ dokumentasi ERD + architecture. Pendulum:
        pengingat manual, bukan auto-debit.
-- [ ] **12. Offline edit/hapus ikut antre.** Queue `update/delete` juga
-      (atau disable tombol offline dengan jelas); tambah drawer "Antrean
-      offline" (lihat/batal/kirim ulang).
+- [ ] ~~**12. Offline edit/hapus ikut antre.**~~ **DIBATALK** (keputusan
+      2026-09-22): aplikasi online-only — antrean offline dihapus dari
+      client, kegagalan jaringan tampil sebagai error biasa; drawer
+      "Antrean offline" tidak dibuat.
 
 ## P1-UX
 
@@ -83,8 +85,7 @@ P1-Fitur → P1-UX → P2 dari feedback**.
       tur tampil optimis bila preferences gagal; seed gagal tidak menghapus
       saldo manual; link demo di empty-state beranda; pesan "saldo dilewati";
       sapaan pakai nama/fallback "Teman"; poster asli fallback video;
-      typo `Profilaksi`; pesan offline vs server dibedakan + retry reset state;
-      `role="status"` skeleton riwayat/anggaran; error inline pengingat.
+      typo `Profilaksi`; `role="status"` skeleton riwayat/anggaran; error inline pengingat.
 
 ---
 
