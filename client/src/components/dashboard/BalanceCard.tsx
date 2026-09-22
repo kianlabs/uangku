@@ -105,7 +105,7 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
           }}
           aria-label={masked ? "Tampilkan saldo" : "Sembunyikan saldo"}
           aria-pressed={!masked}
-          className="flex items-center justify-center w-9 h-9 -mt-1 -mr-1 rounded-lg text-sky-200/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="flex items-center justify-center w-11 h-11 -m-1 rounded-lg text-sky-200/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           {masked ? <Eye className="w-4.5 h-4.5" aria-hidden="true" /> : <EyeOff className="w-4.5 h-4.5" aria-hidden="true" />}
         </button>
@@ -123,7 +123,7 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
           {formatRupiah(Math.round(animated))}
         </span>
       )}
-      <p className="text-xs text-sky-200/70 leading-relaxed">Seluruh waktu hingga bulan ini.</p>
+      <p className="text-xs text-sky-200/90 leading-relaxed">Seluruh waktu hingga bulan ini.</p>
 
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/15">
         <div className="flex flex-col gap-1">

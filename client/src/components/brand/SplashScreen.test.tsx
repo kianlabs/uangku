@@ -58,7 +58,27 @@ describe("SplashScreen", () => {
     await waitFor(() => {
       expect(screen.getByRole("img", { name: "Maskot UangKu" })).toBeTruthy();
     });
-    await user.click(screen.getByRole("status", { name: "Memuat UangKu" }));
+    // P1-15: splash kini role button (bisa diketuk ATAU ditekan Enter).
+    const splash = screen.getByRole("button", {
+      name: "Memuat UangKu — ketuk atau tekan Enter untuk melewati",
+    });
+    await user.click(splash);
+    expect(sessionStorage.getItem("uangku_splash_seen")).toBe("1");
+  });
+
+  it("dismisses on Enter key (keyboard access)", async () => {
+    mockMatchMedia(false);
+    const user = userEvent.setup();
+    render(<SplashScreen />);
+    await waitFor(() => {
+      expect(screen.getByRole("img", { name: "Maskot UangKu" })).toBeTruthy();
+    });
+    // P1-15: splash kini role button (bisa diketuk ATAU ditekan Enter).
+    const splash = screen.getByRole("button", {
+      name: "Memuat UangKu — ketuk atau tekan Enter untuk melewati",
+    });
+    splash.focus();
+    await user.keyboard("{Enter}");
     expect(sessionStorage.getItem("uangku_splash_seen")).toBe("1");
   });
 });

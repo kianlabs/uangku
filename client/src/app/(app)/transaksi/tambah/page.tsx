@@ -268,7 +268,7 @@ export default function TambahTransaksiPage() {
         <h1 className="text-xl font-bold text-text">Tambah Transaksi</h1>
         <Link
           href="/beranda"
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
+          className="flex items-center justify-center w-11 h-11 rounded-lg text-text hover:bg-surface-muted transition-colors"
           aria-label="Tutup"
         >
           <svg

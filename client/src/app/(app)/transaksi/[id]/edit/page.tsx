@@ -179,7 +179,7 @@ export default function EditTransaksiPage() {
           <Link
             href={`/transaksi/${id}`}
             aria-label="Kembali"
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
+            className="flex items-center justify-center w-11 h-11 rounded-lg text-text hover:bg-surface-muted transition-colors"
           >
             <svg
               aria-hidden="true"
@@ -214,7 +214,7 @@ export default function EditTransaksiPage() {
           <Link
             href="/riwayat"
             aria-label="Kembali"
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-text hover:bg-surface-muted transition-colors"
+            className="flex items-center justify-center w-11 h-11 rounded-lg text-text hover:bg-surface-muted transition-colors"
           >
             <svg
               aria-hidden="true"

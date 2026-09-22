@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
 import { Minus, TrendingDown, TrendingUp, Flag } from "lucide-react";
-import { ApiResponseError } from "@/lib/api";
+import { ApiResponseError, apiFetch } from "@/lib/api";
 import { getDashboardSummary, getDashboardMetrics } from "@/lib/dashboard";
 import { listBudgets } from "@/lib/budgets";
 import { getCategoryIcon } from "@/lib/category-icons";
@@ -59,6 +59,8 @@ export default function BerandaPage() {
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
+  const [isSeedingDemo, setIsSeedingDemo] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +120,21 @@ export default function BerandaPage() {
       window.removeEventListener("uangku:tx-changed", handleTxChanged);
     };
   }, []);
+
+  // P1-16: isi contoh data langsung dari empty-state beranda (server 409
+  // bila sudah ada transaksi — hanya ditawarkan saat benar-benar kosong).
+  async function handleSeedDemo() {
+    setIsSeedingDemo(true);
+    setDemoError(null);
+    try {
+      await apiFetch("/api/v1/dashboard/demo-data", { method: "POST" });
+      setFetchKey((k) => k + 1);
+    } catch {
+      setDemoError("Gagal menyiapkan contoh data. Coba lagi.");
+    } finally {
+      setIsSeedingDemo(false);
+    }
+  }
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -262,7 +279,7 @@ export default function BerandaPage() {
                 ) : momDelta > 0 ? (
                   <TrendingUp className="w-5 h-5 text-rose-600 shrink-0" aria-hidden="true" />
                 ) : (
-                  <Minus className="w-5 h-5 text-slate-400 shrink-0" aria-hidden="true" />
+                  <Minus className="w-5 h-5 text-slate-500 shrink-0" aria-hidden="true" />
                 )}
                 <div className="flex flex-col min-w-0">
                   <p
@@ -351,16 +368,32 @@ export default function BerandaPage() {
               </p>
             </div>
             <QuickAddInline onSave={() => setFetchKey((k) => k + 1)} />
-            <Link
-              href="/transaksi/tambah"
-              className="text-sm font-medium text-emerald-600 hover:underline"
-            >
-              atau isi form lengkap
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/transaksi/tambah"
+                className="text-sm font-medium text-emerald-600 hover:underline"
+              >
+                atau isi form lengkap
+              </Link>
+              <span aria-hidden="true" className="text-slate-300">·</span>
+              <button
+                type="button"
+                onClick={() => void handleSeedDemo()}
+                disabled={isSeedingDemo}
+                className="text-sm font-medium text-emerald-600 hover:underline disabled:opacity-60 disabled:hover:no-underline"
+              >
+                {isSeedingDemo ? "Menyiapkan contoh…" : "coba dengan contoh data"}
+              </button>
+            </div>
+            {demoError && (
+              <p role="alert" className="text-sm text-danger">
+                {demoError}
+              </p>
+            )}
           </div>
         )}
       </motion.div>
-      <p className="text-center text-xs text-slate-400 lg:col-span-6">
+      <p className="text-center text-xs text-slate-500 lg:col-span-6">
         {updatedLabel ? `Diperbarui ${updatedLabel}` : ""}
       </p>
       <MochiGuide />
@@ -381,7 +414,7 @@ function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <span className="text-base font-medium text-slate-900 truncate">{tx.category_name}</span>
         {tx.description && <span className="text-sm text-slate-500 truncate">{tx.description}</span>}
-        <span className="text-xs text-slate-400">{formatDate(tx.transaction_date)}</span>
+        <span className="text-xs text-slate-500">{formatDate(tx.transaction_date)}</span>
       </div>
       <span
         className={`num text-base font-bold shrink-0 ${

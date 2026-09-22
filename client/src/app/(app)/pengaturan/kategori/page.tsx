@@ -175,7 +175,7 @@ export default function KategoriPage() {
         <EmptyState
           mood="excited"
           title="Belum ada kategori"
-          description="Bikin kategori sesuai gaya hidupmu, misalnya Jajan atau Profilaksi."
+          description="Bikin kategori sesuai gaya hidupmu, misalnya Jajan atau Hiburan."
           actions={
             <Button size="sm" onClick={() => setShowAddForm(true)}>
               Tambah kategori
@@ -470,19 +470,19 @@ function CategoryRow({
                 setBudgetError(null);
                 setShowBudgetForm((v) => !v);
               }}
-              className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[36px] flex items-center"
+              className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[44px] flex items-center"
             >
               Anggaran
             </button>
             <button
               onClick={() => setIsEditing(true)}
-              className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[36px] flex items-center"
+              className="text-sm text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded px-2 py-1 min-h-[44px] flex items-center"
             >
               Ubah
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="text-sm text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger rounded px-2 py-1 min-h-[36px] flex items-center"
+              className="text-sm text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger rounded px-2 py-1 min-h-[44px] flex items-center"
             >
               Hapus
             </button>

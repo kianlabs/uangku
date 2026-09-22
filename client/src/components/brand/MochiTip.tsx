@@ -66,7 +66,7 @@ export function MochiTip({
         <button
           onClick={onClose}
           aria-label="Tutup tips"
-          className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-text hover:bg-surface-muted active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="shrink-0 flex items-center justify-center w-11 h-11 rounded-lg text-muted hover:text-text hover:bg-surface-muted active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <X className="w-4 h-4" aria-hidden="true" />
         </button>

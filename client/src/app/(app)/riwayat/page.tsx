@@ -768,7 +768,7 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
 
 function LoadingSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" role="status" aria-busy="true" aria-label="Memuat riwayat">
       {[...Array(5)].map((_, i) => (
         <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
           <div className="w-10 h-10 rounded-lg bg-surface-muted shrink-0" />

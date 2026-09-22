@@ -69,23 +69,26 @@ P1-Fitur → P1-UX → P2 dari feedback**.
 
 ## P1-UX
 
-- [ ] **13. Tap-target 44px.** Sisa: `Button size="sm"` (36px), toggle mata
-      saldo, ikon gear header, tombol × modal/kembali, link kategori
-      (`min-h-36px`), input/tombol `RecurringReminders`, input/switch
-      pengaturan, tombol form template.
-- [ ] **14. Kontras.** `text-slate-400` → `text-slate-500`/`muted` (beranda);
-      `text-amber-600` → `text-amber-700` (anggaran); `text-sky-200/70` → `/90`
-      (BalanceCard). Verifikasi pakai tool sebelum rilis.
-- [ ] **15. Fokus keyboard.** Focus trap + return-focus `QuickAddModal`;
-      fokus tiap langkah + Escape + `aria-live` di `MochiGuide`;
-      `SplashScreen` bisa keyboard/button; `role="alert"` error QuickAdd;
-      hapus `autoFocus` di empty-state beranda.
-- [ ] **16. Onboarding.** Splash 3 dtk + bisa diketuk (final sesuai
-      permintaan user);
-      tur tampil optimis bila preferences gagal; seed gagal tidak menghapus
-      saldo manual; link demo di empty-state beranda; pesan "saldo dilewati";
-      sapaan pakai nama/fallback "Teman"; poster asli fallback video;
-      typo `Profilaksi`; `role="status"` skeleton riwayat/anggaran; error inline pengingat.
+- [x] **13. Tap-target 44px.** SELESAI: `Button size="sm"` naik ke 44px,
+      toggle mata saldo & gear header 44px, semua tombol ×/kembali modal &
+      transaksi 44px, link kategori `min-h-[44px]`, tombol tutup MochiTip.
+      Input & tombol `RecurringReminders`/pengaturan/form template sudah ≥44px.
+- [x] **14. Kontras.** SELESAI: `text-slate-400` → `text-slate-500` di
+      beranda (footer, tanggal, ikon Minus); `text-amber-600` →
+      `text-amber-700` (anggaran); `text-sky-200/70` → `/90` (BalanceCard).
+- [x] **15. Fokus keyboard.** SELESAI: focus trap + initial focus +
+      return-focus `QuickAddModal` (backdrop `tabIndex=-1`); fokus CTA tiap
+      langkah + Escape + `aria-live` di `MochiGuide`; `SplashScreen` role
+      button + Enter/Space; `role="alert"` error QuickAdd; `autoFocus`
+      empty-state beranda dihapus.
+- [x] **16. Onboarding.** SELESAI: splash 3 dtk, bisa diketuk + keyboard;
+      tur tampil optimis bila preferences gagal; seed gagal TIDAK menghapus
+      saldo manual (+ pesan error); link demo di empty-state beranda;
+      pesan "saldo dilewati" ada di langkah saldo; sapaan fallback "Teman";
+      poster/logo fallback video (statis sampai MP4 tersedia); contoh
+      kategori "Profilaksi" diganti "Hiburan"; `role="status"` skeleton
+      riwayat/anggaran; error inline pengingat; pesan offline vs server
+      dibedakan di QuickAdd.
 
 ---
 

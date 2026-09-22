@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "motion/react";
 import { createTransaction } from "@/lib/transactions";
+import { ApiResponseError } from "@/lib/api";
 import { listCategories, createCategory } from "@/lib/categories";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
 import { todayLocalISO } from "@/lib/date";
@@ -76,9 +77,14 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
       setInput("");
       setShowSuccess(true);
       onSave();
-    } catch {
+    } catch (err) {
       haptic.error();
-      setError("Gagal menyimpan. Coba lagi.");
+      // P1-16: pesan offline vs server dibedakan.
+      setError(
+        err instanceof ApiResponseError && err.status === 0
+          ? "Tidak ada koneksi. Periksa jaringan lalu coba lagi."
+          : "Gagal menyimpan. Coba lagi."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -119,9 +125,12 @@ export function QuickAddInline({ onSave, onSuccessChange }: QuickAddInlineProps)
         placeholder='Contoh: "Makan siang 45k"'
         className="w-full h-12 px-4 rounded-xl bg-surface border border-border text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
         disabled={isLoading}
-        autoFocus
       />
-      {error && <p className="text-sm text-danger text-center">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-danger text-center">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={isLoading || !input.trim()}

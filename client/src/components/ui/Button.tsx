@@ -22,7 +22,8 @@ const variantStyles: Record<Variant, string> = {
 
 const sizeStyles: Record<Size, string> = {
   md: "h-12 px-5 text-base",
-  sm: "h-9 px-4 text-sm",
+  // P1-13: tap-target Android/iOS ≥44px — sm sebelumnya 36px (h-9).
+  sm: "h-11 px-4 text-sm",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

@@ -86,9 +86,13 @@ export function SplashScreen() {
         {show && (
           <motion.div
             key="splash"
-            role="status"
-            aria-label="Memuat UangKu"
+            role="button"
+            tabIndex={0}
+            aria-label="Memuat UangKu — ketuk atau tekan Enter untuk melewati"
             onClick={dismiss}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") dismiss();
+            }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-canvas p-4"

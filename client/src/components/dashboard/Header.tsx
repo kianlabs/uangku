@@ -10,6 +10,8 @@ interface HeaderProps {
 }
 
 export function Header({ userName, currentDate }: HeaderProps) {
+  // P1-16: sapaan pakai nama profil; fallback "Teman" bila kosong.
+  const displayName = userName.trim() || "Teman";
   const greeting = currentDate.getHours() < 12 ? "Pagi" : currentDate.getHours() < 17 ? "Siang" : "Malam";
   const dateStr = currentDate.toLocaleDateString("id-ID", {
     weekday: "long",
@@ -20,7 +22,7 @@ export function Header({ userName, currentDate }: HeaderProps) {
   return (
     <header className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
-        <h1 className="text-lg font-bold text-slate-900">{greeting}, {userName}</h1>
+        <h1 className="text-lg font-bold text-slate-900">{greeting}, {displayName}</h1>
         <p className="text-sm text-slate-500">{dateStr}</p>
       </div>
       <div className="flex items-center gap-3">
@@ -28,7 +30,7 @@ export function Header({ userName, currentDate }: HeaderProps) {
         <Link
           href="/pengaturan"
           aria-label="Pengaturan"
-          className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-100 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
+          className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-slate-100 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
         >
           <Settings className="w-5 h-5 text-slate-900" aria-hidden="true" />
         </Link>

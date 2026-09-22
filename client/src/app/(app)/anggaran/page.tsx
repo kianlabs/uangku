@@ -247,7 +247,7 @@ export default function AnggaranPage() {
       </section>
 
       {isLoading ? (
-        <div className="flex flex-col gap-3 py-4" aria-busy="true">
+        <div className="flex flex-col gap-3 py-4" role="status" aria-busy="true" aria-label="Memuat anggaran">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-14 rounded-xl bg-surface-muted animate-pulse" />
           ))}
@@ -357,7 +357,7 @@ function BudgetRow({
   const barColor =
     pct == null ? "" : pct < 75 ? "bg-emerald-500" : pct <= 90 ? "bg-amber-500" : "bg-rose-500";
   const pctColor =
-    pct == null ? "text-muted" : pct < 75 ? "text-emerald-600" : pct <= 90 ? "text-amber-600" : "text-rose-600";
+    pct == null ? "text-muted" : pct < 75 ? "text-emerald-600" : pct <= 90 ? "text-amber-700" : "text-rose-600";
 
   return (
     <div className="flex flex-col gap-2 py-4">

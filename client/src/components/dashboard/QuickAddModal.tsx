@@ -13,19 +13,45 @@ interface QuickAddModalProps {
 
 export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   const closeTimer = useRef<number | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      // Focus trap: Tab berputar di dalam dialog (P1-15).
+      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialogRef.current.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !dialogRef.current.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener("keydown", handleKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Fokus masuk ke dialog; simpan elemen asal untuk return-focus saat tutup.
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => dialogRef.current?.focus());
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = prevOverflow;
+      restoreFocusRef.current?.focus?.();
+      restoreFocusRef.current = null;
       if (closeTimer.current !== null) {
         clearTimeout(closeTimer.current);
         closeTimer.current = null;
@@ -46,10 +72,14 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
         <button
           type="button"
           aria-label="Tutup dialog"
+          aria-hidden="true"
+          tabIndex={-1}
           onClick={onClose}
           className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px] cursor-default"
         />
         <motion.div
+          ref={dialogRef}
+          tabIndex={-1}
           initial={{ opacity: 0, y: 48, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: "spring", stiffness: 380, damping: 34 }}
@@ -60,7 +90,7 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
           type="button"
           onClick={onClose}
           aria-label="Tutup"
-          className="absolute top-3 right-3 flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:bg-surface-muted hover:text-text transition-colors"
+          className="absolute top-2 right-2 flex items-center justify-center w-11 h-11 rounded-lg text-muted hover:bg-surface-muted hover:text-text transition-colors"
         >
           <svg
             aria-hidden="true"

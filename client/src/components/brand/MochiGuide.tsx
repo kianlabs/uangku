@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Mascot, type MascotMood } from "@/components/brand/Mascot";
 import { getPreferences, updatePreferences } from "@/lib/preferences";
 import { getPayday, setPayday } from "@/lib/local-storage";
-import { createTransaction, deleteTransaction, listTransactions } from "@/lib/transactions";
+import { createTransaction, listTransactions } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import { todayLocalISO } from "@/lib/date";
 import { groupThousands } from "@/lib/format";
@@ -73,6 +73,23 @@ export function MochiGuide() {
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
+  const ctaRef = useRef<HTMLButtonElement | null>(null);
+
+  // P1-15: fokus pindah ke CTA tiap ganti langkah + Escape menutup tur.
+  useEffect(() => {
+    if (!visible) return;
+    ctaRef.current?.focus();
+  }, [step, visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") dismiss();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [visible]);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +100,9 @@ export function MochiGuide() {
         }
       })
       .catch(() => {
-        // Preferences gagal dibaca — jangan ganggu user dengan tutorial
+        // P1-16: preferences gagal dibaca → tampilkan tur optimis.
+        // User yang sudah selesai onboarding bisa Lewati dengan mudah.
+        if (!cancelled) setVisible(true);
       });
     return () => {
       cancelled = true;
@@ -96,10 +115,11 @@ export function MochiGuide() {
     );
   }, [visible]);
 
-  /** Isi contoh data via server, lalu tutup tur. Kalau gagal → hapus saldo
-   * awal agar user tidak terjebak "sudah punya transaksi" tanpa data penuh. */
+  /** Isi contoh data via server, lalu tutup tur. Gagal → pesan error;
+   * saldo manual user TIDAK dihapus (P1-16). */
   async function handleSeed() {
     setSeeding(true);
+    setSeedError(null);
     try {
       await apiFetch<{ transactions: number; budgets: number }>(
         "/api/v1/dashboard/demo-data",
@@ -110,17 +130,7 @@ export function MochiGuide() {
       dismiss();
     } catch {
       haptic.error();
-      try {
-        const existing = await listTransactions({ page: 1, page_size: 50 });
-        for (const tx of existing.items.filter((t) => t.is_opening_balance || t.description === "Saldo awal")) {
-          await deleteTransaction(tx.id);
-        }
-        if (existing.items.some((t) => t.is_opening_balance || t.description === "Saldo awal")) {
-          window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
-        }
-      } catch {
-        // Bersih-bersih gagal — biarkan; user bisa hapus manual
-      }
+      setSeedError("Gagal menyiapkan contoh data. Saldo awalmu tetap aman — coba lagi.");
     } finally {
       setSeeding(false);
     }
@@ -227,7 +237,7 @@ export function MochiGuide() {
               className="w-full flex flex-col items-center gap-5"
             >
           <Mascot size={128} mood={current.mood} variant={step % 2 === 0 ? "bow" : "peace"} label="Mochi memandumu" />
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2" aria-live="polite">
             <h2 className="text-2xl font-bold text-text">{current.title}</h2>
             <p className="text-base text-muted leading-relaxed">{current.body}</p>
           </div>
@@ -289,14 +299,21 @@ export function MochiGuide() {
         </div>
         <div className="flex flex-col gap-2 pt-8">
           {step === STEPS.length - 1 && (
-            <button
-              type="button"
-              onClick={handleSeed}
-              disabled={isSaving || seeding}
-              className="h-12 rounded-xl border border-accent/40 text-accent text-sm font-semibold hover:bg-accent/10 active:scale-[0.98] transition-all disabled:opacity-60"
-            >
-              {seeding ? "Menyiapkan contoh…" : "Coba dengan contoh data"}
-            </button>
+            <>
+              {seedError && (
+                <p role="alert" className="text-xs text-danger text-center">
+                  {seedError}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleSeed}
+                disabled={isSaving || seeding}
+                className="h-12 rounded-xl border border-accent/40 text-accent text-sm font-semibold hover:bg-accent/10 active:scale-[0.98] transition-all disabled:opacity-60"
+              >
+                {seeding ? "Menyiapkan contoh…" : "Coba dengan contoh data"}
+              </button>
+            </>
           )}
           <div className="flex items-center gap-2">
             <button
@@ -308,6 +325,7 @@ export function MochiGuide() {
               Lewati
             </button>
             <button
+              ref={ctaRef}
               type="button"
               onClick={handleNext}
               disabled={isSaving || seeding}
