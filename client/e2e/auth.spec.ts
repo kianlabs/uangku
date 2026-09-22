@@ -15,6 +15,13 @@ import { registerAndLogin, loginAs, logout, uniqueEmail } from "./helpers/auth";
 let sharedEmail: string;
 
 test.describe("Auth", () => {
+  test.beforeEach(() => {
+    // Headroom untuk retry 65 dtk di helper bila register/login kena 429
+    // (rate-limit server 5x/menit/IP — production mode jalan lebih cepat
+    // sehingga lebih mudah menyentuh limit dalam satu jendela).
+    test.setTimeout(120_000);
+  });
+
   test.beforeAll(async ({ browser }) => {
     // Batas rate-limit server (5x/menit) + retry 65 dtk di helper
     // butuh hook timeout lebih panjang dari default 30 dtk.
@@ -37,14 +44,10 @@ test.describe("Auth", () => {
   });
 
   test("register dengan email duplikat menampilkan error", async ({ page }) => {
-    const email = uniqueEmail();
-    // Register pertama kali
-    await registerAndLogin(page, email);
-    // Logout
-    await logout(page);
-    // Coba register lagi dengan email yang sama
+    // Reuse sharedEmail dari beforeAll (hemat kuota rate-limit register):
+    // cukup SATU register POST dengan email yang pasti sudah terdaftar.
     await page.goto("/daftar");
-    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Email").fill(sharedEmail);
     await page.getByLabel("Password", { exact: true }).fill("testpass1234");
     await page.getByLabel("Konfirmasi Password").fill("testpass1234");
     await page.getByRole("button", { name: "Daftar" }).click();
