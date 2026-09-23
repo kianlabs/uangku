@@ -24,4 +24,9 @@ describe("BudgetWarning", () => {
     const { container } = render(<BudgetWarning spent={10} limit={0} />);
     expect(container.firstChild).toBeNull();
   });
+
+  it("returns null when spent is null", () => {
+    const { container } = render(<BudgetWarning spent={null} limit={100} />);
+    expect(container.firstChild).toBeNull();
+  });
 });

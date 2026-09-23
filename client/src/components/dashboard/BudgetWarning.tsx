@@ -3,13 +3,14 @@
 import { formatRupiah } from "@/lib/format";
 
 interface BudgetWarningProps {
-  spent: string | number;
+  spent: string | number | null | undefined;
   limit: string | number;
   label?: string;
 }
 
 /** Progress bar anggaran sesuai DESIGN §3D: hijau <75%, amber 75-90%, merah >90%. */
 export function BudgetWarning({ spent, limit, label = "Anggaran bulan ini" }: BudgetWarningProps) {
+  if (spent === null || spent === undefined) return null;
   const spentNum = typeof spent === "string" ? Number(spent) : spent;
   const limitNum = typeof limit === "string" ? Number(limit) : limit;
   if (!Number.isFinite(spentNum) || !Number.isFinite(limitNum) || limitNum <= 0) return null;

@@ -314,14 +314,16 @@ export default function BerandaPage() {
                     Kelola
                   </Link>
                 </div>
-                {budgets.map((b) => (
-                  <BudgetWarning
-                    key={b.category_id}
-                    spent={b.spent ?? "0"}
-                    limit={b.amount}
-                    label={b.category_name}
-                  />
-                ))}
+                {budgets
+                  .filter((b) => b.spent !== null)
+                  .map((b) => (
+                    <BudgetWarning
+                      key={b.category_id}
+                      spent={b.spent}
+                      limit={b.amount}
+                      label={b.category_name}
+                    />
+                  ))}
               </section>
             )}
 
