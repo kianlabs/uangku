@@ -16,7 +16,7 @@ import { Select } from "@/components/ui/Select";
 import type { Category, TransactionDetail, TransactionType } from "@/lib/types";
 
 function parseAmountInput(value: string): number {
-  return value.includes(".") ? parseFloat(value) : parseFloat(value.replace(/\D/g, ""));
+  return parseFloat(value.replace(/\D/g, "")) || 0;
 }
 
 export default function EditTransaksiPage() {
