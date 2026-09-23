@@ -74,7 +74,17 @@ export function IndicatorSpotlightTour() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<RectPosition | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
   const primaryButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    function checkDesktop() {
+      setIsDesktop(typeof window !== "undefined" && window.innerWidth >= 1024);
+    }
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   const updateTargetRect = useCallback((index: number) => {
     const step = TOUR_STEPS[index];
@@ -86,9 +96,18 @@ export function IndicatorSpotlightTour() {
         typeof window !== "undefined" &&
         (window.getComputedStyle(el).position === "fixed" || Boolean(el.closest("nav")));
       if (!isFixed && typeof el.scrollIntoView === "function") {
-        // Gulir target ke tengah layar agar berada tepat di bawah kartu instruksi atas,
-        // persis sesuai susunan layout panduan yang diharapkan.
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const desktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+        if (desktop && step.targetKey === "safe-to-spend") {
+          // Di desktop: Safe-to-Spend berada di bagian atas berdampingan dengan Saldo.
+          // Gulir ke puncak halaman agar seluruh kartu Safe-to-Spend terlihat jelas di bagian atas.
+          if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+            window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+          }
+        } else {
+          // Di mobile: gulir target ke tengah layar agar berada tepat di bawah kartu instruksi atas,
+          // persis sesuai susunan layout panduan yang diharapkan.
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       }
       const pad = 6;
       const syncRect = () => {
@@ -202,10 +221,15 @@ export function IndicatorSpotlightTour() {
   const currentStep = TOUR_STEPS[currentIndex];
   const isLast = currentIndex === TOUR_STEPS.length - 1;
 
-  // Seluruh instruksi tur (Safe-to-Spend di tengah dan menu BottomNav di dasar)
-  // diletakkan di ATAS SENDIRI (top-0) persis seperti screenshot acuan panduan,
-  // sehingga sorotan target di bawahnya terlihat 100% utuh tanpa tertutup kartu.
-  const placeCardAtTop = true;
+  // Di tampilan desktop (layar web lebar):
+  // Untuk Safe-to-Spend, kartu instruksi ditaruh di BAWAH (bottom-0) agar sorotan
+  // Safe-to-Spend di kanan atas tidak pernah tertutup oleh kartu instruksi.
+  // Untuk langkah navigasi bawah, kartu ditaruh di ATAS.
+  // Di tampilan mobile:
+  // Seluruh instruksi tur diletakkan di ATAS SENDIRI (top-0) persis seperti screenshot acuan.
+  const placeCardAtTop = isDesktop
+    ? currentStep.targetKey !== "safe-to-spend"
+    : true;
 
   return (
     <AnimatePresence>
@@ -272,14 +296,14 @@ export function IndicatorSpotlightTour() {
           />
         )}
 
-        {/* Modal / Card Penjelasan: Ditaruh di ATAS SENDIRI agar highlight target tidak tertutup */}
+        {/* Modal / Card Penjelasan: Posisi adaptif desktop (bawah untuk Safe to Spend) vs mobile (atas) */}
         <div
           className={`fixed inset-x-0 z-[60] p-3 sm:p-5 flex justify-center pointer-events-none transition-all duration-300 ${
             placeCardAtTop ? "top-0 items-start" : "bottom-0 items-end"
           }`}
           style={{
             paddingTop: placeCardAtTop ? "calc(env(safe-area-inset-top) + 0.5rem)" : undefined,
-            paddingBottom: !placeCardAtTop ? "calc(env(safe-area-inset-bottom) + 0.5rem)" : undefined,
+            paddingBottom: !placeCardAtTop ? "calc(env(safe-area-inset-bottom) + 1.25rem)" : undefined,
           }}
         >
           <motion.div
