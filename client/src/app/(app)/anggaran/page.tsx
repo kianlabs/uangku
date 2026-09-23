@@ -56,11 +56,11 @@ export default function AnggaranPage() {
       const map: Record<string, Budget> = {};
       for (const b of budRes.items) map[b.category_id] = b;
       setBudgets(map);
-      if (budRes.earliest_created_at) {
-        setEarliestBudgetMonth(toMonthKey(new Date(budRes.earliest_created_at)));
-      } else {
-        setEarliestBudgetMonth(null);
-      }
+      setEarliestBudgetMonth(
+        budRes.earliest_created_at
+          ? toMonthKey(new Date(budRes.earliest_created_at))
+          : null
+      );
     } catch {
       if (!signal?.aborted) setLoadError("Gagal memuat anggaran. Coba lagi.");
     } finally {
@@ -146,6 +146,9 @@ export default function AnggaranPage() {
       setBudgets((prev) => {
         const next = { ...prev };
         delete next[categoryId];
+        if (Object.keys(next).length === 0) {
+          setEarliestBudgetMonth(null);
+        }
         return next;
       });
       setConfirmDeleteId(null);
