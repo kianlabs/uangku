@@ -104,6 +104,9 @@ test.describe("Polish UI: mask saldo & swipe-delete", () => {
 
   async function authedPage(): Promise<Page> {
     const pg = await ctx.newPage();
+    await pg.addInitScript(() => {
+      localStorage.setItem("uangku:indicator_tour_done", "1");
+    });
     await pg.goto("/beranda");
     await pg.waitForURL("**/beranda", { timeout: 15_000 });
     await dismissTour(pg);
