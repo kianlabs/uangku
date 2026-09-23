@@ -63,6 +63,7 @@ export default function RiwayatPage() {
   const [compact, setCompact] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const pendingRef = useRef(new Map<string, { tx: Transaction; index: number; timer: number }>());
+  const isMountedRef = useRef(true);
 
   /** Hapus optimistik per item; tiap item punya timer undo sendiri. */
   function beginDelete(tx: Transaction) {
@@ -97,13 +98,14 @@ export default function RiwayatPage() {
     const pd = pendingRef.current.get(id);
     if (!pd) return;
     pendingRef.current.delete(id);
-    setPendingCount(pendingRef.current.size);
+    if (isMountedRef.current) setPendingCount(pendingRef.current.size);
     try {
       await deleteTransaction(pd.tx.id);
       window.dispatchEvent(new CustomEvent("uangku:tx-changed"));
       haptic.success();
     } catch {
-      // Rollback: kembalikan baris & tampilkan error.
+      // Rollback: kembalikan baris & tampilkan error jika masih terpasang (mounted)
+      if (!isMountedRef.current) return;
       reinsert([pd]);
       haptic.error();
       setError("Gagal menghapus transaksi. Coba lagi.");
@@ -111,8 +113,10 @@ export default function RiwayatPage() {
   }
 
   useEffect(() => {
+    isMountedRef.current = true;
     const pending = pendingRef.current;
     return () => {
+      isMountedRef.current = false;
       for (const e of pending.values()) clearTimeout(e.timer);
       pending.clear();
     };
@@ -578,9 +582,14 @@ export default function RiwayatPage() {
           <div className="flex flex-col gap-5">
             {groups.map((g) => (
               <section key={g.date} className="flex flex-col">
-                <h2 className="text-xs font-semibold text-muted uppercase tracking-wide pb-1">
-                  {g.label}
-                </h2>
+                <div className="sticky top-0 z-10 -mx-2 px-2 py-1.5 bg-canvas/90 backdrop-blur-md backdrop-saturate-150 rounded-md transition-colors flex items-center justify-between">
+                  <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">
+                    {g.label}
+                  </h2>
+                  <span className="text-[11px] font-medium text-muted/80">
+                    {g.items.length} transaksi
+                  </span>
+                </div>
                 <div className="flex flex-col divide-y divide-border">
                   {g.items.map((tx) => (
                     <SwipeableTxRow key={tx.id} tx={tx} onDelete={beginDelete} />
@@ -739,7 +748,13 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
               {tx.description || tx.category.name}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-muted">{tx.category.name}</span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(tx.category.name).foreground.replace("text-", "bg-")} shrink-0`}
+                  aria-hidden="true"
+                />
+                {tx.category.name}
+              </span>
               {source && (
                 <span className="text-[11px] font-medium text-muted bg-surface-muted px-2 py-0.5 rounded shrink-0">
                   {source}
