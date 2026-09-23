@@ -8,7 +8,8 @@ describe("formatRupiahCompact", () => {
   });
 
   it("meringkas ribuan", () => {
-    expect(formatRupiahCompact(450000)).toContain("rb");
+    expect(formatRupiahCompact(450000)).toBe("Rp 450 rb");
+    expect(formatRupiahCompact(1500)).toBe("Rp 2 rb");
   });
 
   it("nilai kecil tetap penuh", () => {

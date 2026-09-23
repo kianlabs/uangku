@@ -22,7 +22,7 @@ export function formatRupiahCompact(value: string | number): string {
     new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(v);
   if (abs >= 1_000_000_000) return `${sign}Rp ${fmt(abs / 1_000_000_000)} M`;
   if (abs >= 1_000_000) return `${sign}Rp ${fmt(abs / 1_000_000)} jt`;
-  if (abs >= 1_000) return `${sign}Rp ${fmt(abs / 1_000)} rb`;
+  if (abs >= 1_000) return `${sign}Rp ${Math.round(abs / 1_000)} rb`;
   return `${sign}Rp ${fmt(abs)}`;
 }
 
