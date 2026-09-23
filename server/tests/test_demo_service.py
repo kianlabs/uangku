@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.models import Base
 from app.models.category import Category
 from app.models.transaction import Transaction
+from app.services import demo as demo_module
 from app.services.auth import register_user
 from app.services.demo import seed_demo_data
 from app.services.transaction import create_transaction
@@ -72,3 +73,26 @@ def test_seed_replaces_opening_balance_only_user(db):
         )
     ).all()
     assert remaining_opening == []
+
+
+def test_seed_demo_data_on_january_first_no_duplicate_salary(db, monkeypatch):
+    """BUG-2: seed_demo_data di tanggal 1 Januari tidak boleh duplicate salary."""
+    class FakeDatetime:
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2028, 1, 1, tzinfo=UTC)
+
+    monkeypatch.setattr(demo_module, "datetime", FakeDatetime)
+
+    fresh = register_user(db, f"{uuid.uuid4()}@demo.com", "pass")
+    seed_demo_data(db, fresh, seed=42)
+
+    salaries = db.scalars(
+        select(Transaction).where(
+            Transaction.user_id == fresh.id,
+            Transaction.type == "income",
+            Transaction.description == "Gaji bulanan",
+        )
+    ).all()
+    assert len(salaries) == 1
+    assert salaries[0].transaction_date == date(2027, 12, 25)

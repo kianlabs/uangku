@@ -74,7 +74,7 @@ def seed_demo_data(db: Session, user: User, seed: int | None = None) -> dict[str
     first_of_month = today.replace(day=1)
     if today.day >= 15:
         _add_salary(first_of_month, "4500000")
-    if today.day < 15 and today.month == 1:
+    elif today.day < 15 and today.month == 1:
         prev_month_last = first_of_month - timedelta(days=1)
         _add_salary(prev_month_last.replace(day=25), "4500000")
     else:
