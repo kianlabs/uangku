@@ -111,11 +111,11 @@ describe("RecurringReminders — server", () => {
 describe("isRecurringDue", () => {
   it("jatuh tempo setelah tanggal, sekali per bulan", () => {
     const base = { day: 20, active: true, last_confirmed: null };
-    expect(isRecurringDue(base, new Date(2026, 8, 19))).toBe(false);
-    expect(isRecurringDue(base, new Date(2026, 8, 20))).toBe(true);
+    expect(isRecurringDue(base, new Date(Date.UTC(2026, 8, 19)))).toBe(false);
+    expect(isRecurringDue(base, new Date(Date.UTC(2026, 8, 20)))).toBe(true);
     expect(
-      isRecurringDue({ ...base, last_confirmed: "2026-09-20" }, new Date(2026, 8, 25))
+      isRecurringDue({ ...base, last_confirmed: "2026-09-20" }, new Date(Date.UTC(2026, 8, 25)))
     ).toBe(false);
-    expect(isRecurringDue({ ...base, day: 31 }, new Date(2026, 1, 28))).toBe(true);
+    expect(isRecurringDue({ ...base, day: 31 }, new Date(Date.UTC(2026, 1, 28)))).toBe(true);
   });
 });

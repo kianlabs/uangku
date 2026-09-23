@@ -51,11 +51,18 @@ export async function confirmRecurring(id: string): Promise<{ id: string }> {
 
 export function isRecurringDue(
   item: { day: number; active: boolean; last_confirmed: string | null },
-  today = new Date()
+  today?: Date
 ): boolean {
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  if (!item.active || today.getDate() < Math.min(item.day, lastDay)) return false;
-  const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  if (!item.active) return false;
+  const now = today || new Date();
+  const utcDate = now.getUTCDate();
+  const utcMonth = now.getUTCMonth();
+  const utcYear = now.getUTCFullYear();
+
+  const lastDay = new Date(Date.UTC(utcYear, utcMonth + 1, 0)).getUTCDate();
+  if (utcDate < Math.min(item.day, lastDay)) return false;
+
+  const month = `${utcYear}-${String(utcMonth + 1).padStart(2, "0")}`;
   return item.last_confirmed?.startsWith(month) !== true;
 }
 
