@@ -193,6 +193,8 @@ def update_transaction(
         db.rollback()
         raise InvalidCategoryError()
     db.refresh(tx)
+    # Eager-load category to avoid extra lazy query or stale relation in caller/response
+    db.refresh(tx, attribute_names=["category"])
     return tx
 
 

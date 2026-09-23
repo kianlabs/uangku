@@ -195,6 +195,20 @@ def test_update_type_and_category_compatible(db, user, income_cat):
     updated = update_transaction(db, user, tx.id, type_="income", category_id=income_cat.id)
     assert updated.type == "income"
     assert updated.category_id == income_cat.id
+    assert updated.category.id == income_cat.id
+
+
+def test_update_transaction_eager_loads_new_category(db, user, expense_cat):
+    """BUG-3: update_transaction harus eager load category relationship baru setelah commit."""
+    from app.services.category import create_category as cc
+    expense_cat2 = cc(db, user, name="Kategori Baru", type_="expense")
+    tx = create_transaction(db, user, type_="expense", amount=Decimal(1000),
+                            category_id=expense_cat.id, transaction_date=date(2026, 9, 17))
+    assert tx.category.name == expense_cat.name
+    updated = update_transaction(db, user, tx.id, category_id=expense_cat2.id)
+    assert updated.category_id == expense_cat2.id
+    assert updated.category.id == expense_cat2.id
+    assert updated.category.name == "Kategori Baru"
 
 
 def test_update_type_only_mismatch_raises(db, user, expense_cat):
