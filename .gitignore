@@ -102,3 +102,13 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Neon & Local Tooling
+.neon
+.env.local
+.agents/
+skills-lock.json
+package.json
+package-lock.json
+neon.ts
+
