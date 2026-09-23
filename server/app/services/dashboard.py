@@ -244,43 +244,19 @@ def get_user_metrics(
     # -- Query 2b: today's expense (nilai terakhir sparkline) --
     today_expense = amounts_by_date.get(today, Decimal(0))
 
-    # -- Query 3: current-month totals for safe-to-spend --
-    month_start = date(today.year, today.month, 1)
-    if today.month == 12:
-        month_end_exclusive = date(today.year + 1, 1, 1)
-    else:
-        month_end_exclusive = date(today.year, today.month + 1, 1)
-
-    monthly_row = db.execute(
+    # -- Query 3: all-time balance for safe-to-spend (BUG-1: hitung dari all_time_balance) --
+    balance_row = db.execute(
         select(
             func.coalesce(
                 func.sum(Transaction.amount).filter(Transaction.type == "income"), 0
-            ).label("monthly_income"),
+            ).label("total_income"),
             func.coalesce(
                 func.sum(Transaction.amount).filter(Transaction.type == "expense"), 0
-            ).label("monthly_expense"),
-        ).where(
-            Transaction.user_id == user.id,
-            Transaction.is_opening_balance.is_(False),
-            Transaction.transaction_date >= month_start,
-            Transaction.transaction_date < month_end_exclusive,
-        )
+            ).label("total_expense"),
+        ).where(Transaction.user_id == user.id)
     ).one()
 
-    monthly_income = Decimal(str(monthly_row.monthly_income))
-    monthly_expense = Decimal(str(monthly_row.monthly_expense))
-
-    # Saldo awal adalah uang yang memang dipegang (timeless seed money),
-    # jadi ikut menghitung sebagai dana tersedia — walau bukan income.
-    opening_total = db.scalar(
-        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            Transaction.user_id == user.id,
-            Transaction.is_opening_balance.is_(True),
-        )
-    )
-    opening_total = Decimal(str(opening_total))
-
-    remaining_balance = monthly_income - monthly_expense + opening_total
+    remaining_balance = Decimal(str(balance_row.total_income)) - Decimal(str(balance_row.total_expense))
     days_left = _days_until_next_payday(today, payday)
     # Clamp to zero: overspent months show Rp 0/day instead of a negative budget.
     raw_safe = (remaining_balance / days_left) if days_left > 0 else Decimal(0)

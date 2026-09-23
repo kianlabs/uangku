@@ -357,26 +357,55 @@ def test_metrics_weekly_excludes_income(db, metrics_user, metrics_income_cat, me
     assert result["week_expense_total"] < Decimal(100000)  # income not counted
 
 
-def test_metrics_safe_to_spend_with_income_and_tagihan(
-    db, metrics_user, metrics_income_cat, metrics_expense_cat, metrics_tagihan_cat
-):
+def test_metrics_safe_to_spend_with_income_and_tagihan(db):
+    u = register_user(db, f"{uuid.uuid4()}@metrics.com", "pass")
+    inc_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Gaji"))
+    exp_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Makanan"))
+    tag_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Tagihan"))
+
     today = date(2028, 7, 10)
     # Income: 5,000,000
-    create_transaction(db, metrics_user, type_="income", amount=Decimal(5000000),
-                       category_id=metrics_income_cat.id, transaction_date=date(2028, 7, 1))
+    create_transaction(db, u, type_="income", amount=Decimal(5000000),
+                       category_id=inc_cat.id, transaction_date=date(2028, 7, 1))
     # Regular expense: 1,000,000
-    create_transaction(db, metrics_user, type_="expense", amount=Decimal(1000000),
-                       category_id=metrics_expense_cat.id, transaction_date=date(2028, 7, 5))
+    create_transaction(db, u, type_="expense", amount=Decimal(1000000),
+                       category_id=exp_cat.id, transaction_date=date(2028, 7, 5))
     # Tagihan (mandatory): 500,000
-    create_transaction(db, metrics_user, type_="expense", amount=Decimal(500000),
-                       category_id=metrics_tagihan_cat.id, transaction_date=date(2028, 7, 5))
+    create_transaction(db, u, type_="expense", amount=Decimal(500000),
+                       category_id=tag_cat.id, transaction_date=date(2028, 7, 5))
 
-    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    result = get_user_metrics(db, u, payday=25, today=today)
     # remaining_balance = income - ALL expense = 5,000,000 - 1,500,000 = 3,500,000
     assert result["remaining_balance"] == Decimal(3500000)
     # days_left = 25 - 10 = 15
     assert result["days_left"] == 15
     assert result["safe_to_spend"] == Decimal(3500000) / 15
+
+
+def test_metrics_safe_to_spend_includes_past_months_balance(db):
+    """BUG-1: safe_to_spend harus memperhitungkan saldo akumulasi dari bulan-bulan lalu."""
+    u = register_user(db, f"{uuid.uuid4()}@metrics.com", "pass")
+    inc_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Gaji"))
+    exp_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Makanan"))
+
+    # Bulan lalu: Saldo Rp 5.000.000 (income 6jt - expense 1jt)
+    create_transaction(db, u, type_="income", amount=Decimal(6000000),
+                       category_id=inc_cat.id, transaction_date=date(2028, 6, 1))
+    create_transaction(db, u, type_="expense", amount=Decimal(1000000),
+                       category_id=exp_cat.id, transaction_date=date(2028, 6, 10))
+
+    # Bulan ini (Juli 2028): income 3.000.000, expense 1.000.000
+    today = date(2028, 7, 10)
+    create_transaction(db, u, type_="income", amount=Decimal(3000000),
+                       category_id=inc_cat.id, transaction_date=date(2028, 7, 1))
+    create_transaction(db, u, type_="expense", amount=Decimal(1000000),
+                       category_id=exp_cat.id, transaction_date=date(2028, 7, 5))
+
+    result = get_user_metrics(db, u, payday=25, today=today)
+    # Saldo akumulasi all-time = 5jt (bulan lalu) + 2jt (bulan ini) = 7jt
+    assert result["remaining_balance"] == Decimal(7000000)
+    assert result["days_left"] == 15
+    assert result["safe_to_spend"] == Decimal(7000000) / 15
 
 
 def test_metrics_safe_to_spend_zero_income(db, metrics_user, metrics_expense_cat):
@@ -425,15 +454,18 @@ def test_opening_balance_counts_toward_balance_only(db, user, income_cat):
     assert all(tx["description"] != "Saldo awal" for tx in result["recent_transactions"])
 
 
-def test_metrics_excludes_opening_balance(db, metrics_user, metrics_income_cat, metrics_expense_cat):
+def test_metrics_excludes_opening_balance(db):
+    u = register_user(db, f"{uuid.uuid4()}@metrics.com", "pass")
+    inc_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Gaji"))
+    exp_cat = db.scalar(select(Category).where(Category.user_id == u.id, Category.name == "Makanan"))
     today = date(2029, 6, 15)
-    create_transaction(db, metrics_user, type_="income", amount=Decimal(9000000),
-                       category_id=metrics_income_cat.id, transaction_date=date(2029, 6, 1),
+    create_transaction(db, u, type_="income", amount=Decimal(9000000),
+                       category_id=inc_cat.id, transaction_date=date(2029, 6, 1),
                        description="Saldo awal", is_opening_balance=True)
-    create_transaction(db, metrics_user, type_="expense", amount=Decimal(100000),
-                       category_id=metrics_expense_cat.id, transaction_date=date(2029, 6, 5))
+    create_transaction(db, u, type_="expense", amount=Decimal(100000),
+                       category_id=exp_cat.id, transaction_date=date(2029, 6, 5))
 
-    result = get_user_metrics(db, metrics_user, payday=25, today=today)
+    result = get_user_metrics(db, u, payday=25, today=today)
     # Dana tersedia = saldo awal + income - expense = 9.000.000 + 0 - 100.000
     assert result["remaining_balance"] == Decimal(8900000)
     assert result["transaction_dates"] == ["2029-06-05"]
