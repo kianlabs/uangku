@@ -6,6 +6,8 @@ import { formatRupiah, formatRupiahCompact } from "@/lib/format";
 interface SpendingDonutProps {
   data: ExpenseByCategoryItem[];
   monthlyExpense: string;
+  /** Tata letak donut vs daftar: "stacked" menaruh donut di atas & daftar kategori di bawah, "side" berdampingan di layar lebar, "auto" adaptif. */
+  layout?: "auto" | "stacked" | "side";
 }
 
 const PALETTE = [
@@ -39,7 +41,7 @@ function arcPath(cx: number, cy: number, rOut: number, rIn: number, start: numbe
   ].join(" ");
 }
 
-export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
+export function SpendingDonut({ data, monthlyExpense, layout = "auto" }: SpendingDonutProps) {
   const total = Number.parseFloat(monthlyExpense);
   if (!data.length || !Number.isFinite(total) || total <= 0) return null;
 
@@ -66,13 +68,20 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
     []
   );
 
+  const containerFlexClass =
+    layout === "stacked"
+      ? "flex flex-col items-center gap-4"
+      : layout === "side"
+        ? "flex flex-col gap-4 sm:flex-row sm:items-center"
+        : "flex flex-col gap-4 sm:flex-row sm:items-center lg:flex-col lg:items-center";
+
   return (
-    <section aria-label="Pengeluaran terbesar" className="flex flex-col gap-4">
+    <section aria-label="Pengeluaran terbesar" className="flex flex-col gap-4 min-w-0">
       <h2 className="text-base font-semibold text-text">Pengeluaran terbesar</h2>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className={containerFlexClass}>
         <svg
           viewBox="0 0 160 160"
-          className="h-36 w-36 shrink-0"
+          className="h-36 w-36 shrink-0 self-center"
           role="img"
           aria-label="Donut pengeluaran terbesar"
         >
@@ -105,35 +114,37 @@ export function SpendingDonut({ data, monthlyExpense }: SpendingDonutProps) {
             y={92}
             textAnchor="middle"
             className="fill-text"
-            fontSize={12}
+            fontSize={total >= 10000000 ? 10 : 12}
             fontWeight={700}
             style={{ fontFamily: "var(--font-serif)", fontVariantNumeric: "tabular-nums" }}
           >
             {formatRupiah(total)}
           </text>
         </svg>
-        <ul className="flex flex-col gap-1 flex-1">
+        <ul className="flex flex-col gap-1 w-full min-w-0">
           {slices.map((s, i) => (
             <li
               key={s.name}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 -mx-2"
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 min-w-0"
               style={{
                 background: `linear-gradient(to right, ${s.color}24 ${s.pct}%, transparent ${s.pct}%)`,
               }}
             >
-              <span className="num w-6 shrink-0 text-xs text-muted">
+              <span className="num w-5 shrink-0 text-xs text-muted">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span
-                className="h-3 w-3 shrink-0 rounded-full"
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: s.color }}
                 aria-hidden="true"
               />
-              <span className="flex-1 text-sm text-text">{s.name}</span>
-              <span className="num text-sm font-semibold text-text">
+              <span className="flex-1 min-w-0 text-xs sm:text-sm text-text truncate" title={s.name}>
+                {s.name}
+              </span>
+              <span className="num text-xs sm:text-sm font-semibold text-text shrink-0">
                 {s.pct.toFixed(0)}%
               </span>
-              <span className="num text-sm text-muted whitespace-nowrap">
+              <span className="num text-xs sm:text-sm text-muted shrink-0 tabular-nums" title={formatRupiah(s.amount)}>
                 {formatRupiahCompact(s.amount)}
               </span>
             </li>

@@ -97,9 +97,9 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
   const animatedExpense = useCountUp(Number.isFinite(expenseNum) ? expenseNum : 0);
 
   return (
-    <div data-tour="balance-card" className="flex flex-col gap-4 p-6 rounded-2xl bg-brand shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold text-sky-200 uppercase tracking-wide pt-1">
+    <div data-tour="balance-card" className="flex flex-col gap-4 p-6 rounded-2xl bg-brand shadow-md min-w-0">
+      <div className="flex items-start justify-between gap-2 min-w-0">
+        <span className="text-xs font-semibold text-sky-200 uppercase tracking-wide pt-1 truncate">
           Saldo keseluruhan
         </span>
         <button
@@ -110,7 +110,7 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
           }}
           aria-label={masked ? "Tampilkan saldo" : "Sembunyikan saldo"}
           aria-pressed={!masked}
-          className="flex items-center justify-center w-11 h-11 -m-1 rounded-lg text-sky-200/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-sky-200/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white shrink-0"
         >
           {masked ? <Eye className="w-4.5 h-4.5" aria-hidden="true" /> : <EyeOff className="w-4.5 h-4.5" aria-hidden="true" />}
         </button>
@@ -118,26 +118,40 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
       {masked ? (
         <span
           data-testid="balance-value"
-          className="num font-serif text-[1.9rem] leading-tight font-bold text-white select-none"
+          className="num font-serif text-[1.9rem] leading-tight font-bold text-white select-none truncate"
           aria-label="Saldo disembunyikan"
         >
           Rp ••••••
         </span>
       ) : (
-        <span data-testid="balance-value" className="num font-serif text-[1.9rem] leading-tight font-bold text-white">
+        <span
+          data-testid="balance-value"
+          className="num font-serif text-[1.9rem] leading-tight font-bold text-white truncate"
+          title={formatRupiah(Math.round(animated))}
+        >
           {formatRupiah(Math.round(animated))}
         </span>
       )}
-      <p className="text-xs text-sky-200/90 leading-relaxed">Seluruh waktu hingga bulan ini.</p>
+      <p className="text-xs text-sky-200/90 leading-relaxed truncate">Seluruh waktu hingga bulan ini.</p>
 
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/15">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wide">Pemasukan</span>
-          <span className="num text-lg font-bold text-emerald-300">+{formatRupiah(Math.round(animatedIncome))}</span>
+      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/15 min-w-0">
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wide truncate">Pemasukan</span>
+          <span
+            className="num text-base sm:text-lg font-bold text-emerald-300 truncate tabular-nums"
+            title={`+${formatRupiah(Math.round(animatedIncome))}`}
+          >
+            +{formatRupiah(Math.round(animatedIncome))}
+          </span>
         </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold text-rose-300 uppercase tracking-wide">Pengeluaran</span>
-          <span className="num text-lg font-bold text-rose-300">-{formatRupiah(Math.round(animatedExpense))}</span>
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-xs font-semibold text-rose-300 uppercase tracking-wide truncate">Pengeluaran</span>
+          <span
+            className="num text-base sm:text-lg font-bold text-rose-300 truncate tabular-nums"
+            title={`-${formatRupiah(Math.round(animatedExpense))}`}
+          >
+            -{formatRupiah(Math.round(animatedExpense))}
+          </span>
         </div>
       </div>
     </div>

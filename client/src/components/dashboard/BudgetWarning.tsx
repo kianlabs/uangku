@@ -20,10 +20,10 @@ export function BudgetWarning({ spent, limit, label = "Anggaran bulan ini" }: Bu
   const text = pct < 75 ? "text-emerald-700" : pct <= 90 ? "text-amber-700" : "text-rose-700";
 
   return (
-    <section aria-label={label} className="flex flex-col gap-2 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</span>
-        <span className={`num text-sm font-bold ${text}`}>{pct.toFixed(0)}%</span>
+    <section aria-label={label} className="flex flex-col gap-2 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm min-w-0">
+      <div className="flex items-baseline justify-between gap-2 min-w-0">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide truncate" title={label}>{label}</span>
+        <span className={`num text-sm font-bold shrink-0 tabular-nums ${text}`}>{pct.toFixed(0)}%</span>
       </div>
       <div
         role="progressbar"
@@ -35,8 +35,8 @@ export function BudgetWarning({ spent, limit, label = "Anggaran bulan ini" }: Bu
       >
         <div className={`h-full rounded-full transition-all ${bar}`} style={{ width: `${pct}%` }} />
       </div>
-      <p className="text-xs text-slate-500">
-        <span className="num">{formatRupiah(spentNum)}</span> dari <span className="num">{formatRupiah(limitNum)}</span>
+      <p className="text-xs text-slate-500 truncate">
+        <span className="num font-semibold tabular-nums">{formatRupiah(spentNum)}</span> dari <span className="num font-semibold tabular-nums">{formatRupiah(limitNum)}</span>
       </p>
     </section>
   );

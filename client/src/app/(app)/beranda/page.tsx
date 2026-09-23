@@ -226,7 +226,7 @@ export default function BerandaPage() {
         transition={{ duration: 0.25 }}
         className="flex flex-col gap-4 pb-4 lg:grid lg:grid-cols-6 lg:gap-5 lg:items-start"
       >
-        <div className="lg:col-span-6 sticky top-0 z-30 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5">
+        <div className="lg:col-span-6 rounded-2xl bg-white border border-slate-100 shadow-sm p-4 sm:p-5">
           <Header userName={user.email.split("@")[0] || user.email} currentDate={now} />
         </div>
         {offlineBanner && <div className="lg:col-span-6">{offlineBanner}</div>}
@@ -278,11 +278,11 @@ export default function BerandaPage() {
             </div>
 
             {metrics.daily_expense_7d && metrics.daily_expense_7d.length === 7 && (
-              <div className="p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3">
+              <div className="p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3 min-w-0">
                 <Sparkline data={metrics.daily_expense_7d} label="Pengeluaran 7 hari" />
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-xs text-slate-500 mt-2 truncate">
                   Total minggu ini{" "}
-                  <span className="num font-semibold text-slate-700">{formatRupiah(weekTotal)}</span>
+                  <span className="num font-semibold text-slate-700 tabular-nums">{formatRupiah(weekTotal)}</span>
                 </p>
               </div>
             )}
@@ -370,9 +370,15 @@ export default function BerandaPage() {
             {hasExpense && (
               <div
                 data-tour={budgets.length === 0 ? "budget-section" : undefined}
-                className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 lg:col-span-3"
+                className={`rounded-2xl bg-white border border-slate-100 shadow-sm p-5 min-w-0 ${
+                  budgets.length > 0 ? "lg:col-span-3" : "lg:col-span-6"
+                }`}
               >
-                <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
+                <SpendingDonut
+                  data={data.expense_by_category}
+                  monthlyExpense={data.monthly_expense}
+                  layout={budgets.length > 0 ? "stacked" : "side"}
+                />
               </div>
             )}
 
@@ -497,7 +503,7 @@ function RecentTxRow({ tx, index = 0 }: { tx: RecentTransactionItem; index?: num
     >
       <Link
         href={`/transaksi/${tx.id}`}
-        className="flex items-center gap-3 py-3 rounded-xl hover:bg-slate-50 active:bg-slate-100/70 active:scale-[0.985] transition-all duration-150 -mx-4 px-4"
+        className="flex items-center gap-3 py-3 rounded-xl hover:bg-slate-50 active:bg-slate-100/70 active:scale-[0.985] transition-all duration-150 px-2 sm:px-3"
       >
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 shrink-0">
           {createElement(getCategoryIcon(tx.category_name), { className: "w-5 h-5 text-slate-900", "aria-hidden": true })}
@@ -530,8 +536,8 @@ function ShimmerBlock({ className }: { className: string }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="flex flex-col gap-8 pb-4" role="status" aria-label="Memuat data beranda">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-5 pb-4" role="status" aria-label="Memuat data beranda">
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-4 sm:p-5 flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <ShimmerBlock className="w-36 h-6" />
           <ShimmerBlock className="w-48 h-4" />
