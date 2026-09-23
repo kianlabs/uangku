@@ -134,3 +134,24 @@ def test_confirm_inactive_raises(db, user, expense_cat):
     update_recurring(db, user, rec.id, active=False)
     with pytest.raises(RecurringInactiveError):
         confirm_recurring(db, user, rec.id, transaction_date=date(2026, 9, 5))
+
+
+def test_confirm_atomic_rollback_on_create_failure(db, user, expense_cat, monkeypatch):
+    """BUG-4: jika pembuatan transaksi gagal, last_confirmed tidak boleh tersimpan."""
+    import app.services.recurring as rec_module
+    from app.services.transaction import InvalidAmountError
+
+    rec = _make(db, user, expense_cat, name="Atomic Test", day=1)
+    original_last_confirmed = rec.last_confirmed
+
+    def mock_create_failure(*args, **kwargs):
+        db.rollback()
+        raise InvalidAmountError()
+
+    monkeypatch.setattr(rec_module, "create_transaction", mock_create_failure)
+
+    with pytest.raises(InvalidAmountError):
+        confirm_recurring(db, user, rec.id, transaction_date=date(2026, 9, 5))
+
+    db.refresh(rec)
+    assert rec.last_confirmed == original_last_confirmed

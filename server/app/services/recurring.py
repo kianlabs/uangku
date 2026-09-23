@@ -163,6 +163,12 @@ def confirm_recurring(
     cat = _get_owned_category(db, user, rec.category_id)
     if rec.type != cat.type:
         raise TypeMismatchError()
+
+    # BUG-4: Update last_confirmed sebelum create_transaction agar keduanya
+    # ter-commit secara atomik dalam satu transaksi di create_transaction(),
+    # mencegah race condition dan double commit jika commit kedua gagal.
+    rec.last_confirmed = tx_date
+
     tx = create_transaction(
         db, user,
         type_=rec.type,
@@ -171,6 +177,4 @@ def confirm_recurring(
         transaction_date=tx_date,
         description=rec.name,
     )
-    rec.last_confirmed = tx_date
-    db.commit()
     return tx
