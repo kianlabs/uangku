@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "./AuthContext";
 
 const mockPush = vi.fn();
+let mockPathname = "/beranda";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/beranda",
+  usePathname: () => mockPathname,
   useRouter: () => ({
     push: mockPush,
   }),
@@ -134,5 +135,58 @@ describe("AuthContext", () => {
     expect(screen.getByTestId("authenticated").textContent).toBe("false");
     expect(mockLogout).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith("/masuk");
+  });
+
+  it("resets initialized ref on logout allowing fresh getMe on subsequent session", async () => {
+    mockPathname = "/beranda";
+    mockGetMe.mockResolvedValueOnce({
+      id: "1",
+      email: "user1@example.com",
+      created_at: "2024-01-01",
+    });
+    mockLogout.mockResolvedValue(undefined);
+
+    const { rerender } = render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("email").textContent).toBe("user1@example.com");
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "logout" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("email").textContent).toBe("none");
+    });
+
+    mockGetMe.mockResolvedValueOnce({
+      id: "2",
+      email: "user2@example.com",
+      created_at: "2024-01-02",
+    });
+
+    // Simulasi user diarahkan ke /masuk lalu kembali ke protected page /beranda
+    mockPathname = "/masuk";
+    rerender(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    );
+
+    mockPathname = "/beranda";
+    rerender(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(mockGetMe).toHaveBeenCalledTimes(2);
+      expect(screen.getByTestId("email").textContent).toBe("user2@example.com");
+    });
   });
 });

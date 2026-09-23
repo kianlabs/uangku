@@ -119,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await logout();
     clearLocalCache();
     setUser(null);
+    initialized.current = false;
     router.push("/masuk");
   }, [router]);
 
