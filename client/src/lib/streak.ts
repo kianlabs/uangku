@@ -22,8 +22,16 @@ export function calculateStreak(transactionDates: string[]): number {
 
 function toLocalDateKey(value: string): string {
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
-  if (year && month && day) return localDateKey(new Date(year, month - 1, day));
-  return localDateKey(new Date(value));
+  if (year && month && day) {
+    return localDateKey(new Date(year, month - 1, day));
+  }
+  // Fallback: extract date part saja secara lokal agar tidak kena timezone shift UTC
+  const dateOnly = value.slice(0, 10);
+  const [y, m, d] = dateOnly.split("-").map(Number);
+  if (y && m && d) {
+    return localDateKey(new Date(y, m - 1, d));
+  }
+  return dateOnly;
 }
 
 function localDateKey(date: Date): string {
