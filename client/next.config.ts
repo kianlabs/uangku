@@ -4,8 +4,8 @@ import type { NextConfig } from "next";
 const serverUrl = process.env.SERVER_URL ?? "http://localhost:8000";
 
 const nextConfig: NextConfig = {
-  // Image Docker ramping untuk Fly.io (hanya .next/standalone + statis).
-  output: "standalone",
+  // Hanya gunakan standalone output jika bukan di Vercel (misal: Docker / local)
+  ...(process.env.VERCEL ? {} : { output: "standalone" }),
   compress: true,
   poweredByHeader: false,
   images: {
