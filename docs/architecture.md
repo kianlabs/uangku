@@ -369,35 +369,49 @@ register/login
 
 ## Deployment Boundary
 
-Client dan server dapat di-deploy terpisah.
+Client dan server dapat di-deploy terpisah atau di dalam private network yang sama.
 
-Concept:
+Target Arsitektur Utama (Fly.io + Neon PostgreSQL):
 
 ```text
-Client
-→ Vercel
-
-Server
-→ Railway / Render / VPS
-
-Database
-→ Managed PostgreSQL
+Pengguna (Browser / Mobile PWA)
+      │
+      ▼ HTTPS
+[ Fly.io Edge (Region: SIN) ]
+      │
+      ▼
+Client (Next.js 16 Standalone Container)
+      │
+      ├── UI Rendering & Assets
+      └── Rewrites (/api/*) ──► Server (FastAPI Container)
+                                  │ (Private WireGuard DNS: .internal)
+                                  ▼ SSL
+                            Neon PostgreSQL 16 (Serverless + Pooling)
 ```
 
-Provider final belum harus dipilih pada tahap architecture.
+1. **Client (Fly.io):**
+   - Output: `standalone` Next.js (image Docker minimalis).
+   - Menghandle routing frontend dan reverse proxy `/api/*` internal ke server FastAPI.
+2. **Server (Fly.io):**
+   - Python 3.13 + Uvicorn multi-worker di-deploy via `Dockerfile`.
+   - Release command: `uv run alembic upgrade head` otomatis berjalan sebelum traffic dibuka.
+3. **Database (Neon.tech):**
+   - PostgreSQL 16 serverless dengan connection pooling (`?sslmode=require`, `pool_recycle=300`).
+   - Backup otomatis via PITR (Point-In-Time-Recovery).
+
+Alternatif Deployment:
+- **VPS (Hetzner/DigitalOcean) + Coolify / Docker Compose:** Single-host setup hemat biaya dengan Traefik/Caddy reverse proxy dan Let's Encrypt SSL otomatis.
 
 Environment dibedakan:
-
 - local
 - test
 - production
 
-Secrets hanya melalui environment variables.
+Secrets hanya melalui environment variables (Fly Secrets / `.env.production`).
 
 Tidak boleh commit:
-
 - database URL production
-- auth secrets
+- auth secrets (`SECRET_KEY`)
 - API keys
 - credentials
 

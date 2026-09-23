@@ -16,6 +16,12 @@ export default defineConfig({
       "**/*.test.ts",
       "**/*.test.tsx",
     ],
+    pool: "threads",
+    server: {
+      deps: {
+        inline: ["lucide-react"],
+      },
+    },
   },
   resolve: {
     alias: {

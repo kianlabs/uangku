@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # When set, X-Forwarded-For is trusted only for requests coming from these IPs.
     # Leave empty in local dev (rate-limiting falls back to request.client.host).
     trusted_proxy_ips: str = ""
+    # Database connection pool settings (tuned for production / serverless Postgres)
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_pool_recycle: int = 300
 
     @property
     def trusted_proxy_set(self) -> frozenset[str]:

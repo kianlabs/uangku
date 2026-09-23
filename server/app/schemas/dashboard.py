@@ -45,6 +45,7 @@ class DashboardSummaryResponse(BaseModel):
     transaction_count: int
     expense_by_category: list[ExpenseByCategoryItem]
     recent_transactions: list[RecentTransactionItem]
+    earliest_transaction_date: date | None = None
 
     @field_serializer("balance", "monthly_income", "monthly_expense")
     def serialize_money(self, v: Decimal) -> str:

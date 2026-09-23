@@ -1,10 +1,13 @@
 import logging
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
+from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -17,11 +20,26 @@ from app.api.v1.recurring import router as recurring_router
 from app.api.v1.transactions import router as transactions_router
 from app.api.v1.user import router as user_router
 from app.core.config import settings
+from app.core.deps import get_db
 from app.core.rate_limit import limiter
 
 logger = logging.getLogger("uangku")
 
-app = FastAPI(title="UangKu API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    from app.core.deps import engine
+    engine.dispose()
+
+
+app = FastAPI(
+    title="UangKu API",
+    docs_url=None if settings.app_env == "production" else "/docs",
+    redoc_url=None if settings.app_env == "production" else "/redoc",
+    openapi_url=None if settings.app_env == "production" else "/openapi.json",
+    lifespan=lifespan,
+)
 app.state.limiter = limiter
 
 
@@ -46,6 +64,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "same-origin"
+        if settings.https_only:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
         return response
 
 
@@ -175,5 +197,13 @@ app.include_router(user_router, prefix="/api/v1")
 
 
 @app.get("/health")
-def health():
-    return {"status": "ok"}
+def health(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "ok"}
+    except SQLAlchemyError as exc:
+        logger.error("Health check database failure: %s", exc)
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"status": "error", "detail": "database connection failed"},
+        )

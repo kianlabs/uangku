@@ -5,7 +5,7 @@ import { CloudOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
-import { Minus, TrendingDown, TrendingUp, Flag } from "lucide-react";
+import { Minus, TrendingDown, TrendingUp, Flag, Award, ChevronRight } from "lucide-react";
 import { ApiResponseError, apiFetch } from "@/lib/api";
 import { getDashboardSummary, getDashboardMetrics } from "@/lib/dashboard";
 import { listBudgets } from "@/lib/budgets";
@@ -27,7 +27,11 @@ import { Header } from "@/components/dashboard/Header";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { SafeToSpendCard } from "@/components/dashboard/SafeToSpendCard";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
+import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
+import { IndicatorSpotlightTour } from "@/components/dashboard/IndicatorSpotlightTour";
+import { MonthlyWrapupModal } from "@/components/dashboard/MonthlyWrapupModal";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { haptic } from "@/lib/haptics";
 
 export default function BerandaPage() {
   const [isOffline, setIsOffline] = useState(false);
@@ -61,6 +65,36 @@ export default function BerandaPage() {
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const [isSeedingDemo, setIsSeedingDemo] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [wrapupOpen, setWrapupOpen] = useState(false);
+
+  useEffect(() => {
+    function handleOpenWrapup() {
+      setWrapupOpen(true);
+    }
+    function handleGoHome() {
+      setWrapupOpen(false);
+      setQuickAddOpen(false);
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+    window.addEventListener("uangku:open-monthly-wrapup", handleOpenWrapup);
+    window.addEventListener("uangku:go-home", handleGoHome);
+    return () => {
+      window.removeEventListener("uangku:open-monthly-wrapup", handleOpenWrapup);
+      window.removeEventListener("uangku:go-home", handleGoHome);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (hasAnyTransaction && !isLoading) {
+      if (typeof window !== "undefined" && !localStorage.getItem("uangku:indicator_tour_done")) {
+        const timer = setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("uangku:open-indicator-tour"));
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [hasAnyTransaction, isLoading]);
 
   useEffect(() => {
     let cancelled = false;
@@ -229,7 +263,10 @@ export default function BerandaPage() {
               />
             </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3">
+            <div
+              data-tour="streak-card"
+              className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 lg:col-span-3"
+            >
               <Mascot size={48} mood={streak > 0 ? "celebrating" : "happy"} variant="bow" />
               <Flag className="w-5 h-5 text-accent shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0">
@@ -300,14 +337,50 @@ export default function BerandaPage() {
               </div>
             )}
 
+            {/* Banner Akses Laporan & Evaluasi Bulanan */}
+            <button
+              type="button"
+              onClick={() => {
+                haptic.tap();
+                setWrapupOpen(true);
+              }}
+              className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/50 border border-emerald-100 shadow-sm hover:border-emerald-200 active:scale-[0.99] transition-all text-left lg:col-span-6 cursor-pointer"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Award className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                      Evaluasi Keuangan
+                    </span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-800">
+                      Insight
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-900 truncate">
+                    Buka Laporan & Evaluasi Bulan Ini
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden="true" />
+            </button>
+
             {hasExpense && (
-              <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 lg:col-span-3">
+              <div
+                data-tour={budgets.length === 0 ? "budget-section" : undefined}
+                className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 lg:col-span-3"
+              >
                 <SpendingDonut data={data.expense_by_category} monthlyExpense={data.monthly_expense} />
               </div>
             )}
 
             {budgets.length > 0 && (
-              <section className={`flex flex-col gap-3 ${hasExpense ? "lg:col-span-3" : "lg:col-span-6"}`}>
+              <section
+                data-tour="budget-section"
+                className={`flex flex-col gap-3 ${hasExpense ? "lg:col-span-3" : "lg:col-span-6"}`}
+              >
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-slate-900">Anggaran</h2>
                   <Link href="/pengaturan/kategori" className="text-sm font-medium text-emerald-600 hover:underline">
@@ -337,8 +410,8 @@ export default function BerandaPage() {
                     </Link>
                   </div>
                   <div className="flex flex-col divide-y divide-slate-100">
-                    {data.recent_transactions.slice(0, 5).map((tx) => (
-                      <RecentTxRow key={tx.id} tx={tx} />
+                    {data.recent_transactions.slice(0, 5).map((tx, idx) => (
+                      <RecentTxRow key={tx.id} tx={tx} index={idx} />
                     ))}
                   </div>
                 </section>
@@ -349,12 +422,16 @@ export default function BerandaPage() {
                   title="Belum ada catatan bulan ini"
                   description="Mulai dari satu catatan kecil hari ini."
                   actions={
-                    <Link
-                      href="/transaksi/tambah"
-                      className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        haptic.tap();
+                        setQuickAddOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all cursor-pointer"
                     >
                       Catat transaksi
-                    </Link>
+                    </button>
                   }
                 />
               )}
@@ -398,35 +475,48 @@ export default function BerandaPage() {
       <p className="text-center text-xs text-slate-500 lg:col-span-6">
         {updatedLabel ? `Diperbarui ${updatedLabel}` : ""}
       </p>
+      <QuickAddModal open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
+      <MonthlyWrapupModal
+        open={wrapupOpen}
+        onClose={() => setWrapupOpen(false)}
+        earliestMonth={data?.earliest_transaction_date ? data.earliest_transaction_date.slice(0, 7) : null}
+      />
+      <IndicatorSpotlightTour />
       <MochiGuide />
     </MotionConfig>
   );
 }
 
-function RecentTxRow({ tx }: { tx: RecentTransactionItem }) {
+function RecentTxRow({ tx, index = 0 }: { tx: RecentTransactionItem; index?: number }) {
   const isIncome = tx.type === "income";
   return (
-    <Link
-      href={`/transaksi/${tx.id}`}
-      className="flex items-center gap-3 py-3 hover:bg-slate-50 active:bg-slate-50 transition-colors -mx-4 px-4"
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: Math.min(index * 0.04, 0.2), ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 shrink-0">
-        {createElement(getCategoryIcon(tx.category_name), { className: "w-5 h-5 text-slate-900", "aria-hidden": true })}
-      </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <span className="text-base font-medium text-slate-900 truncate">{tx.category_name}</span>
-        {tx.description && <span className="text-sm text-slate-500 truncate">{tx.description}</span>}
-        <span className="text-xs text-slate-500">{formatDate(tx.transaction_date)}</span>
-      </div>
-      <span
-        className={`num text-base font-bold shrink-0 ${
-          isIncome ? "text-emerald-600" : "text-rose-600"
-        }`}
+      <Link
+        href={`/transaksi/${tx.id}`}
+        className="flex items-center gap-3 py-3 rounded-xl hover:bg-slate-50 active:bg-slate-100/70 active:scale-[0.985] transition-all duration-150 -mx-4 px-4"
       >
-        {isIncome ? "+ " : "- "}
-        {formatRupiah(tx.amount)}
-      </span>
-    </Link>
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 shrink-0">
+          {createElement(getCategoryIcon(tx.category_name), { className: "w-5 h-5 text-slate-900", "aria-hidden": true })}
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <span className="text-base font-medium text-slate-900 truncate">{tx.category_name}</span>
+          {tx.description && <span className="text-sm text-slate-500 truncate">{tx.description}</span>}
+          <span className="text-xs text-slate-500">{formatDate(tx.transaction_date)}</span>
+        </div>
+        <span
+          className={`num text-base font-bold shrink-0 ${
+            isIncome ? "text-emerald-600" : "text-rose-600"
+          }`}
+        >
+          {isIncome ? "+ " : "- "}
+          {formatRupiah(tx.amount)}
+        </span>
+      </Link>
+    </motion.div>
   );
 }
 

@@ -89,10 +89,15 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
   const [masked, toggleMasked] = useMasked();
 
   const balanceNum = Number.parseFloat(balance);
+  const incomeNum = Number.parseFloat(monthly_income);
+  const expenseNum = Number.parseFloat(monthly_expense);
+
   const animated = useCountUp(Number.isFinite(balanceNum) ? balanceNum : 0);
+  const animatedIncome = useCountUp(Number.isFinite(incomeNum) ? incomeNum : 0);
+  const animatedExpense = useCountUp(Number.isFinite(expenseNum) ? expenseNum : 0);
 
   return (
-    <div className="flex flex-col gap-4 p-6 rounded-2xl bg-brand shadow-md">
+    <div data-tour="balance-card" className="flex flex-col gap-4 p-6 rounded-2xl bg-brand shadow-md">
       <div className="flex items-start justify-between gap-2">
         <span className="text-xs font-semibold text-sky-200 uppercase tracking-wide pt-1">
           Saldo keseluruhan
@@ -128,11 +133,11 @@ export function BalanceCard({ balance, monthly_income, monthly_expense }: Balanc
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/15">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wide">Pemasukan</span>
-          <span className="num text-lg font-bold text-emerald-300">+{formatRupiah(monthly_income)}</span>
+          <span className="num text-lg font-bold text-emerald-300">+{formatRupiah(Math.round(animatedIncome))}</span>
         </div>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-rose-300 uppercase tracking-wide">Pengeluaran</span>
-          <span className="num text-lg font-bold text-rose-300">-{formatRupiah(monthly_expense)}</span>
+          <span className="num text-lg font-bold text-rose-300">-{formatRupiah(Math.round(animatedExpense))}</span>
         </div>
       </div>
     </div>

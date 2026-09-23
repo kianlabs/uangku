@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { listCategories } from "@/lib/categories";
 import { listBudgets, upsertBudget, deleteBudget } from "@/lib/budgets";
@@ -20,7 +20,8 @@ export default function AnggaranPage() {
 
   const [cats, setCats] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Record<string, Budget>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isMonthChanging, setIsMonthChanging] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -31,28 +32,85 @@ export default function AnggaranPage() {
   // created_at anggaran tertua — batas bawah navigasi bulan.
   const [earliestBudgetMonth, setEarliestBudgetMonth] = useState<string | null>(null);
 
+  const isFirstMount = useRef(true);
+
   const expenseCats = useMemo(() => cats.filter((c) => c.type === "expense"), [cats]);
 
-  // Kategori tidak bergantung bulan — dimuat sekali, bukan tiap ganti bulan
-  // (duplikasi request tiap navigasi rawan menyentuh rate-limit → "gagal memuat").
+  // Load awal: ambil kategori & anggaran secara paralel agar data siap bersamaan
+  // dalam satu siklus render (mencegah cascade render & flash "Belum ada kategori").
   useEffect(() => {
     let cancelled = false;
-    listCategories()
-      .then((res) => {
-        if (!cancelled) setCats(res.items);
+    const controller = new AbortController();
+
+    Promise.all([
+      listCategories({}, controller.signal),
+      listBudgets(monthKey, controller.signal),
+    ])
+      .then(([catRes, budRes]) => {
+        if (cancelled || controller.signal.aborted) return;
+        const map: Record<string, Budget> = {};
+        for (const b of budRes.items) map[b.category_id] = b;
+        setCats(catRes.items);
+        setBudgets(map);
+        setEarliestBudgetMonth(
+          budRes.earliest_created_at
+            ? toMonthKey(new Date(budRes.earliest_created_at))
+            : null
+        );
+        setLoadError(null);
+        setIsInitialLoading(false);
       })
       .catch(() => {
-        if (!cancelled) setLoadError("Gagal memuat anggaran. Coba lagi.");
+        if (cancelled || controller.signal.aborted) return;
+        setLoadError("Gagal memuat anggaran. Coba lagi.");
+        setIsInitialLoading(false);
       });
+
     return () => {
       cancelled = true;
+      controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
+  // Navigasi bulan: hanya update anggaran tanpa meremount list kategori.
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    listBudgets(monthKey, controller.signal)
+      .then((budRes) => {
+        if (cancelled || controller.signal.aborted) return;
+        const map: Record<string, Budget> = {};
+        for (const b of budRes.items) map[b.category_id] = b;
+        setBudgets(map);
+        setEarliestBudgetMonth(
+          budRes.earliest_created_at
+            ? toMonthKey(new Date(budRes.earliest_created_at))
+            : null
+        );
+        setIsMonthChanging(false);
+      })
+      .catch(() => {
+        if (cancelled || controller.signal.aborted) return;
+        setLoadError("Gagal memuat anggaran. Coba lagi.");
+        setIsMonthChanging(false);
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [monthKey]);
+
+  const refreshBudgets = useCallback(async () => {
     try {
-      const budRes = await listBudgets(monthKey, signal);
-      if (signal?.aborted) return;
+      const budRes = await listBudgets(monthKey);
       const map: Record<string, Budget> = {};
       for (const b of budRes.items) map[b.category_id] = b;
       setBudgets(map);
@@ -62,126 +120,160 @@ export default function AnggaranPage() {
           : null
       );
     } catch {
-      if (!signal?.aborted) setLoadError("Gagal memuat anggaran. Coba lagi.");
-    } finally {
-      if (!signal?.aborted) setIsLoading(false);
+      // Background silent refresh
     }
   }, [monthKey]);
 
-  async function handleRetry() {
-    setIsLoading(true);
-    setLoadError(null);
-    await load();
-  }
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // Deferred — hindari setState sinkron di jalur effect (cascading render).
-    // Skeleton saat pindah bulan mencegah data bulan lama tampak stale.
-    const t = setTimeout(() => {
-      setIsLoading(true);
-      void load(controller.signal);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      controller.abort();
-    };
-  }, [load]);
-
   useEffect(() => {
     function onTxChanged() {
-      load();
+      refreshBudgets();
+    }
+    function onResetAnggaran() {
+      setMonthKey(currentMonthKey());
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
     window.addEventListener("uangku:tx-changed", onTxChanged);
-    return () => window.removeEventListener("uangku:tx-changed", onTxChanged);
-  }, [load]);
+    window.addEventListener("uangku:reset-anggaran", onResetAnggaran);
+    return () => {
+      window.removeEventListener("uangku:tx-changed", onTxChanged);
+      window.removeEventListener("uangku:reset-anggaran", onResetAnggaran);
+    };
+  }, [refreshBudgets]);
 
-  function setDraft(categoryId: string, value: string) {
+  function handleRetry() {
+    setIsInitialLoading(true);
+    setLoadError(null);
+    Promise.all([
+      listCategories(),
+      listBudgets(monthKey),
+    ])
+      .then(([catRes, budRes]) => {
+        const map: Record<string, Budget> = {};
+        for (const b of budRes.items) map[b.category_id] = b;
+        setCats(catRes.items);
+        setBudgets(map);
+        setEarliestBudgetMonth(
+          budRes.earliest_created_at
+            ? toMonthKey(new Date(budRes.earliest_created_at))
+            : null
+        );
+        setLoadError(null);
+        setIsInitialLoading(false);
+      })
+      .catch(() => {
+        setLoadError("Gagal memuat anggaran. Coba lagi.");
+        setIsInitialLoading(false);
+      });
+  }
+
+  const setDraft = useCallback((categoryId: string, value: string) => {
     const digits = value.replace(/\D/g, "");
     setDrafts((prev) => ({ ...prev, [categoryId]: digits }));
-  }
+  }, []);
 
-  async function handleSave(categoryId: string) {
-    if (savingId) return; // sedang menyimpan baris lain — cegah double-PUT
-    if (drafts[categoryId] === undefined) return; // belum diedit
-    const digits = drafts[categoryId];
-    const num = digits ? parseInt(digits, 10) : 0;
-    if (num <= 0) {
-      // Dikosongkan = batal edit, bukan hapus.
-      setDrafts((prev) => {
-        const next = { ...prev };
-        delete next[categoryId];
-        return next;
-      });
-      return;
-    }
-    setSavingId(categoryId);
-    setRowErrors((prev) => ({ ...prev, [categoryId]: null }));
-    try {
-      const res = await upsertBudget(categoryId, String(num));
-      haptic.success();
-      setBudgets((prev) => ({ ...prev, [categoryId]: res }));
-      setSavedFlash(categoryId);
-      setTimeout(() => setSavedFlash((cur) => (cur === categoryId ? null : cur)), 2000);
-      setDrafts((prev) => {
-        const next = { ...prev };
-        delete next[categoryId];
-        return next;
-      });
-    } catch {
-      haptic.error();
-      setRowErrors((prev) => ({ ...prev, [categoryId]: "Gagal menyimpan. Coba lagi." }));
-    } finally {
-      setSavingId(null);
-    }
-  }
+  const handleSave = useCallback(
+    async (categoryId: string) => {
+      if (savingId) return; // sedang menyimpan baris lain — cegah double-PUT
+      if (drafts[categoryId] === undefined) return; // belum diedit
+      const digits = drafts[categoryId];
+      const num = digits ? parseInt(digits, 10) : 0;
+      if (num <= 0) {
+        // Dikosongkan = batal edit, bukan hapus.
+        setDrafts((prev) => {
+          const next = { ...prev };
+          delete next[categoryId];
+          return next;
+        });
+        return;
+      }
+      setSavingId(categoryId);
+      setRowErrors((prev) => ({ ...prev, [categoryId]: null }));
+      try {
+        const res = await upsertBudget(categoryId, String(num));
+        haptic.success();
+        setBudgets((prev) => ({ ...prev, [categoryId]: res }));
+        setSavedFlash(categoryId);
+        setTimeout(() => setSavedFlash((cur) => (cur === categoryId ? null : cur)), 2000);
+        setDrafts((prev) => {
+          const next = { ...prev };
+          delete next[categoryId];
+          return next;
+        });
+      } catch {
+        haptic.error();
+        setRowErrors((prev) => ({ ...prev, [categoryId]: "Gagal menyimpan. Coba lagi." }));
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [drafts, savingId]
+  );
 
-  async function handleDeleteBudget(categoryId: string) {
-    if (deletingId) return;
-    setDeletingId(categoryId);
-    setRowErrors((prev) => ({ ...prev, [categoryId]: null }));
-    try {
-      await deleteBudget(categoryId);
-      haptic.success();
-      setBudgets((prev) => {
-        const next = { ...prev };
-        delete next[categoryId];
-        if (Object.keys(next).length === 0) {
-          setEarliestBudgetMonth(null);
-        }
-        return next;
-      });
-      setConfirmDeleteId(null);
-    } catch {
-      haptic.error();
-      setRowErrors((prev) => ({ ...prev, [categoryId]: "Gagal menghapus. Coba lagi." }));
-    } finally {
-      setDeletingId(null);
-    }
-  }
+  const handleDeleteBudget = useCallback(
+    async (categoryId: string) => {
+      if (deletingId) return;
+      setDeletingId(categoryId);
+      setRowErrors((prev) => ({ ...prev, [categoryId]: null }));
+      try {
+        await deleteBudget(categoryId);
+        haptic.success();
+        setBudgets((prev) => {
+          const next = { ...prev };
+          delete next[categoryId];
+          if (Object.keys(next).length === 0) {
+            setEarliestBudgetMonth(null);
+          }
+          return next;
+        });
+        setConfirmDeleteId(null);
+      } catch {
+        haptic.error();
+        setRowErrors((prev) => ({ ...prev, [categoryId]: "Gagal menghapus. Coba lagi." }));
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [deletingId]
+  );
 
-  const rows = expenseCats.map((c) => {
-    const b = budgets[c.id];
-    const spent = b?.spent != null ? Number(b.spent) : null;
-    const amount = b ? Number(b.amount) : 0;
-    const pct =
-      b?.percentage != null
-        ? b.percentage
-        : spent != null && amount > 0
-          ? (spent / amount) * 100
-          : null;
-    return { cat: c, budget: b, spent, pct };
-  });
+  const handleDeleteCancel = useCallback(() => {
+    setConfirmDeleteId(null);
+  }, []);
+
+  const rows = useMemo(() => {
+    return expenseCats.map((c) => {
+      const b = budgets[c.id];
+      const spent = b?.spent != null ? Number(b.spent) : null;
+      const amount = b ? Number(b.amount) : 0;
+      const pct =
+        b?.percentage != null
+          ? b.percentage
+          : spent != null && amount > 0
+            ? (spent / amount) * 100
+            : null;
+      return { cat: c, budget: b, spent, pct };
+    });
+  }, [expenseCats, budgets]);
 
   // Bulan lampau hanya menampilkan kategori yang beranggaran — tanpa form kosong.
   const isPastMonth = monthKey < currentMonthKey();
-  const visibleRows = isPastMonth ? rows.filter((r) => r.budget) : rows;
+  const visibleRows = useMemo(
+    () => (isPastMonth ? rows.filter((r) => r.budget) : rows),
+    [isPastMonth, rows]
+  );
 
-  const withBudget = rows.filter((r) => r.budget);
-  const totalBudget = withBudget.reduce((sum, r) => sum + Number(r.budget?.amount ?? 0), 0);
-  const totalSpent = withBudget.reduce((sum, r) => (r.spent != null ? sum + r.spent : sum), 0);
+  const withBudget = useMemo(() => rows.filter((r) => r.budget), [rows]);
+  const totalBudget = useMemo(
+    () => withBudget.reduce((sum, r) => sum + Number(r.budget?.amount ?? 0), 0),
+    [withBudget]
+  );
+  const totalSpent = useMemo(
+    () => withBudget.reduce((sum, r) => (r.spent != null ? sum + r.spent : sum), 0),
+    [withBudget]
+  );
   const totalPct = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-  const riskCount = rows.filter((r) => (r.pct ?? 0) >= 90).length;
+  const riskCount = useMemo(() => rows.filter((r) => (r.pct ?? 0) >= 90).length, [rows]);
+
   // Anggaran berlaku lintas bulan, tapi bulan SEBELUM anggaran pertama dibuat
   // tidak relevan — tombol ‹ berhenti di situ. Tanpa anggaran: tanpa navigator.
   const hasAnyBudget = withBudget.length > 0;
@@ -193,58 +285,76 @@ export default function AnggaranPage() {
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-bold text-text">Anggaran</h1>
 
-      {hasAnyBudget && (
-        <div
-          className="flex items-center justify-between gap-2"
-          role="group"
-          aria-label="Pilih bulan anggaran"
+      <div
+        className="flex items-center justify-between gap-2"
+        role="group"
+        aria-label="Pilih bulan anggaran"
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setIsMonthChanging(true);
+            setMonthKey((k) => shiftMonthKey(k, -1));
+          }}
+          disabled={!canGoPrev || isMonthChanging}
+          aria-label="Bulan sebelumnya"
+          className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-40"
         >
-          <button
-            type="button"
-            onClick={() => setMonthKey((k) => shiftMonthKey(k, -1))}
-            disabled={!canGoPrev}
-            aria-label="Bulan sebelumnya"
-            className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-40"
-          >
-            ‹
-          </button>
-          <span
-            aria-live="polite"
-            className="flex h-11 min-w-[7.5rem] items-center justify-center rounded-xl bg-surface border border-border px-4 text-sm font-semibold text-text"
-          >
-            {monthLabelId(monthKey)}
-          </span>
-          <button
-            type="button"
-            onClick={() => setMonthKey((k) => shiftMonthKey(k, 1))}
-            disabled={monthKey >= currentMonthKey()}
-            aria-label="Bulan berikutnya"
-            className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-40"
-          >
-            ›
-          </button>
+          ‹
+        </button>
+        <span
+          aria-live="polite"
+          className={`flex h-11 min-w-[7.5rem] items-center justify-center rounded-xl bg-surface border border-border px-4 text-sm font-semibold text-text transition-opacity ${
+            isMonthChanging ? "opacity-60" : "opacity-100"
+          }`}
+        >
+          {monthLabelId(monthKey)}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setIsMonthChanging(true);
+            setMonthKey((k) => shiftMonthKey(k, 1));
+          }}
+          disabled={monthKey >= currentMonthKey() || isMonthChanging}
+          aria-label="Bulan berikutnya"
+          className="min-w-[44px] min-h-[44px] px-3 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all disabled:opacity-40"
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Sembunyikan maskot atas saat daftar kategori kosong agar tidak dobel dengan EmptyState (§5) */}
+      {!isInitialLoading && expenseCats.length === 0 ? null : (
+        <div className="flex flex-col items-center gap-1.5 text-center pt-1 pb-2">
+          <Mascot
+            size={88}
+            mood="excited"
+            variant="cap"
+            animated
+            label="Mochi menemanimu merencanakan anggaran"
+          />
+          <p className="text-base font-bold text-text">Rencanakan belanjamu</p>
+          <p className="text-sm text-muted leading-relaxed max-w-xs">
+            Tetapkan batas belanja per kategori untuk {monthLabelId(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
+          </p>
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-1.5 text-center pt-1 pb-2">
-        <Mascot
-          size={88}
-          mood="excited"
-          variant="cap"
-          animated
-          label="Mochi menemanimu merencanakan anggaran"
-        />
-        <p className="text-base font-bold text-text">Rencanakan belanjamu</p>
-        <p className="text-sm text-muted leading-relaxed max-w-xs">
-          Tetapkan batas belanja per kategori untuk {monthLabelId(monthKey)}. Kosong berarti tanpa batas — sisanya tetap dijaga lewat batas aman harian.
-        </p>
-      </div>
-
       <section
         aria-label="Ringkasan anggaran"
-        className="flex flex-col gap-2 p-5 rounded-2xl bg-surface border border-border shadow-sm"
+        className="flex flex-col gap-2 p-5 rounded-2xl bg-surface border border-border shadow-sm min-h-[96px] justify-center"
       >
-        {totalBudget > 0 ? (
+        {isInitialLoading ? (
+          <div className="flex flex-col gap-2.5 py-1 animate-pulse" aria-hidden="true">
+            <div className="flex justify-between items-center">
+              <div className="h-3 w-28 bg-surface-muted rounded" />
+              <div className="h-5 w-24 bg-surface-muted rounded" />
+            </div>
+            <div className="h-2 w-full bg-surface-muted rounded-full" />
+            <div className="h-3 w-36 bg-surface-muted rounded" />
+          </div>
+        ) : totalBudget > 0 ? (
           <>
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-xs font-semibold text-muted uppercase tracking-wide">
@@ -286,10 +396,21 @@ export default function AnggaranPage() {
         )}
       </section>
 
-      {isLoading ? (
-        <div className="flex flex-col gap-3 py-4" role="status" aria-busy="true" aria-label="Memuat anggaran">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-14 rounded-xl bg-surface-muted animate-pulse" />
+      {isInitialLoading ? (
+        <div
+          className="flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border animate-pulse"
+          role="status"
+          aria-busy="true"
+          aria-label="Memuat anggaran"
+        >
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="h-5 w-28 bg-surface-muted rounded" />
+                <div className="h-10 w-32 bg-surface-muted rounded-lg" />
+              </div>
+              <div className="h-1.5 w-full bg-surface-muted rounded-full" />
+            </div>
           ))}
         </div>
       ) : loadError ? (
@@ -317,27 +438,37 @@ export default function AnggaranPage() {
           }
         />
       ) : (
-        <div className="flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border">
-          {visibleRows.map(({ cat, budget, spent, pct }) => (
-            <BudgetRow
-              key={cat.id}
-              category={cat}
-              budget={budget}
-              draft={drafts[cat.id]}
-              spent={spent}
-              pct={pct}
-              saving={savingId === cat.id}
-              deleting={deletingId === cat.id}
-              confirmingDelete={confirmDeleteId === cat.id}
-              error={rowErrors[cat.id] ?? null}
-              flash={savedFlash === cat.id}
-              onDraft={setDraft}
-              onSave={handleSave}
-              onDeleteRequest={setConfirmDeleteId}
-              onDeleteCancel={() => setConfirmDeleteId(null)}
-              onDeleteConfirm={handleDeleteBudget}
-            />
-          ))}
+        <div
+          className={`flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border transition-opacity duration-150 ${
+            isMonthChanging ? "opacity-75 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          {visibleRows.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted">
+              Tidak ada catatan anggaran untuk bulan ini.
+            </p>
+          ) : (
+            visibleRows.map(({ cat, budget, spent, pct }) => (
+              <BudgetRow
+                key={cat.id}
+                category={cat}
+                budget={budget}
+                draft={drafts[cat.id]}
+                spent={spent}
+                pct={pct}
+                saving={savingId === cat.id}
+                deleting={deletingId === cat.id}
+                confirmingDelete={confirmDeleteId === cat.id}
+                error={rowErrors[cat.id] ?? null}
+                flash={savedFlash === cat.id}
+                onDraft={setDraft}
+                onSave={handleSave}
+                onDeleteRequest={setConfirmDeleteId}
+                onDeleteCancel={handleDeleteCancel}
+                onDeleteConfirm={handleDeleteBudget}
+              />
+            ))
+          )}
         </div>
       )}
 
@@ -369,7 +500,7 @@ interface BudgetRowProps {
   onDeleteConfirm: (categoryId: string) => void;
 }
 
-function BudgetRow({
+const BudgetRow = memo(function BudgetRow({
   category,
   budget,
   draft,
@@ -483,4 +614,4 @@ function BudgetRow({
       )}
     </div>
   );
-}
+});

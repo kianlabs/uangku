@@ -116,6 +116,14 @@ def get_dashboard_summary(
         for tx in recent_txs
     ]
 
+    # Query 5: earliest transaction date (non-opening-balance) all-time
+    earliest_tx_date = db.scalar(
+        select(func.min(Transaction.transaction_date)).where(
+            Transaction.user_id == user.id,
+            Transaction.is_opening_balance.is_(False),
+        )
+    )
+
     return {
         "period": month_str,
         "balance": balance,
@@ -124,6 +132,7 @@ def get_dashboard_summary(
         "transaction_count": transaction_count,
         "expense_by_category": expense_by_category,
         "recent_transactions": recent_transactions,
+        "earliest_transaction_date": earliest_tx_date,
     }
 
 

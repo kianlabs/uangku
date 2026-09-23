@@ -13,7 +13,13 @@ from app.models.user import User
 # Cap absolut 7 hari (cookie max_age bisa refresh tiap respons).
 SESSION_MAX_AGE_SECONDS = 7 * 24 * 3600
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    pool_recycle=settings.db_pool_recycle,
+)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 

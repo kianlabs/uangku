@@ -30,6 +30,9 @@ Personal finance tracking app for managing income and expenses.
 - Monthly recurring transaction reminders (server-side, synced across devices):
   edit, pause/resume, income or expense, manual confirm (one transaction/month)
 - Onboarding tour + Mochi mascot guide (personal finance agent)
+- Indicator Spotlight Tour: interaktif menyorot metrik utama Beranda (Safe-to-Spend, Saldo Keseluruhan vs Sisa Saldo Aman, Status Anggaran, Streak) dengan cutout fokus jernih bebas blur
+- Monthly Wrap-up & Evaluasi Mochi: kilas balik finansial bulanan dengan rasio tabungan, kategori belanja teratas, skor kepatuhan anggaran, narasi evaluasi cerdas Mochi, dan salin ringkasan teks berformat
+- Halaman Anggaran Teroptimasi: render instan tanpa flicker, debounced autosave 400ms, bottom sheet interaktif, dan navigasi bulan aman
 - Dashboard monthly summary; export as formatted PDF (2.000-row cap) or CSV
 - Mobile-first UI with bottom navigation
 
@@ -132,6 +135,27 @@ from the client are never trusted for ownership.
 - The app is online-only: when the API is unreachable, mutations fail with a
   clear error and are not queued or auto-retried; the server remains the
   source of truth.
-- Recurring reminders are device-local monthly templates. They never create a
-  transaction automatically: the user must confirm each due reminder.
-- See `docs/architecture.md` and `docs/erd.md` for deeper design docs.
+- Recurring reminders are server-side monthly templates synced across devices.
+  They never create a transaction automatically: the user must confirm each due
+  reminder (manual confirmation, idempotent per month).
+- See `docs/architecture.md`, `docs/erd.md`, and `docs/roadmap-p1-p2.md` for deeper design docs.
+
+## Production Readiness & Deployment
+
+The application is architected for deployment on **Fly.io** (Region: Singapore `sin`) paired with **Neon Serverless PostgreSQL**.
+
+### Production Checklist
+1. **Environment Variables**:
+   - `APP_ENV=production` (enforces strict security checks).
+   - `SECRET_KEY`: Minimum 32-character random cryptographic secret.
+   - `HTTPS_ONLY=true`: Enforces `Secure` flag on session cookies and enables HSTS.
+   - `INVITE_CODE`: Required for private/family instances to prevent unauthorized registrations.
+   - `DATABASE_URL`: Connection pooled Neon database URL with SSL enabled (`?sslmode=require`).
+2. **Database Migrations**: Run `uv run alembic upgrade head` during release step before serving traffic.
+3. **Internal Networking**: Next.js client standalone container proxies `/api/*` requests to the FastAPI backend via Fly.io private network (`http://uangku-api.internal:8000`).
+4. **Verification Gate**:
+   ```bash
+   mise run test    # Server pytest (307+) & Client vitest (161+ across 29 suites)
+   mise run lint    # Ruff & ESLint
+   mise run build   # Next.js standalone build
+   ```

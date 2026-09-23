@@ -141,6 +141,11 @@ export function MochiGuide() {
       // Gagal persist — tutorial sudah selesai dari sisi user
     });
     setVisible(false);
+    if (typeof window !== "undefined" && !localStorage.getItem("uangku:indicator_tour_done")) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("uangku:open-indicator-tour"));
+      }, 400);
+    }
   }
 
   async function handleNext() {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getPayday, setPayday } from "@/lib/local-storage";
 import { haptic } from "@/lib/haptics";
-import { CalendarDays, Bell, ChevronRight, Download, LogOut, Tags } from "lucide-react";
+import { CalendarDays, Bell, ChevronRight, Download, LogOut, Tags, Award, CircleHelp } from "lucide-react";
 import { RecurringReminders } from "@/components/dashboard/RecurringReminders";
+import { MonthlyWrapupModal } from "@/components/dashboard/MonthlyWrapupModal";
 import {
   getNotifyPermission,
   isInsecureContext,
@@ -25,6 +26,15 @@ export default function PengaturanPage() {
   const [paydayError, setPaydayError] = useState<string | null>(null);
   const [perm, setPerm] = useState<NotifyPermission>(() => getNotifyPermission());
   const [notifyOn, setNotifyOn] = useState(() => isNotifyEnabled());
+  const [wrapupOpen, setWrapupOpen] = useState(false);
+
+  useEffect(() => {
+    function onResetPengaturan() {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+    window.addEventListener("uangku:reset-pengaturan", onResetPengaturan);
+    return () => window.removeEventListener("uangku:reset-pengaturan", onResetPengaturan);
+  }, []);
 
   async function handleNotifyToggle() {
     if (perm === "unsupported" || perm === "denied") return;
@@ -185,6 +195,20 @@ export default function PengaturanPage() {
       <RecurringReminders />
 
       <nav aria-label="Menu pengaturan" className="flex flex-col rounded-2xl bg-surface border border-border shadow-sm px-5 divide-y divide-border">
+        <button
+          type="button"
+          onClick={() => {
+            haptic.tap();
+            setWrapupOpen(true);
+          }}
+          className="flex items-center justify-between py-4 text-base font-medium text-text hover:bg-surface-muted/50 active:opacity-70 transition-colors px-2 -mx-2 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent cursor-pointer"
+        >
+          <span className="flex items-center gap-3">
+            <Award className="w-5 h-5 text-accent" aria-hidden="true" />
+            Laporan Keuangan Bulanan
+          </span>
+          <ChevronRight className="w-5 h-5 text-muted" aria-hidden="true" />
+        </button>
         <Link
           href="/pengaturan/kategori"
           className="flex items-center justify-between py-4 text-base font-medium text-text hover:bg-surface-muted/50 active:opacity-70 transition-colors px-2 -mx-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
@@ -199,7 +223,24 @@ export default function PengaturanPage() {
           <span className="flex items-center gap-3"><Download className="w-5 h-5 text-accent" aria-hidden="true" />Export PDF</span>
           <ChevronRight className="w-5 h-5 text-muted" aria-hidden="true" />
         </Link>
+        <Link
+          href="/beranda"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("uangku:indicator_tour_done");
+            }
+          }}
+          className="flex items-center justify-between py-4 text-base font-medium text-text hover:bg-surface-muted/50 active:opacity-70 transition-colors px-2 -mx-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
+        >
+          <span className="flex items-center gap-3">
+            <CircleHelp className="w-5 h-5 text-accent" aria-hidden="true" />
+            Panduan Indikator Beranda
+          </span>
+          <ChevronRight className="w-5 h-5 text-muted" aria-hidden="true" />
+        </Link>
       </nav>
+
+      <MonthlyWrapupModal open={wrapupOpen} onClose={() => setWrapupOpen(false)} />
 
       <button
         onClick={handleLogout}

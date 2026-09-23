@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ApiResponseError } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
 
 export default function KategoriPage() {
   const [items, setItems] = useState<Category[]>([]);
@@ -57,11 +58,13 @@ export default function KategoriPage() {
     setAddError(null);
     try {
       await createCategory({ name: newName.trim(), type: newType });
+      haptic.success();
       await load();
       setNewName("");
       setNewType("expense");
       setShowAddForm(false);
     } catch (err) {
+      haptic.error();
       if (err instanceof ApiResponseError) {
         setAddError(err.message);
       } else {
@@ -230,9 +233,11 @@ function CategoryRow({
     setEditError(null);
     try {
       await updateCategory(category.id, { name: editName.trim() });
+      haptic.success();
       setIsEditing(false);
       onUpdate();
     } catch (err) {
+      haptic.error();
       if (err instanceof ApiResponseError) {
         setEditError(err.message);
       } else {
@@ -248,8 +253,10 @@ function CategoryRow({
     setDeleteError(null);
     try {
       await deleteCategory(category.id);
+      haptic.success();
       onUpdate();
     } catch (err) {
+      haptic.error();
       if (err instanceof ApiResponseError) {
         if (err.status === 409 && err.code === "CATEGORY_IN_USE") {
           setShowDeleteConfirm(false);
@@ -281,9 +288,11 @@ function CategoryRow({
     setTransferError(null);
     try {
       await transferCategory(category.id, transferTo);
+      haptic.success();
       setShowTransfer(false);
       onUpdate();
     } catch (err) {
+      haptic.error();
       setTransferError(
         err instanceof ApiResponseError && err.message
           ? err.message

@@ -6,12 +6,13 @@ export interface ListCategoriesParams {
 }
 
 export async function listCategories(
-  params: ListCategoriesParams = {}
+  params: ListCategoriesParams = {},
+  signal?: AbortSignal
 ): Promise<{ items: Category[] }> {
   const q = new URLSearchParams();
   if (params.type) q.set("type", params.type);
   const qs = q.toString();
-  return apiFetch<{ items: Category[] }>(`/api/v1/categories${qs ? `?${qs}` : ""}`);
+  return apiFetch<{ items: Category[] }>(`/api/v1/categories${qs ? `?${qs}` : ""}`, { signal });
 }
 
 export interface CreateCategoryParams {

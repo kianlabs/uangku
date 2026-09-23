@@ -76,6 +76,26 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: "/pengaturan",
+    label: "Pengaturan",
+    icon: (
+      <svg
+        aria-hidden="true"
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+  },
 ];
 
 export function BottomNav() {
@@ -114,6 +134,7 @@ export function BottomNav() {
           <div className="absolute left-1/2 -translate-x-1/2 -top-[60px] z-10">
             <button
               type="button"
+              data-tour="nav-catat-cepat"
               onClick={() => {
                 haptic.tap();
                 setModalOpen(true);
@@ -121,7 +142,7 @@ export function BottomNav() {
               aria-label="Catat cepat"
               aria-haspopup="dialog"
               aria-expanded={modalOpen}
-              className="flex items-center justify-center w-14 h-14 rounded-full bg-accent text-accent-ink shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:bg-accent/90 active:scale-95 transition-all select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="flex items-center justify-center w-14 h-14 rounded-full bg-accent text-accent-ink shadow-lg hover:bg-accent/90 active:scale-95 transition-all select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <svg
                 aria-hidden="true"
@@ -140,16 +161,39 @@ export function BottomNav() {
             </button>
           </div>
         )}
-        <ul className="flex h-16 list-none m-0 p-1.5 rounded-[28px] border border-white/60 bg-surface/70 shadow-[0_8px_30px_rgba(2,6,23,0.12)] backdrop-blur-xl backdrop-saturate-150">
+        <ul className="flex h-16 list-none m-0 p-1.5 rounded-[28px] border border-border bg-surface shadow-lg">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
+            const tourKey = `nav-${item.href.replace("/", "")}`;
             return (
-              <li key={item.href} className="flex-1 flex">
+              <li key={item.href} className="flex-1 flex" data-tour={tourKey}>
                 <Link
                   href={item.href}
+                  onClick={() => {
+                    haptic.tap();
+                    setModalOpen(false);
+                    if (typeof window !== "undefined") {
+                      const isSamePage = pathname === item.href;
+                      if (isSamePage) {
+                        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                      } else {
+                        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                      }
+
+                      if (item.href === "/beranda") {
+                        window.dispatchEvent(new CustomEvent("uangku:go-home"));
+                      } else if (item.href === "/riwayat") {
+                        window.dispatchEvent(new CustomEvent("uangku:reset-riwayat"));
+                      } else if (item.href === "/anggaran") {
+                        window.dispatchEvent(new CustomEvent("uangku:reset-anggaran"));
+                      } else if (item.href === "/pengaturan") {
+                        window.dispatchEvent(new CustomEvent("uangku:reset-pengaturan"));
+                      }
+                    }
+                  }}
                   aria-current={isActive ? "page" : undefined}
                   className={[
-                    "relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors select-none min-h-[44px] rounded-2xl",
+                    "relative flex flex-1 flex-col items-center justify-center gap-1 transition-transform select-none min-h-[44px] rounded-2xl active:scale-[0.93] duration-150",
                     isActive ? "text-accent font-semibold" : "text-muted hover:text-text font-medium",
                   ].join(" ")}
                 >

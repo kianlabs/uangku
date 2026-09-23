@@ -86,13 +86,14 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 
 - Donut chart interaktif berbasis kategori pengeluaran dengan legenda persentase di sampingnya.
 
-### F. Navigasi Bawah (`BottomNav.tsx`) & FAB (`FAB.tsx`)
+### F. Navigasi Bawah (`BottomNav.tsx`) & FAB
 
-- **BottomNav:** Fixed di bagian bawah layar. Tiga tab: **Beranda**,
-  **Riwayat**, **Anggaran** — item aktif ditandai pil `accent` yang
-  meluncur halus antar ikon (layoutId, lihat §6).
-- **FAB:** Tombol `(+)` melayang di pojok kanan bawah. Saat dialog Catat
-  Cepat terbuka, ikon + berputar 45° menjadi ×.
+- **BottomNav:** Fixed di bagian bawah layar dengan kontainer solid putih bersih (`bg-surface border border-border shadow-lg`, tanpa efek hologram/kaca kabur). Tab menu utama: **Beranda**, **Riwayat**, **Anggaran**, dan **Pengaturan**. Item aktif ditandai pil `accent` yang meluncur halus antar ikon (`layoutId`).
+- **Reset ke Halaman Awal:** Setiap kali pengguna mengetuk tab menu masing-masing:
+  - Jika sudah berada di halaman tersebut: layar otomatis *smooth-scroll* ke posisi paling atas (puncak) dan mereset status filter sub-menu ke kondisi awal.
+  - Jika berpindah dari tab lain: aplikasi langsung memposisikan scroll ke puncak halaman awal.
+  - Seluruh modal yang sedang terbuka otomatis tertutup.
+- **FAB (Tombol Catat Cepat):** Tombol bulat (+) melayang di tengah navigasi. Saat dialog Catat Cepat terbuka, ikon + berputar 45° menjadi ×, disertai haptic feedback halus (`haptic.tap()`).
 
 ### G. Halaman Anggaran (`/anggaran`)
 
@@ -117,6 +118,26 @@ Dokumen ini mendefinisikan spesifikasi desain, sistem warna tema terang, dan kom
 
 - Profil, tanggal gajian, menu Kategori & Export, keluar. Diakses dari ikon
   gear di Header (bukan tab navigasi).
+
+### I. Tur Spotlight Panduan Aplikasi & Sub Menu (`IndicatorSpotlightTour.tsx`)
+
+- **Fokus Visual:** Menggunakan SVG mask cutout dengan latar belakang gelap bersih (`rgba(15,23,42,0.72)`) **tanpa blur** (`no backdrop-blur`) agar angka dan label pada target tetap tajam, jernih, dan mudah dibaca.
+- **Ring Fokus Bersih (Anti-Hologram / Anti-AI Slop):** Animasi spring membingkai elemen target dengan ring solid emerald (`ring-2 ring-emerald-600`) tegas **tanpa neon glow, bayangan hologram, atau dekorasi sparkle AI-slop**.
+- **Cakupan Edukasi Menyeluruh:** Menjelaskan seluruh fitur dan sub menu aplikasi secara berurutan:
+  1. **Beranda:** Rekomendasi belanja harian *Safe to Spend* dan saldo keseluruhan.
+  2. **Catat Cepat:** Tombol tengah (+) untuk mencatat mutasi kilat dengan bahasa natural.
+  3. **Riwayat:** Pencatatan dan pemfilteran seluruh transaksi masuk/keluar.
+  4. **Anggaran:** Perencanaan pagu pengeluaran bulanan per kategori.
+  5. **Pengaturan:** Kustomisasi kategori, tanggal gajian, dan ekspor CSV/Excel.
+- **Smart Scroll:** Menghitung bounding box secara dinamis dan melakukan *smooth scroll* dengan multi-phase sync ke posisi target.
+- **Bottom-Docked Card:** Kartu penjelasan berlabuh di bawah layar ramah jempol mobile, menampilkan mood Mochi dinamis (excited, happy, thinking, firm, celebrating), indikator langkah, serta tombol navigasi lengkap (Sebelumnya, Lanjut, Mengerti, Esc/Arrow key).
+
+### J. Modal Laporan & Evaluasi Bulanan (`MonthlyWrapupModal.tsx`)
+
+- **Metrik Utama:** Pemasukan, Pengeluaran, dan Sisa Tabungan Bersih (*Net Savings*) dengan badge rasio tabungan (*savings rate*).
+- **Analisis Mendalam:** Kategori pengeluaran terbesar beserta persentase kontribusi dan tingkat kepatuhan pagu anggaran per kategori.
+- **Evaluasi Personal Mochi:** Komentar naratif cerdas yang beradaptasi dengan kondisi finansial bulan terpilih (celebrating > 30% hemat, happy jika surplus, worried jika defisit).
+- **Aksi Cepat:** Navigasi bulan (sebelumnya/berikutnya) dan tombol salin ringkasan laporan ke papan klip dengan format teks siap dibagikan.
 
 ---
 

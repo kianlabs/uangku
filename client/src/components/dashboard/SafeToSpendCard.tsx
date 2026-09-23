@@ -63,6 +63,7 @@ export function SafeToSpendCard({ safeToSpendAmount, daysLeft, remainingBalance,
 
   return (
     <motion.div
+      data-tour="safe-to-spend"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}

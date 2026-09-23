@@ -60,7 +60,7 @@ P1-Fitur → P1-UX → P2 dari feedback**.
       warna konsisten); sukses create tampilkan toast sebelum redirect;
       `offlineQueued` → toast info "Tersimpan offline, akan dikirim otomatis"
       *(bagian offline sudah dihapus — lihat item 12)*.
-- [ ] **11. Recurring naik ke server (SELESAI).** ✓ Model `RecurringTemplate`
+- [x] **11. Recurring naik ke server (SELESAI).** ✓ Model `RecurringTemplate`
        (`day, active, type, category_id, last_confirmed`); ✓ CRUD + confirm
        (idempotent per bulan, 409 `ALREADY_CONFIRMED`); ✓ client component
        `RecurringReminders` + notifikasi + migration legacy; ✓ transfer kategori
@@ -117,11 +117,21 @@ P1-Fitur → P1-UX → P2 dari feedback**.
 - [ ] **10. Teks minimal 12px.** Naikkan `text-[10px]`/`text-[11px]`.
 - [ ] **11. Copy.** Typo `Profilaksi`; sapaan pakai nama profil.
 
-### Keamanan & backend (boleh ikut persiapan deploy)
-- [ ] **12. `/docs` mati di production** + header HSTS/CSP.
-- [ ] **13. Audit dependency di CI** (`npm audit` + `pip-audit`).
-- [ ] **14. Rate-limit endpoint tulis** (POST transaksi, CRUD kategori,
-      preferences, DELETE budget) + global default limit.
+### Keamanan, Reliability & Persiapan Deploy Production
+- [x] **12. Hardening API:** `/docs`, `/redoc`, `/openapi.json` nonaktif jika `APP_ENV=production` + header HSTS `Strict-Transport-Security`.
+- [x] **13. Real Healthcheck:** `/health` ping database (`SELECT 1`) untuk validasi kesiapan container (readiness probe).
+- [x] **14. Database Pooling & SSL:** Parameter connection pool (`pool_recycle=300`, SSL mode) untuk Neon Serverless PostgreSQL.
+- [x] **15. Container Artifacts:**
+      - `client/Dockerfile`: Multi-stage build memanfaatkan Next.js standalone output.
+      - `server/Dockerfile`: Multi-stage image Python 3.13 dengan `uv` dan multi-worker Uvicorn.
+      - `fly.client.toml` & `fly.server.toml`: Konfigurasi deployment Fly.io di region Singapura (`sin`) dengan private networking WireGuard (`.internal`).
+- [x] **16. Automated Release Migration:** Release command `uv run alembic upgrade head` otomatis berjalan sebelum container baru menerima traffic.
+- [x] **17. Tur Spotlight Indikator Beranda:** Tur interaktif menyorot tiap metrik (Safe-to-Spend, Saldo Keseluruhan vs Sisa Saldo Aman, Anggaran, Streak) dengan SVG mask cutout tanpa blur.
+- [x] **18. Laporan & Evaluasi Bulanan (Monthly Wrap-up):** Modal evaluasi performa finansial dengan rasio tabungan, kategori teratas, skor kepatuhan, evaluasi Mochi, dan salin ringkasan.
+- [ ] **17. Audit dependency di CI:** Tambahkan `npm audit` dan `pip-audit` ke pipeline GitHub Actions.
+- [ ] **18. Rate-limit endpoint tulis:** POST transaksi, CRUD kategori, preferences, DELETE budget + global default limit.
+- [ ] **19. Backup Strategy:** Kebijakan backup otomatis (Neon PITR & export berkala).
+- [ ] **20. Invite Code Enforcement:** Pastikan `INVITE_CODE` wajib diisi saat mode produksi privat/keluarga.
 
 ---
 

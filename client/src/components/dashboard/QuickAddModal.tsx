@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, MotionConfig } from "motion/react";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
+import { X } from "lucide-react";
 
 interface QuickAddModalProps {
   open: boolean;
@@ -64,80 +65,74 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
         role="dialog"
         aria-modal="true"
         aria-label="Catat transaksi cepat"
       >
-        <button
-          type="button"
-          aria-label="Tutup dialog"
-          aria-hidden="true"
-          tabIndex={-1}
+        {/* Backdrop Gelap Tanpa Blur */}
+        <div
           onClick={onClose}
-          className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px] cursor-default"
+          className="fixed inset-0 bg-slate-950/60 transition-opacity cursor-pointer"
+          aria-hidden="true"
         />
+
+        {/* Modal Card Berlabuh di Tengah dengan Radius Lengkap & Bebas Terpotong */}
         <motion.div
           ref={dialogRef}
           tabIndex={-1}
-          initial={{ opacity: 0, y: 48, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ type: "spring", stiffness: 380, damping: 34 }}
-          className="relative w-full max-w-lg mx-4 mb-24 sm:mb-0 rounded-t-[28px] sm:rounded-[28px] bg-surface/85 border border-white/60 shadow-xl backdrop-blur-2xl backdrop-saturate-150 p-6 pt-3 flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.94, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.94, y: 16 }}
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          className="relative w-full max-w-md my-auto rounded-3xl bg-surface border border-border shadow-2xl p-6 sm:p-7 flex flex-col items-center gap-4 z-10"
         >
-          <div aria-hidden="true" className="h-1.5 w-12 rounded-full bg-slate-900/15" />
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Tutup"
-          className="absolute top-2 right-2 flex items-center justify-center w-11 h-11 rounded-lg text-muted hover:bg-surface-muted hover:text-text transition-colors"
-        >
-          <svg
-            aria-hidden="true"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-        {!saved && <Mascot size={72} mood="happy" variant="bow" />}
-        {!saved && (
-          <div className="flex flex-col items-center gap-1 text-center">
-            <h2 className="text-lg font-bold text-text">Catat cepat</h2>
-          </div>
-        )}
-        <QuickAddInline
-          onSave={() => {
-            // tx-changed sudah didispatch QuickAddInline segera setelah submit
-            // (pola perceived-instant) — di sini cukup tutup dengan jeda agar
-            // user sempat lihat Mochi celebrating.
-            if (closeTimer.current !== null) clearTimeout(closeTimer.current);
-            closeTimer.current = window.setTimeout(onClose, 1400);
-          }}
-          onSuccessChange={(s) => {
-            setSaved(s);
-            // User pilih "Catat lagi" → batalkan tutup otomatis.
-            if (!s && closeTimer.current !== null) {
-              clearTimeout(closeTimer.current);
-              closeTimer.current = null;
-            }
-          }}
-        />
-        {!saved && (
-          <Link
-            href="/transaksi/tambah"
+          {/* Tombol Tutup Silang di Kanan Atas */}
+          <button
+            type="button"
             onClick={onClose}
-            className="text-sm font-medium text-accent hover:underline"
+            aria-label="Tutup"
+            className="absolute top-3.5 right-3.5 flex items-center justify-center w-10 h-10 rounded-full text-muted hover:bg-surface-muted hover:text-text transition-colors active:scale-95 z-20"
           >
-            atau isi form manual
-          </Link>
-        )}
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Header Kartu Catat Cepat (hanya tampil saat belum tersimpan) */}
+          {!saved && (
+            <div className="flex flex-col items-center gap-2 text-center pt-1">
+              <Mascot size={64} mood="happy" variant="bow" label="Mochi siap mencatat" />
+              <h2 className="text-lg font-bold text-text">Catat cepat</h2>
+            </div>
+          )}
+
+          {/* Form & Rekap Hasil Catatan */}
+          <QuickAddInline
+            onSave={() => {
+              // Beri waktu 5 detik agar user sempat membaca rekap transaksi,
+              // atau mereka bisa langsung tap "Selesai" kapan saja.
+              if (closeTimer.current !== null) clearTimeout(closeTimer.current);
+              closeTimer.current = window.setTimeout(onClose, 5000);
+            }}
+            onSuccessChange={(s) => {
+              setSaved(s);
+              if (!s && closeTimer.current !== null) {
+                clearTimeout(closeTimer.current);
+                closeTimer.current = null;
+              }
+            }}
+            onClose={onClose}
+          />
+
+          {/* Opsi Form Lengkap (hanya saat form aktif) */}
+          {!saved && (
+            <Link
+              href="/transaksi/tambah"
+              onClick={onClose}
+              className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline pt-1 pb-1 transition-colors min-h-[32px] flex items-center"
+            >
+              Atau gunakan formulir manual lengkap →
+            </Link>
+          )}
         </motion.div>
       </div>
     </MotionConfig>

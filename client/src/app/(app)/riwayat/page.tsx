@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo, createElement } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { deleteTransaction, listTransactions } from "@/lib/transactions";
 import { listCategories } from "@/lib/categories";
 import type { Category, Transaction, TransactionType } from "@/lib/types";
@@ -115,7 +116,19 @@ export default function RiwayatPage() {
   useEffect(() => {
     isMountedRef.current = true;
     const pending = pendingRef.current;
+
+    function handleReset() {
+      setFilter("all");
+      setCategoryFilter("all");
+      setSourceFilter("all");
+      setDebtFilter("all");
+      setMonthFilter("all");
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+
+    window.addEventListener("uangku:reset-riwayat", handleReset);
     return () => {
+      window.removeEventListener("uangku:reset-riwayat", handleReset);
       isMountedRef.current = false;
       for (const e of pending.values()) clearTimeout(e.timer);
       pending.clear();
@@ -322,15 +335,15 @@ export default function RiwayatPage() {
     <div className="flex flex-col gap-5">
       <div
         aria-hidden="true"
-        className={`fixed top-0 inset-x-0 z-30 transition-transform duration-200 ${
-          compact ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        className={`fixed top-0 inset-x-0 z-30 transition-all duration-200 ${
+          compact ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
         }`}
       >
         <div className="max-w-lg mx-auto px-4 py-3 bg-surface/70 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-900/5 flex items-baseline justify-between">
           <p className="text-base font-bold text-text">Riwayat</p>
-          {!isLoading && (
-            <p className="text-xs text-muted"><span className="num">{filteredItems.length}</span> transaksi</p>
-          )}
+          <p className={`text-xs text-muted transition-opacity duration-150 ${isLoading ? "opacity-0" : "opacity-100"}`}>
+            <span className="num">{filteredItems.length}</span> transaksi
+          </p>
         </div>
       </div>
       <h1 className="text-[32px] leading-[1.15] font-bold tracking-tight text-text">Riwayat</h1>
@@ -580,7 +593,7 @@ export default function RiwayatPage() {
             </div>
           )}
           <div className="flex flex-col gap-5">
-            {groups.map((g) => (
+            {groups.map((g, gIdx) => (
               <section key={g.date} className="flex flex-col">
                 <div className="sticky top-0 z-10 -mx-2 px-2 py-1.5 bg-canvas/90 backdrop-blur-md backdrop-saturate-150 rounded-md transition-colors flex items-center justify-between">
                   <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">
@@ -591,8 +604,13 @@ export default function RiwayatPage() {
                   </span>
                 </div>
                 <div className="flex flex-col divide-y divide-border">
-                  {g.items.map((tx) => (
-                    <SwipeableTxRow key={tx.id} tx={tx} onDelete={beginDelete} />
+                  {g.items.map((tx, txIdx) => (
+                    <SwipeableTxRow
+                      key={tx.id}
+                      tx={tx}
+                      onDelete={beginDelete}
+                      index={Math.min(gIdx * 3 + txIdx, 10)}
+                    />
                   ))}
                 </div>
               </section>
@@ -632,7 +650,15 @@ const SWIPE_RANGE_PX = 96;
  - Fallback a11y: keyboard/screen reader tetap punya jalur hapus via
    halaman detail (/transaksi/[id]), swipe hanya enhancement.
  */
-function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Transaction) => void }) {
+function SwipeableTxRow({
+  tx,
+  onDelete,
+  index = 0,
+}: {
+  tx: Transaction;
+  onDelete: (tx: Transaction) => void;
+  index?: number;
+}) {
   const isIncome = tx.type === "income";
   const source = getTransactionSource(tx.id);
   const debt = getDebtTag(tx.id);
@@ -686,7 +712,16 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
   }
 
   return (
-    <div className="relative overflow-hidden rounded-lg touch-pan-y">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.2,
+        delay: Math.min(index * 0.025, 0.2),
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="relative overflow-hidden rounded-lg touch-pan-y"
+    >
       {/* Tombol hapus di belakang baris — terungkap saat swipe */}
       {dx < 0 && (
         <button
@@ -738,7 +773,7 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
               setDx(0);
             }
           }}
-          className="group flex items-center gap-3 py-3 px-1 bg-surface hover:bg-surface-muted/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
+          className="group flex items-center gap-3 py-3 px-1 bg-surface hover:bg-surface-muted/50 active:bg-surface-muted/80 active:scale-[0.985] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent rounded-lg"
         >
           <div className={`w-10 h-10 rounded-xl ${getCategoryColor(tx.category.name).background} flex items-center justify-center shrink-0 transition-colors`}>
             {createElement(getCategoryIcon(tx.category.name), { className: `w-5 h-5 ${getCategoryColor(tx.category.name).foreground}`, "aria-hidden": true })}
@@ -777,7 +812,7 @@ function SwipeableTxRow({ tx, onDelete }: { tx: Transaction; onDelete: (tx: Tran
           </p>
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

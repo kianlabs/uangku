@@ -89,6 +89,7 @@ export interface DashboardSummary {
   transaction_count: number;
   expense_by_category: ExpenseByCategoryItem[];
   recent_transactions: RecentTransactionItem[];
+  earliest_transaction_date?: string | null;
 }
 
 export interface DashboardMetrics {

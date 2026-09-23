@@ -8,9 +8,9 @@
 - Package manager: `mise` (manages Node.js, Python, PostgreSQL)
 - Install: `mise install`
 - Dev: `mise run dev` (starts both client and server)
-- Test: `mise run test` (server only); client: `cd client && npm run test`
-- Lint: `mise run lint`
-- Build: `mise run build`
+- Test: `mise run test` (runs both server pytest and client vitest); or directly: `cd server && uv run pytest` / `cd client && npm test`
+- Lint: `mise run lint` (runs both ruff and eslint)
+- Build: `mise run build` (Next.js standalone build)
 
 # Architecture
 
@@ -33,6 +33,30 @@
 - Do not push directly to `main` or run destructive Git commands.
 - Do not change migrations without a clear requirement and impact review.
 - Use Context7 or `source-driven-development` for libraries and APIs that may have changed.
+- Consult relevant installed skills (`skill` tool) when planning, implementing, or reviewing code.
+
+# Engineering Skills & Quality Standards
+
+The following skills are installed in `~/.agents/skills/` and available via the `skill` tool:
+
+## 1. Fullstack Architecture & Quality Gates
+- **`source-driven-development`**: Ground library and API patterns (Next.js 16, React 19, FastAPI, SQLAlchemy) in official documentation rather than outdated memory.
+- **`verification-before-completion`**: Enforce fresh evidence before claiming success. Run tests, linter, and build commands, and inspect outputs before any completion claim.
+- **`code-simplification`**: Eliminate cognitive complexity, trim unnecessary abstractions, and prune dead code while preserving behavior.
+- **`debugging-and-error-recovery`**: Systematic root-cause diagnosis, reproducible test cases, and graceful error boundary patterns.
+
+## 2. Frontend Engineering (Client: Next.js 16, React 19, Tailwind CSS)
+- **`react-best-practices`**: Vercel-maintained performance guidelines (eliminating async waterfalls, optimizing bundle size, server vs. client boundaries, and avoiding re-renders).
+- **`frontend-ui-engineering`**: Production-grade state management, accessible component hierarchies, and resilient client-side error handling.
+- **`frontend-design`** & **`tailwind-design-system`**: Distinctive, intentional visual design respecting `DESIGN.md` and anti-slop rules.
+
+## 3. Backend & Database Engineering (Server: FastAPI, PostgreSQL, Alembic)
+- **`api-and-interface-design`**: RESTful interface standards, unified error schemas, status codes, and backward-compatible contracts.
+- **`security-and-hardening`**: OWASP defenses, input validation, SQL/ORM injection mitigation, session security, and secret isolation.
+- **`deprecation-and-migration`**: Zero-downtime database migrations (expand-and-contract patterns) and structured schema evolutions for Alembic/Postgres.
+
+## 4. Testing & Verification
+- **`webapp-testing`**: End-to-end testing with Playwright and server lifecycle management for live browser-level verification.
 
 # Coordinator Role (Pi → omp worker)
 
