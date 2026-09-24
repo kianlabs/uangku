@@ -44,6 +44,7 @@ def is_csrf_allowed(
     origin: str | None,
     referer: str | None,
     forwarded_host: str | None = None,
+    allowed_origins: frozenset[str] = frozenset(),
 ) -> bool:
     """Return True jika request lolos CSRF check.
 
@@ -67,6 +68,8 @@ def is_csrf_allowed(
     if not parsed.hostname:
         return False
     origin_host = parsed.hostname.lower()
+    if origin_host in allowed_origins:
+        return True
     if origin_host == _normalize_host(host):
         return True
     return bool(forwarded_host and origin_host == _normalize_host(forwarded_host))

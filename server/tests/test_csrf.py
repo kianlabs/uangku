@@ -93,6 +93,24 @@ def test_middleware_rejects_cross_origin_post():
     assert r.json()["error"]["code"] == "CSRF_FAILED"
 
 
+def test_middleware_allows_configured_allowed_origins():
+    """POST dari origin yang diizinkan di settings.allowed_origins lolos CSRF."""
+    assert is_csrf_allowed(
+        method="POST",
+        host="uangku-api.onrender.com",
+        origin="https://client-five-opal-18.vercel.app",
+        referer=None,
+        allowed_origins=frozenset({"client-five-opal-18.vercel.app"}),
+    )
+    assert not is_csrf_allowed(
+        method="POST",
+        host="uangku-api.onrender.com",
+        origin="https://hacker.com",
+        referer=None,
+        allowed_origins=frozenset({"client-five-opal-18.vercel.app"}),
+    )
+
+
 def test_middleware_allows_get_with_foreign_origin():
     with TestClient(app, raise_server_exceptions=False) as c:
         r = c.get("/health", headers={"origin": "https://evil.test"})

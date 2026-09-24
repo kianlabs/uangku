@@ -93,6 +93,7 @@ class CsrfOriginMiddleware(BaseHTTPMiddleware):
             origin=origin,
             referer=referer,
             forwarded_host=forwarded_host,
+            allowed_origins=settings.allowed_origins_set,
         ):
             return JSONResponse(
                 status_code=403,

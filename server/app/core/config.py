@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     # When set, X-Forwarded-For is trusted only for requests coming from these IPs.
     # Leave empty in local dev (rate-limiting falls back to request.client.host).
     trusted_proxy_ips: str = ""
+    # Allowed frontend origins for CSRF validation (comma-separated, e.g. "https://my-app.vercel.app").
+    allowed_origins: str = ""
     # Database connection pool settings (tuned for production / serverless Postgres)
     db_pool_size: int = 5
     db_max_overflow: int = 10
@@ -27,6 +29,25 @@ class Settings(BaseSettings):
         if not self.trusted_proxy_ips:
             return frozenset()
         return frozenset(ip.strip() for ip in self.trusted_proxy_ips.split(",") if ip.strip())
+
+    @property
+    def allowed_origins_set(self) -> frozenset[str]:
+        """Return parsed set of allowed origin hostnames."""
+        if not self.allowed_origins:
+            return frozenset()
+        hosts = set()
+        for item in self.allowed_origins.split(","):
+            raw = item.strip().lower()
+            if not raw:
+                continue
+            if "://" in raw:
+                from urllib.parse import urlparse
+                parsed = urlparse(raw)
+                if parsed.hostname:
+                    hosts.add(parsed.hostname)
+            else:
+                hosts.add(raw.split(":")[0])
+        return frozenset(hosts)
 
     @model_validator(mode="after")
     def _check_production_secret(self) -> "Settings":
