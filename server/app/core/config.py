@@ -6,7 +6,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/uangku"
-    database_url_test: str = "postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test"
+    database_url_test: str = (
+        "postgresql+psycopg://postgres:postgres@localhost:5432/uangku_test"
+    )
     secret_key: str = "change-me-in-production"
     https_only: bool = False
     app_env: str = "development"
@@ -18,6 +20,10 @@ class Settings(BaseSettings):
     trusted_proxy_ips: str = ""
     # Allowed frontend origins for CSRF validation (comma-separated, e.g. "https://my-app.vercel.app").
     allowed_origins: str = ""
+    # Google OAuth 2.0 credentials
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = ""
     # Database connection pool settings (tuned for production / serverless Postgres)
     db_pool_size: int = 5
     db_max_overflow: int = 10
@@ -28,7 +34,14 @@ class Settings(BaseSettings):
         """Return parsed set of trusted proxy IPs."""
         if not self.trusted_proxy_ips:
             return frozenset()
-        return frozenset(ip.strip() for ip in self.trusted_proxy_ips.split(",") if ip.strip())
+        return frozenset(
+            ip.strip() for ip in self.trusted_proxy_ips.split(",") if ip.strip()
+        )
+
+    @property
+    def is_google_auth_enabled(self) -> bool:
+        """Return True jika kredensial Google OAuth lengkap."""
+        return bool(self.google_client_id and self.google_client_secret)
 
     @property
     def allowed_origins_set(self) -> frozenset[str]:
@@ -42,6 +55,7 @@ class Settings(BaseSettings):
                 continue
             if "://" in raw:
                 from urllib.parse import urlparse
+
                 parsed = urlparse(raw)
                 if parsed.hostname:
                     hosts.add(parsed.hostname)

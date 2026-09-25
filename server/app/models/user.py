@@ -22,7 +22,10 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    google_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True
+    )
     preferences: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
@@ -42,4 +45,6 @@ class User(Base):
     categories: Mapped[list[Category]] = relationship(back_populates="user")
     transactions: Mapped[list[Transaction]] = relationship(back_populates="user")
     budgets: Mapped[list[Budget]] = relationship(back_populates="user")
-    recurring_templates: Mapped[list[RecurringTemplate]] = relationship(back_populates="user")
+    recurring_templates: Mapped[list[RecurringTemplate]] = relationship(
+        back_populates="user"
+    )

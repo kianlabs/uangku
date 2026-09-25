@@ -10,6 +10,7 @@ import { haptic } from "@/lib/haptics";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -27,6 +28,17 @@ export function RegisterForm() {
   }>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const oauthError = searchParams.get("error");
+  const oauthErrorMessage =
+    oauthError === "google_not_configured"
+      ? "Pendaftaran dengan Google belum dikonfigurasi di server."
+      : oauthError === "google_csrf_failed"
+        ? "Sesi autentikasi Google kedaluwarsa. Silakan coba lagi."
+        : oauthError === "google_auth_failed"
+          ? "Autentikasi Google gagal atau dibatalkan."
+          : null;
+  const activeError = serverError || oauthErrorMessage;
 
   function validate(): typeof errors {
     const e: typeof errors = {};
@@ -88,9 +100,9 @@ export function RegisterForm() {
         <p className="text-sm text-muted">Buat akun baru untuk mulai mencatat keuangan.</p>
       </div>
 
-      {serverError && (
+      {activeError && (
         <div role="alert" className="rounded-xl bg-surface border border-danger px-4 py-3">
-          <p className="text-sm text-danger">{serverError}</p>
+          <p className="text-sm text-danger">{activeError}</p>
         </div>
       )}
 
@@ -147,6 +159,18 @@ export function RegisterForm() {
             Daftar
           </Button>
         </motion.div>
+
+        <div className="relative flex items-center justify-center my-1">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <span className="relative bg-canvas px-3 text-xs uppercase tracking-wider text-muted">
+            atau
+          </span>
+        </div>
+
+        <GoogleButton text="Daftar dengan Google" />
+
         <p className="text-sm text-center text-muted">
           Sudah punya akun?{" "}
           <Link href="/masuk" className="text-accent font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded">

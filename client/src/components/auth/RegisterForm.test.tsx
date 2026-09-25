@@ -32,6 +32,13 @@ describe("RegisterForm", () => {
     expect(screen.getByLabelText(/konfirmasi password/i)).toBeTruthy();
   });
 
+  it("renders Google register button", () => {
+    render(<RegisterForm />);
+    const googleBtn = screen.getByRole("link", { name: /daftar dengan google/i });
+    expect(googleBtn).toBeTruthy();
+    expect(googleBtn.getAttribute("href")).toBe("/api/v1/auth/google/login");
+  });
+
   it("shows validation error for invalid email format", async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);

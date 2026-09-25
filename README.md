@@ -91,6 +91,9 @@ cd client && npx playwright install     # install browsers (first time)
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
 | `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting. Loopback peers (e.g. the Next.js rewrite in the same container) are always trusted, so per-user buckets work out of the box on single-container deploys (Fly.io) |
 | `INVITE_CODE` | `` (empty = open) | when set, `/api/v1/auth/register` requires a matching `invite_code` (403 `INVALID_INVITE_CODE` otherwise); for family-scope production |
+| `GOOGLE_CLIENT_ID` | `...apps.googleusercontent.com` | Client ID OAuth 2.0 dari Google Cloud Console (kosong = nonaktif) |
+| `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | Client Secret OAuth 2.0 dari Google Cloud Console |
+| `GOOGLE_REDIRECT_URI` | `http://localhost:3000/api/v1/auth/google/callback` | (Opsional) Override redirect URI callback Google |
 
 ## Architecture
 
@@ -105,6 +108,35 @@ the API layer maps them to a stable JSON shape: `{"error": {"code": ..., "messag
 Authorization rule: every query is scoped to `current_user.id` — resource IDs
 from the client are never trusted for ownership.
 
+
+## Login dengan Google (OAuth 2.0)
+
+Uangku mendukung autentikasi Google (OAuth 2.0 Authorization Code Flow). Pengguna baru yang mendaftar via Google otomatis dibuatkan akun dengan kategori default. Jika pengguna sudah memiliki akun email/password sebelumnya, akun akan otomatis ditautkan saat masuk menggunakan Google.
+
+### Langkah Konfigurasi Google Cloud Console:
+
+1. Buka [Google Cloud Console](https://console.cloud.google.com/) dan buat project baru (misal: `uangku-app`).
+2. Masuk ke menu **APIs & Services** > **OAuth consent screen**:
+   - Pilih tipe pengguna **External** lalu klik **Create**.
+   - Isi nama aplikasi (misal: `Uangku`), email dukungan pengguna, dan email kontak pengembang.
+   - Di bagian **Scopes**, pastikan scope dasar tersedia: `.../auth/userinfo.email`, `.../auth/userinfo.profile`, `openid`.
+   - Di bagian **Test users** (jika masih status Testing), tambahkan alamat email Google yang akan digunakan untuk pengujian.
+3. Masuk ke menu **APIs & Services** > **Credentials**:
+   - Klik **Create Credentials** > **OAuth client ID**.
+   - Pilih Application type: **Web application**.
+   - Masukkan nama client (misal: `Uangku Web Client`).
+   - Pada **Authorized JavaScript origins**, tambahkan:
+     - Development: `http://localhost:3000`
+     - Production: `https://domain-anda.com`
+   - Pada **Authorized redirect URIs**, tambahkan:
+     - Development: `http://localhost:3000/api/v1/auth/google/callback`
+     - Production: `https://domain-anda.com/api/v1/auth/google/callback`
+4. Salin nilai **Client ID** dan **Client Secret**, lalu masukkan ke `server/.env`:
+   ```env
+   GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   ```
+5. Restart backend server FastAPI. Tombol "Masuk dengan Google" dan "Daftar dengan Google" akan langsung berfungsi.
 ## Production notes
 
 - Set `APP_ENV=production`, a strong `SECRET_KEY`, and `HTTPS_ONLY=true`.
