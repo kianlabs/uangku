@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const unauthorizedRef = useRef(false);
 
   useEffect(() => {
-    function handleUnauthorized() {
+    async function handleUnauthorized() {
       // Already on public page (landing/auth) — don't redirect, allow future events.
       if (["/", "/masuk", "/daftar"].includes(window.location.pathname)) {
         unauthorizedRef.current = false;
@@ -70,10 +70,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
 
       // Best-effort logout: clear session server-side via Set-Cookie.
+      // MUST complete before the hard redirect below: navigating away
+      // aborts the in-flight POST (esp. on slow mobile / cold backend),
+      // leaving the stale cookie behind → proxy bounces /masuk→/beranda
+      // forever (e.g. after cancelled Google OAuth). Cap wait at 4s.
       // Ignore all errors — session is already invalid (401 triggered this).
-      logout().catch(() => {
-        // Intentional: session invalid, error expected
-      });
+      try {
+        await Promise.race([
+          logout(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("logout timeout")), 4000)
+          ),
+        ]);
+      } catch {
+        // Intentional: session invalid, error/timeout expected
+      }
 
       // Hard redirect required to break infinite loop:
       // stale session cookie still present in proxy after unauthorized event.
