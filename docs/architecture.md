@@ -28,34 +28,13 @@ Target detail:
 
 ```text
 uangku/
-├── client/
-│   ├── app/
-│   ├── components/
-│   ├── features/
-│   ├── lib/
-│   ├── public/
-│   └── tests/
-│
-├── server/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── core/
-│   │   ├── db/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   └── main.py
-│   │
-│   ├── migrations/
-│   └── tests/
-│
-├── docs/
-│   ├── product-brief.md
-│   ├── erd.md
-│   └── architecture.md
-│
+├── client/            # Next.js (src/app, src/components, src/lib, ...)
+├── server/            # FastAPI (app/, migrations/, tests/)
+├── docs/              # architecture, erd, product-brief, maintenance
 ├── AGENTS.md
+├── DESIGN.md
 ├── mise.toml
+├── vercel.json        # build dari Root Directory=client (tanpa prefix cd)
 └── README.md
 ```
 
@@ -175,8 +154,17 @@ Target:
 - `SameSite` dikonfigurasi dengan tepat
 - sesi kedaluwarsa 7 hari: cookie `Max-Age=604800` + batas absolut `issued_at`
   yang dicek server-side (cookie bisa refresh, cap absolut tidak)
-- password disimpan dalam bentuk hash
+- password disimpan dalam bentuk hash (Argon2); akun Google-only punya
+  `password_hash = NULL` dan login password ditolak untuknya
 - server menentukan current user dari credential yang valid
+- login Google (OAuth 2.0 Authorization Code Flow): `GET /auth/google/login`
+  menyimpan `state` CSRF + `redirect_uri` di session lalu redirect ke Google;
+  `GET /auth/google/callback` verifikasi state, tukar code, ambil profil,
+  lalu find-or-create user by `google_id` (auto-link ke akun email yang sama,
+  user baru dibuat + seed kategori default). `redirect_uri` diturunkan dari
+  `X-Forwarded-Host` (lihat `src/proxy.ts`) atau override
+  `GOOGLE_REDIRECT_URI`; persis 1 nilai ini yang didaftarkan di Google Cloud
+- tombol Google ada di form masuk & daftar; keduanya auto-registrasi akun baru
 
 Hindari menyimpan long-lived authentication token di `localStorage`.
 
@@ -202,6 +190,22 @@ FastAPI
    │
    ├── verify credentials
    └── issue authenticated session/cookie
+
+Login (Google OAuth 2.0)
+   │
+   ▼ Next.js rewrite /api/* (proxy.ts teruskan X-Forwarded-Host)
+FastAPI /auth/google/login
+   │
+   ├── simpan state + redirect_uri di session
+   └── 302 ke accounts.google.com ──► user setuju/batal
+           │
+           ▼ callback ?code&state (atau ?error)
+FastAPI /auth/google/callback
+   │
+   ├── verifikasi state (gagal → /masuk?error=google_csrf_failed)
+   ├── tukar code → access token → profil (sub, email)
+   ├── find-or-create by google_id (link email lama / buat baru)
+   └── session login → 302 /beranda
 
 Authenticated Request
    │
@@ -368,38 +372,47 @@ register/login
 
 ## Deployment Boundary
 
-Client dan server dapat di-deploy terpisah atau di dalam private network yang sama.
+Client dan server di-deploy terpisah dan terhubung via HTTPS publik.
 
-Target Arsitektur Utama (Fly.io + Neon PostgreSQL):
+Arsitektur produksi saat ini (2026-09: Vercel + Render):
 
 ```text
 Pengguna (Browser / Mobile PWA)
-      │
-      ▼ HTTPS
-[ Fly.io Edge (Region: SIN) ]
+      │ HTTPS
+      ▼
+uangku-web.my.id (DNS: Idwebhost → Vercel)
       │
       ▼
-Client (Next.js 16 Standalone Container)
+[Vercel] Client (Next.js, Root Directory=client)
       │
       ├── UI Rendering & Assets
-      └── Rewrites (/api/*) ──► Server (FastAPI Container)
-                                  │ (Private WireGuard DNS: .internal)
-                                  ▼ SSL
-                            Neon PostgreSQL 16 (Serverless + Pooling)
+      └── Rewrites (/api/*, SERVER_URL) ──► [Render] Server (FastAPI Docker)
+                                                │ SSL (?sslmode=require)
+                                                ▼
+                                           PostgreSQL produksi
 ```
 
-1. **Client (Fly.io):**
-   - Output: `standalone` Next.js (image Docker minimalis).
-   - Menghandle routing frontend dan reverse proxy `/api/*` internal ke server FastAPI.
-2. **Server (Fly.io):**
-   - Python 3.13 + Uvicorn multi-worker di-deploy via `Dockerfile`.
-   - Release command: `uv run alembic upgrade head` otomatis berjalan sebelum traffic dibuka.
-3. **Database (Neon.tech):**
-   - PostgreSQL 16 serverless dengan connection pooling (`?sslmode=require`, `pool_recycle=300`).
-   - Backup otomatis via PITR (Point-In-Time-Recovery).
+1. **Client (Vercel):** project `uangku`, Root Directory `client`, framework
+   Next.js auto-detect. `vercel.json` di repo root HANYA berisi default tanpa
+   prefix `cd client` (build sudah berjalan di dalam `client/`; prefix
+   `cd client && ...` membuat build ERROR `ENOENT` — insiden 2026-09-25).
+   Auto-deploy dari branch `master`. Custom domain via Vercel Domains
+   (apex = Production, www/vercel.app redirect 308 ke apex).
+2. **Server (Render):** service Docker dari `server/Dockerfile`
+   (`uv sync --frozen`, entrypoint `entrypoint.sh`). `entrypoint.sh`
+   menjalankan `alembic upgrade head` otomatis tiap deploy
+   (`RUN_MIGRATIONS=true`). Auto-deploy dari branch `master`.
+3. **Rantai proxy & header:** browser → Vercel rewrite → backend.
+   `client/src/proxy.ts` meneruskan host asli (`X-Forwarded-Host`, dipakai
+   server untuk validasi CSRF origin + `redirect_uri` Google) dan IP luar
+   (`X-Forwarded-For`, dipakai rate-limit). Guard UX di proxy (halaman
+   proteksi ↔ auth) berdasarkan keberadaan cookie `session`; validitas
+   tetap otoritatif di `GET /api/v1/auth/me`.
 
-Alternatif Deployment:
-- **VPS (Hetzner/DigitalOcean) + Coolify / Docker Compose:** Single-host setup hemat biaya dengan Traefik/Caddy reverse proxy dan Let's Encrypt SSL otomatis.
+Alternatif Deployment (tidak aktif saat ini):
+- **Fly.io (Region SIN) + Neon PostgreSQL:** `fly.server.toml` + Dockerfile
+  sudah siap; butuh billing + `DATABASE_URL` Neon. Tanpa-tidur (~$2/bln).
+- **VPS + Docker Compose:** single-host hemat dengan reverse proxy + SSL otomatis.
 
 Environment dibedakan:
 - local

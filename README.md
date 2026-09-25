@@ -89,7 +89,7 @@ cd client && npx playwright install     # install browsers (first time)
 | `HTTPS_ONLY` | `false` | must be `true` in production (enforced) or session cookies go over HTTP |
 | `SERVER_URL` | `http://localhost:8000` | client env (`client/.env.local`, see `client/.env.example`), rewrite target (server-side only) |
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
-| `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting. Loopback peers (e.g. the Next.js rewrite in the same container) are always trusted, so per-user buckets work out of the box on single-container deploys (Fly.io) |
+| `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting. Loopback peers are always trusted. Catatan: di belakang proxy terkelola (Render/Vercel) peer bukan loopback dan IP-nya dinamis — semua user berbagi satu bucket rate-limit; untuk skala keluarga tidak masalah |
 | `GOOGLE_CLIENT_ID` | `...apps.googleusercontent.com` | Client ID OAuth 2.0 dari Google Cloud Console (kosong = nonaktif) |
 | `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | Client Secret OAuth 2.0 dari Google Cloud Console |
 | `GOOGLE_REDIRECT_URI` | `http://localhost:3000/api/v1/auth/google/callback` | (Opsional) Override redirect URI callback Google |
@@ -100,7 +100,7 @@ cd client && npx playwright install     # install browsers (first time)
 - `server/app/` — FastAPI app: `api/v1/` (HTTP layer), `services/` (business logic), `schemas/` (Pydantic validation), `models/` (SQLAlchemy), `core/` (config, deps, domain errors)
 - `server/tests/` — pytest suite (API + service level, per-user isolation)
 - `server/migrations/` — Alembic migrations
-- `docs/` — architecture, ERD, product brief
+- `docs/` — architecture, ERD, product brief, maintenance runbook
 
 Error contract: services raise typed `DomainError`s (`app/core/errors.py`);
 the API layer maps them to a stable JSON shape: `{"error": {"code": ..., "message": ...}}`.
@@ -124,12 +124,12 @@ Uangku mendukung autentikasi Google (OAuth 2.0 Authorization Code Flow). Penggun
    - Klik **Create Credentials** > **OAuth client ID**.
    - Pilih Application type: **Web application**.
    - Masukkan nama client (misal: `Uangku Web Client`).
-   - Pada **Authorized JavaScript origins**, tambahkan:
-     - Development: `http://localhost:3000`
-     - Production: `https://domain-anda.com`
-   - Pada **Authorized redirect URIs**, tambahkan:
-     - Development: `http://localhost:3000/api/v1/auth/google/callback`
-     - Production: `https://domain-anda.com/api/v1/auth/google/callback`
+    - Pada **Authorized JavaScript origins**, tambahkan:
+      - Development: `http://localhost:3000`
+      - Production: `https://uangku-web.my.id`
+    - Pada **Authorized redirect URIs**, tambahkan:
+      - Development: `http://localhost:3000/api/v1/auth/google/callback`
+      - Production: `https://uangku-web.my.id/api/v1/auth/google/callback`
 4. Salin nilai **Client ID** dan **Client Secret**, lalu masukkan ke `server/.env`:
    ```env
    GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
@@ -171,19 +171,44 @@ Uangku mendukung autentikasi Google (OAuth 2.0 Authorization Code Flow). Penggun
 
 ## Production Readiness & Deployment
 
-The application is architected for deployment on **Fly.io** (Region: Singapore `sin`) paired with **Neon Serverless PostgreSQL**.
+Arsitektur produksi saat ini (2026-09):
+
+```text
+Pengguna (Browser / Mobile PWA)
+      │ HTTPS
+      ▼
+uangku-web.my.id ──► Vercel (frontend Next.js)
+      │  rewrite /api/* ──► Render (backend FastAPI: uangku-api.onrender.com)
+      │                         │  SSL (?sslmode=require)
+      │                         ▼
+      │                    PostgreSQL produksi
+      ▼
+DNS: Idwebhost (NS1/NS2.IDWEBHOST.ID) → A @ 216.198.79.1,
+     CNAME www → <id>.vercel-dns-017.com (lihat Vercel Domains)
+```
+
+- **Frontend**: project Vercel `uangku`, Root Directory `client`, auto-deploy
+  dari branch `master`. Custom domain `uangku-web.my.id` (apex = Production,
+  `www` + `uangku-website.vercel.app` redirect 308 ke apex).
+- **Backend**: service Render `uangku-api` (Docker dari `server/Dockerfile`),
+  auto-deploy dari branch `master`. `entrypoint.sh` menjalankan
+  `alembic upgrade head` otomatis tiap deploy (`RUN_MIGRATIONS=true`).
+- **Detail operasional** (env produksi, domain, runbook insiden, jadwal
+  rutin): lihat `docs/maintenance.md`.
 
 ### Production Checklist
-1. **Environment Variables**:
-   - `APP_ENV=production` (enforces strict security checks).
-   - `SECRET_KEY`: Minimum 32-character random cryptographic secret.
-   - `HTTPS_ONLY=true`: Enforces `Secure` flag on session cookies and enables HSTS.
-   - `DATABASE_URL`: Connection pooled Neon database URL with SSL enabled (`?sslmode=require`).
-2. **Database Migrations**: Run `uv run alembic upgrade head` during release step before serving traffic.
-3. **Internal Networking**: Next.js client standalone container proxies `/api/*` requests to the FastAPI backend via Fly.io private network (`http://uangku-api.internal:8000`).
-4. **Verification Gate**:
+1. **Environment Variables** (Render → Environment; Vercel → Settings):
+   - Backend (Render): `APP_ENV=production`, `SECRET_KEY` (acak, min 32 char),
+     `HTTPS_ONLY=true`, `DATABASE_URL` (pakai `?sslmode=require`),
+     `ALLOWED_ORIGINS=https://uangku-web.my.id`,
+     `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`.
+   - Frontend (Vercel): `SERVER_URL=https://uangku-api.onrender.com`
+     (target rewrite `/api/*`, server-side only).
+2. **Database Migrations**: otomatis via `entrypoint.sh` saat deploy backend;
+   verifikasi di log Render (`Migrations complete.`).
+3. **Verification Gate**:
    ```bash
-   mise run test    # Server pytest (315 tests) & Client vitest (162 tests across 29 suites)
+   mise run test    # server pytest + client vitest
    mise run lint    # Ruff & ESLint
-   mise run build   # Next.js standalone build
+   mise run build   # Next.js production build
    ```

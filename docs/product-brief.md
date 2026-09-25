@@ -72,7 +72,8 @@ Jika produk memiliki pengguna aktif dan kebutuhan native muncul, aplikasi React 
 ### Authentication
 
 - Register
-- Login
+- Login (email/password atau Google OAuth 2.0 — akun Google baru otomatis
+  dibuat + kategori default; akun email lama otomatis terhubung)
 - Logout
 - User session (kedaluwarsa 7 hari)
 - Password hashing

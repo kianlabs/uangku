@@ -93,7 +93,8 @@ erDiagram
     USERS {
         uuid id PK
         string email UK
-        string password_hash
+        string password_hash "nullable (NULL = akun Google-only)"
+        string google_id "nullable, UK (NULL = bukan akun Google)"
         jsonb preferences
         timestamp created_at
         timestamp updated_at

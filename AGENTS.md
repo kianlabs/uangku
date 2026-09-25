@@ -17,7 +17,7 @@
 - Client: `client/src/` (Next.js 16, React 19, TypeScript, Tailwind CSS)
 - Server: `server/app/` (FastAPI, SQLAlchemy, PostgreSQL)
 - Tests: `server/tests/` (pytest)
-- Docs: `docs/` (architecture, ERD, product brief, DESIGN); archived in `docs/archive/`: api-contract, ux-flow, ui-wireframe, visual-direction
+- Docs: `docs/` (architecture, ERD, product brief, maintenance runbook, DESIGN); archived in `docs/archive/`: api-contract, ux-flow, ui-wireframe, visual-direction
 - Database and migrations: `server/migrations/` (Alembic)
 
 # Coding Rules
