@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "motion"],
-    cpus: 1,
+    ...(process.env.FLY_APP_NAME ? { cpus: 1 } : {}),
   },
   async headers() {
     return [
