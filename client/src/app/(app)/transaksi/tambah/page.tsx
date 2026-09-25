@@ -300,10 +300,10 @@ export default function TambahTransaksiPage() {
               type="text"
               value={quickAdd}
               onChange={(e) => handleQuickAdd(e.target.value)}
-              placeholder="kopi 20rb"
-              className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
-            />
-            <span className="text-xs text-muted">cth: kopi 20rb → pengeluaran · gaji 5jt → pemasukan (<span className="font-mono text-text">rb/k/ribu</span> = ribuan, <span className="font-mono text-text">jt/juta</span> = jutaan)</span>
+            placeholder="kopi 20rb atau gaji 2,5jt"
+            className="h-12 rounded-xl border border-border bg-surface px-4 text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
+          />
+          <span className="text-xs text-muted">cth: kopi 20rb · gaji 2,5jt (<span className="font-mono text-text">rb/k/ribu</span> = ribuan, <span className="font-mono text-text">jt/juta</span> = jutaan, mendukung desimal koma)</span>
           </div>
 
           {/* Type toggle */}

@@ -51,7 +51,7 @@ export function QuickAddInline({ onSave, onSuccessChange, onClose }: QuickAddInl
 
     const parsed = parseQuickAdd(input);
     if (!parsed) {
-      setError("Format: [kegiatan] [nominal], misal: Makan siang 45k atau Gaji 5jt");
+      setError("Format: [kegiatan] [nominal], misal: Makan siang 45k atau Gaji 2,5jt");
       haptic.warning();
       return;
     }
@@ -211,7 +211,7 @@ export function QuickAddInline({ onSave, onSuccessChange, onClose }: QuickAddInl
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder='Ketik disini... misal: "Kopi 25k"'
+          placeholder='Ketik disini... misal: "Kopi 25k" atau "Gaji 2,5jt"'
           className="w-full h-12 pl-4 pr-10 rounded-2xl bg-surface border border-border text-base text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-xs"
           disabled={isLoading}
         />

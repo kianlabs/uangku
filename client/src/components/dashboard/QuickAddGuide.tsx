@@ -42,20 +42,19 @@ export function QuickAddGuide() {
               Pengeluaran
             </span>
             <span className="font-mono text-text">kopi 25k</span>
+            <span className="font-mono text-text">servis 2,3jt</span>
             <span className="font-mono text-text">makan siang 35rb</span>
-            <span className="font-mono text-text">bensin 30ribu</span>
           </div>
 
           <div className="flex flex-col gap-0.5">
             <span className="font-semibold text-text text-[10px] uppercase tracking-wider">
               Pemasukan
             </span>
-            <span className="font-mono text-text">gaji 5jt</span>
-            <span className="font-mono text-text">bonus 2jt</span>
+            <span className="font-mono text-text">gaji 2,5jt</span>
+            <span className="font-mono text-text">bonus 1,5jt</span>
             <span className="font-mono text-text">freelance 1jt</span>
           </div>
         </div>
-
         {/* Detail Tambahan Saat Di-expand */}
         {showDetail && (
           <div className="pt-2 mt-1 border-t border-border flex flex-col gap-1.5 text-[11px] text-muted leading-relaxed">
@@ -69,7 +68,13 @@ export function QuickAddGuide() {
               <br />
               • <code className="font-mono text-text">jt</code> /{" "}
               <code className="font-mono text-text">juta</code> = Jutaan (cth:{" "}
-              <span className="font-mono text-text">5jt</span> → Rp 5.000.000)
+              <span className="font-mono text-text">5jt</span> → Rp 5.000.000,{" "}
+              <span className="font-mono text-text">2,5jt</span> → Rp 2.500.000)
+              <br />
+              • Mendukung desimal koma/titik (<span className="font-mono text-text">2,5jt</span>,{" "}
+              <span className="font-mono text-text">2,3jt</span>, <span className="font-mono text-text">1,5jt</span>),{" "}
+              format ribuan (<span className="font-mono text-text">25.000</span>), serta prefix{" "}
+              <span className="font-mono text-text">Rp</span>.
             </p>
             <p>
               <strong className="text-text">Deteksi otomatis:</strong>
