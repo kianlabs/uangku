@@ -22,6 +22,7 @@ const sourceSerif = Source_Serif_4({
 export const BRAND_COLOR = "#024691";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://uangku-web.my.id"),
   title: "UangKu — Catat keuanganmu",
   description: "Expense tracker simpel untuk penggunaan harian.",
   manifest: "/manifest.json",
@@ -33,6 +34,27 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/icon-192.png",
     apple: "/images/logo-uangku-mark.png",
+  },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "UangKu",
+    title: "UangKu — Catat keuanganmu",
+    description: "Catat yang masuk. Pahami yang keluar. Tetap tenang.",
+    images: [
+      {
+        url: "/images/og-uangku.png",
+        width: 1200,
+        height: 630,
+        alt: "UangKu — maskot Mochi",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "UangKu — Catat keuanganmu",
+    description: "Catat yang masuk. Pahami yang keluar. Tetap tenang.",
+    images: ["/images/og-uangku.png"],
   },
   other: {
     "apple-mobile-web-app-title": "UangKu",
