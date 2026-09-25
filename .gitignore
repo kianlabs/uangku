@@ -35,11 +35,19 @@ yarn-error.log*
 *.swo
 *~
 
-# Hermes (agent plans)
+# AI tooling & agent artifacts
+.agents/
 .hermes/
-
-# Kiro (IDE state & spec artifacts)
 .kiro/
+.omp/
+.claude/
+.cursor/
+.cursorrules
+.aider*
+.windsurf/
+.continue/
+.copilot/
+skills-lock.json
 
 # Config & artefak audit visual (lokal saja)
 client/playwright.local.config.ts
@@ -110,8 +118,6 @@ $RECYCLE.BIN/
 # Neon & Local Tooling
 .neon
 .env.local
-.agents/
-skills-lock.json
 package.json
 package-lock.json
 neon.ts
