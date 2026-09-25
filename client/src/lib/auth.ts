@@ -13,14 +13,10 @@ export async function login(email: string, password: string): Promise<User> {
   return data.user;
 }
 
-export async function register(email: string, password: string, inviteCode?: string): Promise<User> {
+export async function register(email: string, password: string): Promise<User> {
   const data = await apiFetch<{ user: User }>("/api/v1/auth/register", {
     method: "POST",
-    body: JSON.stringify({
-      email,
-      password,
-      ...(inviteCode?.trim() ? { invite_code: inviteCode.trim() } : {}),
-    }),
+    body: JSON.stringify({ email, password }),
   });
   return data.user;
 }

@@ -195,19 +195,7 @@ def test_session_without_or_expired_issued_at_rejected(setup_db):
         assert ei2.value.status_code == 401
 
 
-def test_register_invite_code_enforced(client, monkeypatch):
-    monkeypatch.setattr(settings, "invite_code", "keluarga-50")
-    r = client.post("/api/v1/auth/register", json={"email": "nocode@test.com", "password": "pass1234"})
-    assert r.status_code == 403
-    assert r.json()["error"]["code"] == "INVALID_INVITE_CODE"
-    r = client.post("/api/v1/auth/register", json={"email": "wrong@test.com", "password": "pass1234", "invite_code": "salah"})
-    assert r.status_code == 403
-    r = client.post("/api/v1/auth/register", json={"email": "invited@test.com", "password": "pass1234", "invite_code": "keluarga-50"})
-    assert r.status_code == 201
-
-
-def test_register_open_when_no_invite_code(client):
-    """Default (INVITE_CODE kosong) = registrasi terbuka seperti dulu."""
-    assert settings.invite_code == ""
+def test_register_open(client):
+    """Registrasi terbuka untuk semua orang."""
     r = client.post("/api/v1/auth/register", json={"email": "open@test.com", "password": "pass1234"})
     assert r.status_code == 201

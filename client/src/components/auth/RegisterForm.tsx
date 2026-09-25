@@ -20,7 +20,6 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [konfirmasi, setKonfirmasi] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
@@ -63,7 +62,7 @@ export function RegisterForm() {
     setErrors({});
     setIsLoading(true);
     try {
-      await registerUser(email, password, inviteCode);
+      await registerUser(email, password);
       haptic.success();
       const next = searchParams.get("next") || "/beranda";
       const redirect = next.startsWith("/") && !next.startsWith("//") ? next : "/beranda";
@@ -142,14 +141,6 @@ export function RegisterForm() {
           error={errors.konfirmasi}
           autoComplete="new-password"
           enterKeyHint="go"
-        />
-        <Input
-          type="text"
-          label="Kode undangan (opsional)"
-          value={inviteCode}
-          onChange={(e) => setInviteCode(e.target.value)}
-          autoComplete="off"
-          placeholder="Diisi bila diminta admin"
         />
       </div>
 

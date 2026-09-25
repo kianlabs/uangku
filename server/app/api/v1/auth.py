@@ -35,11 +35,6 @@ def _start_session(request: Request, user: User) -> None:
 @router.post("/register", status_code=201)
 @limiter.limit("5/minute")
 def register(body: RegisterRequest, request: Request, db: Session = Depends(get_db)):
-    if settings.invite_code and body.invite_code != settings.invite_code:
-        raise HTTPException(
-            status_code=403,
-            detail={"code": "INVALID_INVITE_CODE", "message": "Kode undangan salah."},
-        )
     try:
         user = register_user(db, body.email, body.password)
     except EmailTakenError:

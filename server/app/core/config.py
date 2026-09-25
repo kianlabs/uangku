@@ -12,8 +12,6 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-production"
     https_only: bool = False
     app_env: str = "development"
-    # Kosong = registrasi terbuka (dev). Isi di production lingkup keluarga.
-    invite_code: str = ""
     # Comma-separated list of trusted reverse-proxy IPs (e.g. "10.0.0.1,10.0.0.2").
     # When set, X-Forwarded-For is trusted only for requests coming from these IPs.
     # Leave empty in local dev (rate-limiting falls back to request.client.host).

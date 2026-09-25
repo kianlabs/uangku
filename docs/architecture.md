@@ -177,7 +177,6 @@ Target:
   yang dicek server-side (cookie bisa refresh, cap absolut tidak)
 - password disimpan dalam bentuk hash
 - server menentukan current user dari credential yang valid
-- registrasi dapat dikunci dengan `INVITE_CODE` (production lingkup keluarga)
 
 Hindari menyimpan long-lived authentication token di `localStorage`.
 

@@ -90,7 +90,6 @@ cd client && npx playwright install     # install browsers (first time)
 | `SERVER_URL` | `http://localhost:8000` | client env (`client/.env.local`, see `client/.env.example`), rewrite target (server-side only) |
 | `APP_ENV` | `development` | set `production` in prod to enable guards |
 | `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting. Loopback peers (e.g. the Next.js rewrite in the same container) are always trusted, so per-user buckets work out of the box on single-container deploys (Fly.io) |
-| `INVITE_CODE` | `` (empty = open) | when set, `/api/v1/auth/register` requires a matching `invite_code` (403 `INVALID_INVITE_CODE` otherwise); for family-scope production |
 | `GOOGLE_CLIENT_ID` | `...apps.googleusercontent.com` | Client ID OAuth 2.0 dari Google Cloud Console (kosong = nonaktif) |
 | `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | Client Secret OAuth 2.0 dari Google Cloud Console |
 | `GOOGLE_REDIRECT_URI` | `http://localhost:3000/api/v1/auth/google/callback` | (Opsional) Override redirect URI callback Google |
@@ -156,8 +155,6 @@ Uangku mendukung autentikasi Google (OAuth 2.0 Authorization Code Flow). Penggun
   (cookie `Max-Age` + absolute `issued_at` cap enforced server-side; logout
   clears the server-side session). Deploying this change logs out all existing
   sessions once (forced re-login).
-- Set `INVITE_CODE` in family-scope production so only invited users can
-  register; the Daftar form has an optional invite-code field.
 - Transaction dates are validated server-side: at most tomorrow (payday
   tolerance) and year >= 2000 (422 otherwise); the client mirrors the rule
   with Indonesian messages.
@@ -181,7 +178,6 @@ The application is architected for deployment on **Fly.io** (Region: Singapore `
    - `APP_ENV=production` (enforces strict security checks).
    - `SECRET_KEY`: Minimum 32-character random cryptographic secret.
    - `HTTPS_ONLY=true`: Enforces `Secure` flag on session cookies and enables HSTS.
-   - `INVITE_CODE`: Required for private/family instances to prevent unauthorized registrations.
    - `DATABASE_URL`: Connection pooled Neon database URL with SSL enabled (`?sslmode=require`).
 2. **Database Migrations**: Run `uv run alembic upgrade head` during release step before serving traffic.
 3. **Internal Networking**: Next.js client standalone container proxies `/api/*` requests to the FastAPI backend via Fly.io private network (`http://uangku-api.internal:8000`).

@@ -71,7 +71,7 @@ Jika produk memiliki pengguna aktif dan kebutuhan native muncul, aplikasi React 
 
 ### Authentication
 
-- Register (opsional kode undangan bila server set `INVITE_CODE`)
+- Register
 - Login
 - Logout
 - User session (kedaluwarsa 7 hari)
