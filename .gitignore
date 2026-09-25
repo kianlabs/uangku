@@ -44,7 +44,11 @@ yarn-error.log*
 # Config & artefak audit visual (lokal saja)
 client/playwright.local.config.ts
 client/shot-*.png
-
+client/shot-*.webp
+shot-*.png
+shot-*.webp
+*-REPORT.md
+AUDIT-REPORT.md
 # Artefak hasil run Playwright (lokal saja)
 test-results/
 server/test-results/

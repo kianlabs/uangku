@@ -40,17 +40,10 @@ export function MonthlyWrapupModal({
   const [selectedMonth, setSelectedMonth] = useState(() => initialMonth || currentMonth);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [earliestMonthState, setEarliestMonthState] = useState<string | null>(
-    () => initialEarliestMonth ?? null
-  );
+  const [earliestMonthOverride, setEarliestMonthOverride] = useState<string | null>(null);
+  const effectiveEarliestMonth = initialEarliestMonth ?? earliestMonthOverride;
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (initialEarliestMonth) {
-      setEarliestMonthState(initialEarliestMonth);
-    }
-  }, [initialEarliestMonth]);
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +59,7 @@ export function MonthlyWrapupModal({
         setSummary(sumRes);
         setBudgets(budRes.items);
         if (sumRes.earliest_transaction_date) {
-          setEarliestMonthState(sumRes.earliest_transaction_date.slice(0, 7));
+          setEarliestMonthOverride(sumRes.earliest_transaction_date.slice(0, 7));
         }
         setIsLoading(false);
       })
@@ -122,7 +115,7 @@ export function MonthlyWrapupModal({
 
   // Navigasi bulan: tombol < nonaktif jika di bulan sebelumnya belum ada transaksi.
   // Tombol > nonaktif jika sudah berada di bulan berjalan.
-  const canGoPrev = Boolean(earliestMonthState && selectedMonth > earliestMonthState);
+  const canGoPrev = Boolean(effectiveEarliestMonth && selectedMonth > effectiveEarliestMonth);
   const canGoNext = selectedMonth < currentMonth;
 
   // Evaluasi Mochi

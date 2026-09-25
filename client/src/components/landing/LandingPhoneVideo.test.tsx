@@ -17,18 +17,19 @@ function mockMatchMedia(matches: boolean) {
 }
 
 describe("LandingPhoneVideo", () => {
-  it("tidak request video (file belum ada) — tampilkan statis", () => {
+  it("renders mockup frame with high quality screenshot", () => {
     mockMatchMedia(false);
     const { container } = render(<LandingPhoneVideo />);
     expect(container.querySelector("video")).toBeNull();
-    // Wrapper aria-hidden saat motion aktif — cek via alt, bukan role.
-    expect(screen.getByAltText("Logo UangKu")).toBeTruthy();
+    expect(screen.getByAltText("Screenshot aplikasi UangKu")).toBeTruthy();
+    expect(screen.getByTestId("phone-mockup")).toBeTruthy();
   });
 
-  it("shows static logo when reduced motion is preferred", () => {
+  it("handles reduced motion preference", () => {
     mockMatchMedia(true);
-    render(<LandingPhoneVideo />);
-    expect(document.querySelector("video")).toBeNull();
-    expect(screen.getByRole("img", { name: "Logo UangKu" })).toBeTruthy();
+    const { container } = render(<LandingPhoneVideo />);
+    expect(container.querySelector("video")).toBeNull();
+    expect(screen.getByAltText("Screenshot aplikasi UangKu")).toBeTruthy();
+    expect(screen.getByTestId("phone-mockup")).toBeTruthy();
   });
 });

@@ -138,7 +138,7 @@ from the client are never trusted for ownership.
 - Recurring reminders are server-side monthly templates synced across devices.
   They never create a transaction automatically: the user must confirm each due
   reminder (manual confirmation, idempotent per month).
-- See `docs/architecture.md`, `docs/erd.md`, and `docs/roadmap-p1-p2.md` for deeper design docs.
+- See `docs/architecture.md`, `docs/erd.md`, and `docs/product-brief.md` for deeper design docs.
 
 ## Production Readiness & Deployment
 
@@ -155,7 +155,7 @@ The application is architected for deployment on **Fly.io** (Region: Singapore `
 3. **Internal Networking**: Next.js client standalone container proxies `/api/*` requests to the FastAPI backend via Fly.io private network (`http://uangku-api.internal:8000`).
 4. **Verification Gate**:
    ```bash
-   mise run test    # Server pytest (307+) & Client vitest (161+ across 29 suites)
+   mise run test    # Server pytest (315 tests) & Client vitest (162 tests across 29 suites)
    mise run lint    # Ruff & ESLint
    mise run build   # Next.js standalone build
    ```

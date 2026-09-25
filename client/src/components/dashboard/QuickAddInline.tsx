@@ -12,7 +12,7 @@ import { formatRupiah } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddGuide } from "@/components/dashboard/QuickAddGuide";
-import { CheckCircle2, Check, Plus, X, ArrowRight } from "lucide-react";
+import { Check, Plus, X, ArrowRight } from "lucide-react";
 
 interface SavedTransactionInfo {
   amount: number;
