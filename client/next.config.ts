@@ -1,9 +1,18 @@
 import type { NextConfig } from "next";
 
 // Server-side only — tidak di-expose ke browser
-const serverUrl = process.env.SERVER_URL ?? "http://localhost:8000";
+const serverUrl = process.env.SERVER_URL ?? "http://127.0.0.1:8000";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [
+    "100.123.112.42",
+    "100.123.112.42:3000",
+    "localhost",
+    "localhost:3000",
+    "127.0.0.1",
+    "127.0.0.1:3000",
+    ...(process.env.ALLOWED_DEV_ORIGINS ? process.env.ALLOWED_DEV_ORIGINS.split(",") : []),
+  ],
   // Hanya gunakan standalone output jika bukan di Vercel (misal: Docker / local)
   ...(process.env.VERCEL ? {} : { output: "standalone" }),
   compress: true,
