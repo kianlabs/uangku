@@ -1,6 +1,30 @@
 # UangKu
 
-Personal finance tracking app for managing income and expenses.
+Production-ready personal finance tracker for daily income and expenses — live at https://uangku-web.my.id.
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-uangku--web.my.id-024691?style=for-the-badge&logo=vercel&logoColor=white)](https://uangku-web.my.id)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+
+| Landing | Login |
+|---|---|
+| <img src="docs/screenshots/01-landing.png" width="350" alt="UangKu landing page"/> | <img src="docs/screenshots/02-login.png" width="350" alt="UangKu login page with Google sign-in"/> |
+
+| Dashboard | Budgets |
+|---|---|
+| <img src="docs/screenshots/03-dashboard.png" width="350" alt="UangKu dashboard with balance summary"/> | <img src="docs/screenshots/04-budget.png" width="350" alt="UangKu monthly budget page"/> |
+
+## Highlights
+
+- Live in production: Next.js on Vercel + FastAPI on Render + custom domain with SSL.
+- Auth: server-side sessions (httpOnly, 7-day) plus Google OAuth 2.0 with automatic account linking.
+- Tested: 323 pytest + 177 Vitest + Playwright E2E, with Ruff and ESLint gates.
+- Budgets per category with 75%/90% usage warnings and safe month navigation.
+- Server-side recurring reminders (manual confirm, idempotent per month) synced across devices.
+- Dashboard summary with formatted PDF / CSV export; mobile-first installable PWA.
 
 ## Stack
 
