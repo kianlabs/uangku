@@ -2,13 +2,6 @@
 
 Production-ready personal finance tracker for daily income and expenses — live at https://uangku-web.my.id.
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-uangku--web.my.id-024691?style=for-the-badge&logo=vercel&logoColor=white)](https://uangku-web.my.id)
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-
 | Landing | Login |
 |---|---|
 | <img src="docs/screenshots/01-landing.png" width="350" alt="UangKu landing page"/> | <img src="docs/screenshots/02-login.png" width="350" alt="UangKu login page with Google sign-in"/> |
