@@ -36,6 +36,7 @@ export function UangkuLogo({
           height={markHeight}
           sizes={`${markWidth}px`}
           priority={priority}
+          unoptimized
         />
         <span role="img" aria-label="UangKu" className="text-xl font-bold leading-none tracking-tight">
           <span aria-hidden="true" className="text-[#024691]">
@@ -65,6 +66,7 @@ export function UangkuLogo({
             height={markHeight}
             sizes={`${markWidth}px`}
             priority={priority}
+            unoptimized
           />
         </motion.span>
         <motion.span
