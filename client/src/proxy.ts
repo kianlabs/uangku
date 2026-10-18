@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 // Verified dari server/app/main.py baris 19: session_cookie="session"
 const SESSION_COOKIE = "session";
 
-const protectedPaths = ["/beranda", "/riwayat", "/anggaran", "/pengaturan", "/transaksi"];
+const protectedPaths = ["/beranda", "/dashboard", "/riwayat", "/anggaran", "/pengaturan", "/transaksi"];
 const authPaths = ["/masuk", "/daftar"];
 
 export function proxy(request: NextRequest) {
@@ -52,6 +52,7 @@ export const config = {
   matcher: [
     "/api/:path*",
     "/beranda/:path*",
+    "/dashboard/:path*",
     "/riwayat/:path*",
     "/anggaran/:path*",
     "/pengaturan/:path*",

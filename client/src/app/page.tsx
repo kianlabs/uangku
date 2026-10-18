@@ -5,6 +5,8 @@ import { Clock3, PiggyBank, Sparkles } from "lucide-react";
 import { UangkuLogo } from "@/components/brand/UangkuLogo";
 import { Mascot } from "@/components/brand/Mascot";
 import { LandingPhoneVideo } from "@/components/landing/LandingPhoneVideo";
+import { DemoButton } from "@/components/landing/DemoButton";
+import { Toaster } from "@/components/ui/Toaster";
 
 // Verified dari server/app/main.py: session_cookie="session"
 const SESSION_COOKIE = "session";
@@ -37,12 +39,15 @@ export default async function LandingPage() {
     <div className="min-h-screen flex flex-col bg-canvas">
       <header className="flex items-center justify-between px-4 h-16 max-w-5xl w-full mx-auto">
         <UangkuLogo compact markWidth={32} animated={false} />
-        <Link
-          href="/masuk"
-          className="inline-flex items-center justify-center h-10 px-5 rounded-xl text-sm font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all min-h-[44px]"
-        >
-          Masuk
-        </Link>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <DemoButton variant="nav" />
+          <Link
+            href="/masuk"
+            className="inline-flex items-center justify-center h-10 px-5 rounded-xl text-sm font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all min-h-[44px]"
+          >
+            Masuk
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 pb-16 flex flex-col gap-14">
@@ -63,6 +68,7 @@ export default async function LandingPage() {
               >
                 Mulai gratis
               </Link>
+              <DemoButton variant="hero" />
               <Link
                 href="/masuk"
                 className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all"
@@ -101,15 +107,20 @@ export default async function LandingPage() {
           <p className="text-lg font-bold text-text max-w-xs">
             Siap tahu ke mana perginya uangmu?
           </p>
-          <Link
-            href="/daftar"
-            className="inline-flex items-center justify-center h-12 px-8 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
-          >
-            Buat akun gratis
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <Link
+              href="/daftar"
+              className="inline-flex items-center justify-center h-12 px-8 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+            >
+              Buat akun gratis
+            </Link>
+            <DemoButton variant="hero" />
+          </div>
         </section>
 
       </main>
+
+      <Toaster />
 
       <footer className="border-t border-border py-6 text-center">
         <p className="text-xs text-muted">UangKu — Expense Tracker</p>

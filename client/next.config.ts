@@ -54,6 +54,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/dashboard",
+        destination: "/beranda",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

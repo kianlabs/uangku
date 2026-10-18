@@ -199,3 +199,39 @@ def test_register_open(client):
     """Registrasi terbuka untuk semua orang."""
     r = client.post("/api/v1/auth/register", json={"email": "open@test.com", "password": "pass1234"})
     assert r.status_code == 201
+
+
+def test_demo_login_creates_user_and_seeds_data(client):
+    r = client.post("/api/v1/auth/demo")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["user"]["email"] == "demo@uangku.id"
+    assert "id" in body["user"]
+    assert "Max-Age=604800" in r.headers.get("set-cookie", "")
+
+    # Sesi terpasang: /auth/me harus mengembalikan user demo
+    r_me = client.get("/api/v1/auth/me")
+    assert r_me.status_code == 200
+    assert r_me.json()["email"] == "demo@uangku.id"
+
+    # Transaksi contoh ter-seed
+    test_engine = create_engine(settings.database_url_test)
+    with Session(test_engine) as db:
+        from app.models.transaction import Transaction
+        from sqlalchemy import func, select
+        tx_count = db.scalar(
+            select(func.count(Transaction.id)).where(Transaction.user_id == body["user"]["id"])
+        )
+        assert tx_count is not None and tx_count > 0
+
+
+def test_demo_login_idempotent(client):
+    r1 = client.post("/api/v1/auth/demo")
+    assert r1.status_code == 200
+    user1_id = r1.json()["user"]["id"]
+
+    r2 = client.post("/api/v1/auth/demo")
+    assert r2.status_code == 200
+    user2_id = r2.json()["user"]["id"]
+    assert user1_id == user2_id
+

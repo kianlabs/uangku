@@ -24,3 +24,11 @@ export async function register(email: string, password: string): Promise<User> {
 export async function logout(): Promise<void> {
   await apiFetch<void>("/api/v1/auth/logout", { method: "POST" });
 }
+
+export async function loginDemo(): Promise<User> {
+  const data = await apiFetch<{ user: User }>("/api/v1/auth/demo", {
+    method: "POST",
+  });
+  return data.user;
+}
+

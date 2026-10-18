@@ -15,11 +15,13 @@ vi.mock("next/navigation", () => ({
 const mockGetMe = vi.fn();
 const mockLogin = vi.fn();
 const mockLogout = vi.fn();
+const mockLoginDemo = vi.fn();
 vi.mock("@/lib/auth", () => ({
   getMe: (...args: unknown[]) => mockGetMe(...args),
   login: (...args: unknown[]) => mockLogin(...args),
   logout: (...args: unknown[]) => mockLogout(...args),
   register: vi.fn(),
+  loginDemo: (...args: unknown[]) => mockLoginDemo(...args),
 }));
 
 // Mock preferences — getPreferences fire-and-forget, tidak boleh throw
@@ -34,13 +36,14 @@ vi.mock("@/lib/local-storage", () => ({
 }));
 
 function AuthProbe() {
-  const { user, isAuthenticated, loginUser, logoutUser } = useAuth();
+  const { user, isAuthenticated, loginUser, logoutUser, loginDemoUser } = useAuth();
   return (
     <div>
       <span data-testid="email">{user?.email ?? "none"}</span>
       <span data-testid="authenticated">{String(isAuthenticated)}</span>
       <button onClick={() => loginUser("test@example.com", "password123")}>login</button>
       <button onClick={() => logoutUser()}>logout</button>
+      <button onClick={() => loginDemoUser()}>demo</button>
     </div>
   );
 }
@@ -189,4 +192,35 @@ describe("AuthContext", () => {
       expect(screen.getByTestId("email").textContent).toBe("user2@example.com");
     });
   });
+
+  it("sets user after loginDemoUser and flips isAuthenticated", async () => {
+    mockGetMe.mockRejectedValue(new Error("not logged in"));
+    mockLoginDemo.mockResolvedValue({
+      id: "demo-user",
+      email: "demo@uangku.id",
+      created_at: "2024-01-01",
+    });
+
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("email")).toBeTruthy();
+    });
+
+    expect(screen.getByTestId("email").textContent).toBe("none");
+    expect(screen.getByTestId("authenticated").textContent).toBe("false");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "demo" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("email").textContent).toBe("demo@uangku.id");
+    });
+    expect(screen.getByTestId("authenticated").textContent).toBe("true");
+  });
 });
+

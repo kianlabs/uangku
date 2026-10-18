@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { login, register, logout, getMe } from "../auth";
+import { login, register, logout, getMe, loginDemo } from "../auth";
 import { ApiResponseError } from "../api";
 
 const mockFetch = vi.fn();
@@ -83,3 +83,22 @@ describe("getMe()", () => {
     await expect(getMe()).rejects.toMatchObject({ status: 401 });
   });
 });
+
+describe("loginDemo()", () => {
+  it("mengembalikan user demo saat berhasil", async () => {
+    mockFetch.mockReturnValueOnce(
+      mockOk(200, { user: { id: "demo-id", email: "demo@uangku.id", created_at: "" } })
+    );
+    const user = await loginDemo();
+    expect(user.email).toBe("demo@uangku.id");
+    expect(user.id).toBe("demo-id");
+  });
+
+  it("melempar ApiResponseError saat server gagal", async () => {
+    mockFetch.mockReturnValueOnce(
+      mockOk(500, { error: { code: "DEMO_ERROR", message: "Server error." } })
+    );
+    await expect(loginDemo()).rejects.toBeInstanceOf(ApiResponseError);
+  });
+});
+

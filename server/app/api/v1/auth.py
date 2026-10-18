@@ -1,18 +1,23 @@
 from __future__ import annotations
 
+import secrets
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import get_current_user, get_db
 from app.core.errors import DomainError, EmailTakenError, InvalidCredentialsError
 from app.core.rate_limit import limiter
+from app.models.category import Category
+from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, UserResponse
-from app.services.auth import authenticate_user, register_user
+from app.services.auth import _seed_default_categories, authenticate_user, register_user
+from app.services.demo import seed_demo_data
 from app.services.google_auth import (
     build_google_auth_url,
     exchange_google_code,
@@ -63,6 +68,44 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
                 "message": "Invalid email or password.",
             },
         )
+    _start_session(request, user)
+    return {"user": UserResponse.model_validate(user).model_dump(mode="json")}
+
+
+DEMO_EMAIL = "demo@uangku.id"
+
+
+@router.post("/demo")
+@limiter.limit("10/minute")
+def demo_login(request: Request, db: Session = Depends(get_db)):
+    """Masuk instan menggunakan akun demo publik dengan data contoh realistis."""
+    user = db.scalar(select(User).where(User.email == DEMO_EMAIL))
+    if not user:
+        try:
+            user = register_user(db, DEMO_EMAIL, secrets.token_urlsafe(32))
+        except EmailTakenError:
+            user = db.scalar(select(User).where(User.email == DEMO_EMAIL))
+
+    if not user:
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "DEMO_USER_ERROR", "message": "Gagal menyiapkan akun demo."},
+        )
+
+    # Pastikan user demo memiliki data transaksi contoh realistis
+    has_transactions = db.scalar(
+        select(Transaction.id).where(Transaction.user_id == user.id).limit(1)
+    )
+    if not has_transactions:
+        has_cats = db.scalar(select(Category.id).where(Category.user_id == user.id).limit(1))
+        if not has_cats:
+            _seed_default_categories(db, user.id)
+            db.commit()
+        try:
+            seed_demo_data(db, user)
+        except ValueError:
+            pass
+
     _start_session(request, user)
     return {"user": UserResponse.model_validate(user).model_dump(mode="json")}
 

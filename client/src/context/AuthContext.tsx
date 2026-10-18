@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getMe, login, logout, register } from "@/lib/auth";
+import { getMe, login, loginDemo, logout, register } from "@/lib/auth";
 import { getPreferences } from "@/lib/preferences";
 import { clearLocalCache, seedLocalStorageFromPreferences } from "@/lib/local-storage";
 import type { User } from "@/lib/types";
@@ -21,6 +21,7 @@ interface AuthContextValue {
   loginUser: (email: string, password: string) => Promise<void>;
   registerUser: (email: string, password: string) => Promise<void>;
   logoutUser: () => Promise<void>;
+  loginDemoUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -126,6 +127,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Preferences kosong untuk user baru — tidak perlu hydrate, localStorage sudah default
   }, []);
 
+  const loginDemoUser = useCallback(async () => {
+    const u = await loginDemo();
+    unauthorizedRef.current = false;
+    clearLocalCache();
+    setUser(u);
+    window.dispatchEvent(new CustomEvent("uangku:auth-success"));
+    getPreferences()
+      .then((prefs) => seedLocalStorageFromPreferences(prefs))
+      .catch(() => {});
+  }, []);
+
   const logoutUser = useCallback(async () => {
     await logout();
     clearLocalCache();
@@ -171,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginUser,
         registerUser,
         logoutUser,
+        loginDemoUser,
       }}
     >
       {children}
