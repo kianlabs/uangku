@@ -118,3 +118,31 @@ export async function updateTransaction(
   });
 }
 
+export interface ReceiptItem {
+  name: string;
+  qty: number;
+  price: number;
+}
+
+export interface ReceiptData {
+  merchant: string;
+  total: number;
+  date: string;
+  category: string;
+  items: ReceiptItem[];
+}
+
+export interface ScanReceiptResponse {
+  success: boolean;
+  data: ReceiptData;
+}
+
+export async function scanReceipt(file: File): Promise<ScanReceiptResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiFetch<ScanReceiptResponse>("/api/v1/transactions/scan-receipt", {
+    method: "POST",
+    body: formData,
+  });
+}
+

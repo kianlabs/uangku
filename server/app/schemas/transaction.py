@@ -121,3 +121,22 @@ class PaginationMeta(BaseModel):
 class TransactionListResponse(BaseModel):
     items: list[TransactionResponse]
     pagination: PaginationMeta
+
+
+class ReceiptItem(BaseModel):
+    name: str
+    qty: float = 1.0
+    price: float = 0.0
+
+
+class ReceiptData(BaseModel):
+    merchant: str
+    total: float
+    date: str
+    category: str
+    items: list[ReceiptItem] = Field(default_factory=list)
+
+
+class ScanReceiptResponse(BaseModel):
+    success: bool = True
+    data: ReceiptData

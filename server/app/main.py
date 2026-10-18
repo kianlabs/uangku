@@ -18,10 +18,12 @@ from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.export import router as export_router
 from app.api.v1.recurring import router as recurring_router
 from app.api.v1.transactions import router as transactions_router
+from app.api.v1.transactions import scan_receipt
 from app.api.v1.user import router as user_router
 from app.core.config import settings
 from app.core.deps import get_db
 from app.core.rate_limit import limiter
+from app.schemas.transaction import ScanReceiptResponse
 
 logger = logging.getLogger("uangku")
 
@@ -195,6 +197,15 @@ app.include_router(transactions_router, prefix="/api/v1")
 app.include_router(export_router, prefix="/api/v1")
 app.include_router(recurring_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
+
+# Route alias untuk /api/transactions/scan-receipt
+app.add_api_route(
+    "/api/transactions/scan-receipt",
+    scan_receipt,
+    methods=["POST"],
+    response_model=ScanReceiptResponse,
+    tags=["transactions"],
+)
 
 
 @app.get("/health")

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, MotionConfig } from "motion/react";
 import { Mascot } from "@/components/brand/Mascot";
 import { QuickAddInline } from "@/components/dashboard/QuickAddInline";
-import { X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 
 interface QuickAddModalProps {
   open: boolean;
@@ -123,15 +123,25 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
             onClose={onClose}
           />
 
-          {/* Opsi Form Lengkap (hanya saat form aktif) */}
+          {/* Opsi Form & Scan Struk (hanya saat form aktif) */}
           {!saved && (
-            <Link
-              href="/transaksi/tambah"
-              onClick={onClose}
-              className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline pt-1 pb-1 transition-colors min-h-[32px] flex items-center"
-            >
-              Atau gunakan formulir manual lengkap →
-            </Link>
+            <div className="flex items-center justify-between w-full pt-1 px-1 text-xs">
+              <Link
+                href="/transaksi/tambah?scan=true"
+                onClick={onClose}
+                className="inline-flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400 hover:underline min-h-[32px]"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Scan Struk (AI)</span>
+              </Link>
+              <Link
+                href="/transaksi/tambah"
+                onClick={onClose}
+                className="font-medium text-muted hover:text-text hover:underline min-h-[32px] flex items-center"
+              >
+                Formulir manual →
+              </Link>
+            </div>
           )}
         </motion.div>
       </div>

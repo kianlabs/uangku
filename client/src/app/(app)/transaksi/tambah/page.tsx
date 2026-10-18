@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { createTransaction } from "@/lib/transactions";
+import { ArrowDown, ArrowUp, Camera, Loader2, Receipt } from "lucide-react";
+import { createTransaction, scanReceipt, type ReceiptData } from "@/lib/transactions";
 import { listCategories, createCategory } from "@/lib/categories";
 import { ApiResponseError } from "@/lib/api";
 import { parseQuickAdd } from "@/lib/quick-add-parser";
@@ -54,6 +54,83 @@ export default function TambahTransaksiPage() {
   }>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // AI Receipt OCR Scan Struk
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedReceipt, setScannedReceipt] = useState<ReceiptData | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("scan=true")) {
+      fileInputRef.current?.click();
+    }
+  }, []);
+
+  async function handleScanFile(file: File) {
+    setIsScanning(true);
+    setServerError(null);
+    try {
+      const res = await scanReceipt(file);
+      if (res && res.success && res.data) {
+        const d = res.data;
+        setScannedReceipt(d);
+        if (d.total) {
+          setAmount(Math.round(d.total).toString());
+        }
+        if (d.merchant) {
+          setDescription(d.merchant);
+        }
+        if (d.date) {
+          setDate(d.date);
+        }
+        setType("expense");
+
+        if (d.category) {
+          const normScanCat = normalizeCategoryName(d.category);
+          const found = categories.find(
+            (c) => normalizeCategoryName(c.name) === normScanCat
+          );
+          if (found) {
+            setCategoryId(found.id);
+            setPendingCategoryName(null);
+          } else {
+            const partial = categories.find(
+              (c) =>
+                normalizeCategoryName(c.name).includes(normScanCat) ||
+                normScanCat.includes(normalizeCategoryName(c.name))
+            );
+            if (partial) {
+              setCategoryId(partial.id);
+              setPendingCategoryName(null);
+            } else {
+              setPendingCategoryName(d.category);
+            }
+          }
+        }
+
+        setErrors((prev) => ({ ...prev, amount: undefined }));
+        showToast("Struk berhasil dianalisis!", "success");
+        haptic.success();
+      }
+    } catch (err) {
+      haptic.error();
+      const msg =
+        err instanceof ApiResponseError ? err.message : "Gagal menganalisis struk.";
+      showToast(msg, "error");
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleScanFile(file);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -349,9 +426,75 @@ export default function TambahTransaksiPage() {
 
           {/* Amount - focal point */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="amount" className="text-xs font-semibold text-muted uppercase tracking-wide">
-              Nominal
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="amount" className="text-xs font-semibold text-muted uppercase tracking-wide">
+                Nominal
+              </label>
+              <button
+                type="button"
+                data-testid="scan-receipt-btn"
+                onClick={() => {
+                  haptic.tap();
+                  fileInputRef.current?.click();
+                }}
+                disabled={isScanning}
+                aria-label="Scan Struk (AI)"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 active:scale-95 transition-all disabled:opacity-50 select-none"
+              >
+                {isScanning ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    <span>Menganalisis struk...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Scan Struk (AI)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+              data-testid="receipt-file-input"
+            />
+
+            {isScanning && (
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-200 animate-pulse">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0 text-amber-600 dark:text-amber-400" />
+                <span className="font-medium">Menganalisis struk...</span>
+              </div>
+            )}
+
+            {scannedReceipt && !isScanning && (
+              <div className="flex items-start justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-text">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                    <Receipt className="w-4 h-4" />
+                    <span>Struk: {scannedReceipt.merchant}</span>
+                  </div>
+                  <span className="text-muted">
+                    Total: Rp {groupThousands(Math.round(scannedReceipt.total).toString())}
+                    {scannedReceipt.items && scannedReceipt.items.length > 0 && ` · ${scannedReceipt.items.length} item`}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setScannedReceipt(null)}
+                  className="text-muted hover:text-text p-1 text-sm font-bold leading-none"
+                  aria-label="Tutup info struk"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-semibold text-muted">Rp</span>
               <input

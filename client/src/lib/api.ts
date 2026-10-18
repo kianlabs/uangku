@@ -80,7 +80,12 @@ export async function apiFetch<T>(
   try {
     // Content-Type JSON hanya bila ada body (hindari preflight).
     const headers: Record<string, string> = { ...(options.headers as Record<string, string> | undefined) };
-    if (rest.body != null && !("Content-Type" in headers) && !("content-type" in headers)) {
+    if (
+      rest.body != null &&
+      !(typeof FormData !== "undefined" && rest.body instanceof FormData) &&
+      !("Content-Type" in headers) &&
+      !("content-type" in headers)
+    ) {
       headers["Content-Type"] = "application/json";
     }
     response = await fetch(path, {

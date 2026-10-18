@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
     google_redirect_uri: str = ""
+    # Gemini AI API Key for Receipt OCR
+    gemini_api_key: str = ""
     # Database connection pool settings (tuned for production / serverless Postgres)
     db_pool_size: int = 5
     db_max_overflow: int = 10

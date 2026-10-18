@@ -3,7 +3,16 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
@@ -18,6 +27,8 @@ from app.models.user import User
 from app.schemas.category import CategoryType
 from app.schemas.transaction import (
     PaginationMeta,
+    ReceiptData,
+    ScanReceiptResponse,
     TransactionCreateRequest,
     TransactionDetailResponse,
     TransactionListResponse,
@@ -25,6 +36,7 @@ from app.schemas.transaction import (
     TransactionUpdatedResponse,
     TransactionUpdateRequest,
 )
+from app.services.receipt import process_receipt_image
 from app.services.transaction import (
     create_transaction,
     delete_transaction,
@@ -190,3 +202,42 @@ def delete_transaction_endpoint(
             detail={"code": "NOT_FOUND", "message": "Transaction not found."},
         )
     return Response(status_code=204)
+
+
+@router.post("/scan-receipt", response_model=ScanReceiptResponse)
+@limiter.limit("30/minute")
+async def scan_receipt(
+    request: Request,
+    file: UploadFile = File(...),
+):
+    """
+    Ekstraksi data struk belanja dengan AI OCR multimodal (Gemini) atau fallback cerdas.
+    Menerima file gambar struk dan mengembalikan data transaksi terstruktur.
+    """
+    try:
+        content = await file.read()
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "FILE_READ_ERROR", "message": f"Gagal membaca file: {exc}"},
+        ) from exc
+
+    if not content:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "EMPTY_FILE", "message": "File struk tidak boleh kosong."},
+        )
+
+    mime_type = file.content_type or "image/jpeg"
+    filename = file.filename or "receipt.jpg"
+
+    extracted = await process_receipt_image(
+        image_bytes=content,
+        mime_type=mime_type,
+        filename=filename,
+    )
+
+    return ScanReceiptResponse(
+        success=True,
+        data=ReceiptData.model_validate(extracted),
+    )
