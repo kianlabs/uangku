@@ -8,6 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 Production-ready, mobile-first personal finance tracker for daily income, expense tracking, and intelligent budgeting. Live in production with custom domain, automated CI/CD, and AI-driven document intelligence.
@@ -112,17 +113,36 @@ flowchart TD
 
 ## Quickstart & Local Development
 
-### 1. Prerequisites
-- [mise-en-place](https://mise.jdx.dev/) (automatically provisions Python 3.13, Node.js 24, and tools)
-- Local PostgreSQL 16 server running on default port `5432`
+### Option A: Docker Compose (Fastest)
 
-### 2. Installation & Database Setup
+Launch the entire stack (PostgreSQL 16, FastAPI backend, and Next.js frontend) in a single command:
 
 ```bash
 # Clone the repository
 git clone https://github.com/kianlabs/uangku.git
 cd uangku
 
+# Setup environment
+cp .env.example .env
+
+# Spin up services
+docker compose up -d --build
+```
+- **Client (Web & PWA):** [http://localhost:3000](http://localhost:3000)
+- **FastAPI API Server:** [http://localhost:8000](http://localhost:8000)
+- **Interactive Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+### Option B: Local Development via mise
+
+#### 1. Prerequisites
+- [mise-en-place](https://mise.jdx.dev/) (automatically provisions Python 3.13, Node.js 24, and tools)
+- Local PostgreSQL 16 server running on default port `5432`
+
+#### 2. Installation & Database Setup
+
+```bash
 # Install runtimes via mise
 mise install
 
@@ -140,7 +160,7 @@ uv run alembic upgrade head
 cd ..
 ```
 
-### 3. Run Development Servers
+#### 3. Run Development Servers
 
 ```bash
 # Start both Next.js frontend and FastAPI backend concurrently
