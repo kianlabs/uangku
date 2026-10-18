@@ -64,14 +64,14 @@ export default async function LandingPage() {
             <div className="landing-reveal landing-delay-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 href="/daftar"
-                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all w-full sm:w-auto"
               >
                 Mulai gratis
               </Link>
               <DemoButton variant="hero" />
               <Link
                 href="/masuk"
-                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all"
+                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all w-full sm:w-auto"
               >
                 Masuk
               </Link>

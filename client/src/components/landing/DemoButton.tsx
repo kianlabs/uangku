@@ -57,7 +57,7 @@ export function DemoButton({
         disabled={isLoading}
         aria-busy={isLoading}
         aria-label="Coba Demo Instan"
-        className={`inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold text-accent bg-accent/10 hover:bg-accent/20 active:scale-[0.98] transition-all min-h-[44px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+        className={`inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold text-accent bg-accent/10 hover:bg-accent/20 active:scale-[0.98] transition-all min-h-[36px] sm:min-h-[44px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0 ${className}`}
       >
         {isLoading ? (
           <span
@@ -79,7 +79,7 @@ export function DemoButton({
       disabled={isLoading}
       aria-busy={isLoading}
       aria-label="Coba Demo Instan tanpa mendaftar"
-      className={`inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl font-semibold text-base transition-all active:scale-[0.98] bg-accent/10 hover:bg-accent/15 border border-accent/30 text-accent hover:border-accent/60 shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed min-h-[48px] ${className}`}
+      className={`inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl font-semibold text-base transition-all active:scale-[0.98] bg-accent/10 hover:bg-accent/15 border border-accent/30 text-accent hover:border-accent/60 shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed min-h-[48px] w-full sm:w-auto ${className}`}
     >
       {isLoading ? (
         <span

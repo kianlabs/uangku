@@ -473,25 +473,43 @@ export default function TambahTransaksiPage() {
             )}
 
             {scannedReceipt && !isScanning && (
-              <div className="flex items-start justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-text">
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
-                    <Receipt className="w-4 h-4" />
-                    <span>Struk: {scannedReceipt.merchant}</span>
+              <div className="flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-text shadow-xs transition-all">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+                      <Receipt className="w-4 h-4 shrink-0" />
+                      <span className="truncate">Struk: {scannedReceipt.merchant}</span>
+                    </div>
+                    <span className="text-muted text-[11px] sm:text-xs">
+                      Total: Rp {groupThousands(Math.round(scannedReceipt.total).toString())}
+                      {scannedReceipt.items && scannedReceipt.items.length > 0 && ` · ${scannedReceipt.items.length} item`}
+                    </span>
                   </div>
-                  <span className="text-muted">
-                    Total: Rp {groupThousands(Math.round(scannedReceipt.total).toString())}
-                    {scannedReceipt.items && scannedReceipt.items.length > 0 && ` · ${scannedReceipt.items.length} item`}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setScannedReceipt(null)}
+                    className="text-muted hover:text-text p-1.5 rounded-lg hover:bg-surface/50 text-sm font-bold leading-none shrink-0 transition-colors"
+                    aria-label="Tutup info struk"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setScannedReceipt(null)}
-                  className="text-muted hover:text-text p-1 text-sm font-bold leading-none"
-                  aria-label="Tutup info struk"
-                >
-                  ✕
-                </button>
+
+                {scannedReceipt.items && scannedReceipt.items.length > 0 && (
+                  <div className="mt-1 pt-2 border-t border-emerald-500/15 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {scannedReceipt.items.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface/70 border border-emerald-500/20 text-[11px] text-text"
+                      >
+                        <span className="truncate max-w-[130px] sm:max-w-[200px]">{item.name}</span>
+                        {item.price ? (
+                          <span className="text-muted font-mono text-[10px]">Rp {groupThousands(Math.round(item.price).toString())}</span>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
