@@ -1,12 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session
 
 from app.core import deps
 from app.core.config import settings
 from app.main import app
-from app.models import Base, Category, User  # noqa: F401
+from app.models import Base, Category, Transaction, User  # noqa: F401
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -217,8 +217,6 @@ def test_demo_login_creates_user_and_seeds_data(client):
     # Transaksi contoh ter-seed
     test_engine = create_engine(settings.database_url_test)
     with Session(test_engine) as db:
-        from app.models.transaction import Transaction
-        from sqlalchemy import func, select
         tx_count = db.scalar(
             select(func.count(Transaction.id)).where(Transaction.user_id == body["user"]["id"])
         )

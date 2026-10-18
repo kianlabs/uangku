@@ -64,18 +64,21 @@ export default async function LandingPage() {
             <div className="landing-reveal landing-delay-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 href="/daftar"
-                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all w-full sm:w-auto"
+                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-accent text-accent-ink text-base font-semibold border border-transparent shadow-sm hover:bg-accent/90 active:scale-[0.98] transition-all w-full sm:w-auto"
               >
                 Mulai gratis
               </Link>
               <DemoButton variant="hero" />
+            </div>
+            <p className="landing-reveal landing-delay-2 text-xs text-muted">
+              Sudah punya akun?{" "}
               <Link
                 href="/masuk"
-                className="inline-flex items-center justify-center h-12 px-7 rounded-xl bg-surface border border-border text-base font-semibold text-text hover:bg-surface-muted active:scale-[0.98] transition-all w-full sm:w-auto"
+                className="font-semibold text-text hover:text-accent underline underline-offset-4 transition-colors"
               >
-                Masuk
+                Masuk di sini
               </Link>
-            </div>
+            </p>
           </div>
           <div className="landing-reveal landing-delay-1 landing-phone-float">
             <LandingPhoneVideo />
@@ -107,10 +110,10 @@ export default async function LandingPage() {
           <p className="text-lg font-bold text-text max-w-xs">
             Siap tahu ke mana perginya uangmu?
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-center w-full sm:w-auto">
             <Link
               href="/daftar"
-              className="inline-flex items-center justify-center h-12 px-8 rounded-xl bg-accent text-accent-ink text-base font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all"
+              className="inline-flex items-center justify-center h-12 px-8 rounded-xl bg-accent text-accent-ink text-base font-semibold border border-transparent shadow-sm hover:bg-accent/90 active:scale-[0.98] transition-all w-full sm:w-auto"
             >
               Buat akun gratis
             </Link>
