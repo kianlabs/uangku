@@ -1,231 +1,232 @@
-# UangKu
+# UangKu — Modern Personal Finance Tracker & AI Receipt Assistant
 
-Production-ready personal finance tracker for daily income and expenses — live at https://uangku-web.my.id.
+[![CI](https://github.com/kianlabs/uangku/actions/workflows/ci.yml/badge.svg)](https://github.com/kianlabs/uangku/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-uangku--web.my.id-024691?logo=vercel&logoColor=white)](https://uangku-web.my.id)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript 5](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-| Landing | Login |
-|---|---|
-| <img src="docs/screenshots/01-landing.png" width="350" alt="UangKu landing page"/> | <img src="docs/screenshots/02-login.png" width="350" alt="UangKu login page with Google sign-in"/> |
+Production-ready, mobile-first personal finance tracker for daily income, expense tracking, and intelligent budgeting. Live in production with custom domain, automated CI/CD, and AI-driven document intelligence.
 
-| Dashboard | Budgets |
-|---|---|
-| <img src="docs/screenshots/03-dashboard.png" width="350" alt="UangKu dashboard with balance summary"/> | <img src="docs/screenshots/04-budget.png" width="350" alt="UangKu monthly budget page"/> |
+🌐 **Production URL:** [https://uangku-web.my.id](https://uangku-web.my.id)
 
-## Highlights
+---
 
-- Live in production: Next.js on Vercel + FastAPI on Render + custom domain with SSL.
-- Auth: server-side sessions (httpOnly, 7-day) plus Google OAuth 2.0 with automatic account linking.
-- Tested: 323 pytest + 177 Vitest + Playwright E2E, with Ruff and ESLint gates.
-- Budgets per category with 75%/90% usage warnings and safe month navigation.
-- Server-side recurring reminders (manual confirm, idempotent per month) synced across devices.
-- Dashboard summary with formatted PDF / CSV export; mobile-first installable PWA.
+## Visual Showcase
 
-## Stack
+| Landing Page | Google OAuth & Session Login |
+|:---:|:---:|
+| <img src="docs/screenshots/01-landing.png" width="400" alt="UangKu landing page"/> | <img src="docs/screenshots/02-login.png" width="400" alt="UangKu login page with Google sign-in"/> |
 
-- **Client**: Next.js 16, React 19, TypeScript 5, Tailwind CSS 4
-- **Server**: FastAPI 0.141, SQLAlchemy 2, Pydantic 2, PostgreSQL 16, Alembic
-- **Auth**: server-side sessions (signed cookie, Argon2 password hashing)
-- **Testing**: pytest (server), Vitest (client)
-- **Tooling**: mise (dev environment), Ruff (Python lint), ESLint (client lint)
+| Dashboard & Metrics | Monthly Budget Engine |
+|:---:|:---:|
+| <img src="docs/screenshots/03-dashboard.png" width="400" alt="UangKu dashboard with balance summary"/> | <img src="docs/screenshots/04-budget.png" width="400" alt="UangKu monthly budget page"/> |
 
-## Features
+---
 
-- Email registration/login with server-side sessions
-- Income & expense transactions (create, update, delete, filter, paginate)
-- Categories per type (income/expense) with ownership isolation; transactions
-  can be bulk-moved to another category before deleting a used one
-  (`POST /api/v1/categories/{id}/transfer`); the last category of a type
-  cannot be deleted
-- Monthly budgets per category with 75%/90% usage warnings; deletion is
-  explicit with confirmation (clearing the input only cancels the edit);
-  month navigation (‹ ›) appears once a budget exists and stops at the
-  first budget's month — months before it are not browsable; past months
-  show only budgeted categories (no empty forms); auto-refresh on
-  transaction changes
-- Online-only mutation flows: network failures show a clear retryable error
-  and are never queued on the device; the server is the single source of truth
-- Global toast notifications (success/error/info) for user feedback
-- Monthly recurring transaction reminders (server-side, synced across devices):
-  edit, pause/resume, income or expense, manual confirm (one transaction/month)
-- Onboarding tour + Mochi mascot guide (personal finance agent)
-- Indicator Spotlight Tour: interaktif menyorot metrik utama Beranda (Safe-to-Spend, Saldo Keseluruhan vs Sisa Saldo Aman, Status Anggaran, Streak) dengan cutout fokus jernih bebas blur
-- Monthly Wrap-up & Evaluasi Mochi: kilas balik finansial bulanan dengan rasio tabungan, kategori belanja teratas, skor kepatuhan anggaran, narasi evaluasi cerdas Mochi, dan salin ringkasan teks berformat
-- Halaman Anggaran Teroptimasi: render instan tanpa flicker, debounced autosave 400ms, bottom sheet interaktif, dan navigasi bulan aman
-- Dashboard monthly summary; export as formatted PDF (2.000-row cap) or CSV
-- Mobile-first UI with bottom navigation
+## Key Highlights & Featured Innovations
 
-## Prerequisites
+- 🧾 **AI Receipt Scanner (Vision OCR)**: Capture receipts directly using a smartphone camera or file upload (`POST /api/v1/transactions/scan-receipt`). Powered by Vision LLM / OCR parsing, it automatically extracts the merchant name, transaction date, total amount, and predicts the expense category with instant form pre-filling in both `QuickAddModal` and the Add Transaction page.
+- 🤖 **Mochi Mascot Guide & Monthly Wrap-Up**: Interactive personal finance agent offering retrospective monthly summaries, savings ratio tracking, top spending categories, and AI-driven budget adherence insights.
+- 🎯 **Indicator Spotlight Tour**: Guided onboarding spotlighting essential metrics—Safe-to-Spend calculations, overall balance vs. safe cushion, category budget pacing, and daily recording streaks.
+- 📊 **Dynamic Budgeting Engine**: Real-time budget tracking with 75% and 90% threshold warning notifications, 400ms debounced autosave, zero-flicker UI, and strict chronological month navigation.
+- 🔄 **Idempotent Recurring Reminders**: Server-side monthly transaction templates synchronized across devices, requiring explicit user confirmation before recording to prevent accidental duplicate entries.
+- 🔐 **Enterprise Auth & Security**: Secure server-side sessions (`httpOnly`, `SameSite=lax`, 7-day TTL, Argon2id hashing) alongside Google OAuth 2.0 with automatic account linking and strict user-scoped row-level queries.
+- 📄 **Export & Offline-Resilient PWA**: Formatted monthly PDF financial statements (2,000-row cap) and raw CSV export; installable as a mobile-first Progressive Web App.
 
-- `mise` (manages Node.js 24, Python 3.13, PostgreSQL — see `mise.toml`)
-- PostgreSQL running locally with databases `uangku` and `uangku_test`
+---
 
-## Setup
+## System Architecture
 
-```sh
+```mermaid
+flowchart TD
+    subgraph ClientLayer["Frontend Client (Next.js 16 App Router)"]
+        UI["Web / Mobile PWA (React 19 + Tailwind 4)"]
+        Scanner["AI Receipt Scanner (Camera / Upload UI)"]
+        Dashboard["Financial Dashboard & Mochi Guide"]
+        Proxy["Next.js API Rewrites (/api/*)"]
+    end
+
+    subgraph ServerLayer["Backend API (FastAPI & Python 3.13)"]
+        Auth["Session Auth & Google OAuth 2.0"]
+        TxService["Transaction & Budget Engine"]
+        VisionService["Vision OCR / Receipt Extraction Engine"]
+        ExportService["PDF & CSV Export Engine"]
+        ReminderService["Recurring Monthly Reminders"]
+    end
+
+    subgraph DataLayer["Persistence & External Services"]
+        DB[("PostgreSQL 16 Database")]
+        GoogleAuth["Google Cloud Identity (OAuth 2.0)"]
+        VisionAI["Gemini / Vision LLM Gateway"]
+    end
+
+    UI --> Proxy
+    Scanner --> Proxy
+    Dashboard --> Proxy
+    Proxy -->|Reverse Proxy / HTTP| ServerLayer
+
+    Auth -->|OAuth 2.0 Verification| GoogleAuth
+    Auth -->|User & Session Data| DB
+    TxService -->|ACID Transactions| DB
+    ReminderService -->|Sync Reminders| DB
+    VisionService -->|Multipart Image / Prompt| VisionAI
+    VisionAI -->|Parsed JSON: Merchant, Date, Amount| VisionService
+```
+
+### Architectural Principles
+- **Strict User Scoping**: All database queries are explicitly filtered by `current_user.id`. Client-supplied resource IDs are never trusted for ownership.
+- **Typed Error Envelope**: The service layer raises domain exceptions (`DomainError`), mapped by FastAPI exception handlers into a consistent contract:
+  ```json
+  {
+    "error": {
+      "code": "INSUFFICIENT_FUNDS",
+      "message": "Saldo tidak mencukupi untuk transaksi ini"
+    }
+  }
+  ```
+- **Single Source of Truth**: Mutations are online-only; network failures prompt retryable alerts rather than desynchronizing local optimistic state.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Details |
+|---|---|---|
+| **Frontend Framework** | [Next.js 16](https://nextjs.org/) | App Router, Server Components, Route Rewrites |
+| **UI Library** | [React 19](https://react.dev/) | React Server Components, Suspense, Hooks |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) | Modern CSS tokens, dark/light responsive layout |
+| **Backend Framework** | [FastAPI 0.141](https://fastapi.tiangolo.com/) | Asynchronous Python REST API, ASGI |
+| **Runtime & Language** | Python 3.13 & Node.js 24 | Managed via [mise](https://mise.jdx.dev/) |
+| **Database & ORM** | [PostgreSQL 16](https://www.postgresql.org/) + [SQLAlchemy 2](https://www.sqlalchemy.org/) | Relational database, Async Alembic migrations |
+| **Data Validation** | [Pydantic v2](https://docs.pydantic.dev/) | Strict boundary and request/response typing |
+| **Authentication** | Argon2 + Google OAuth 2.0 | Signed `httpOnly` cookies, Google Identity Provider |
+| **Testing** | pytest, Vitest, Playwright | 320+ backend unit tests, 175+ frontend tests, E2E |
+| **Infrastructure** | Vercel + Render | Custom domain SSL, Dockerized container deployment |
+
+---
+
+## Quickstart & Local Development
+
+### 1. Prerequisites
+- [mise-en-place](https://mise.jdx.dev/) (automatically provisions Python 3.13, Node.js 24, and tools)
+- Local PostgreSQL 16 server running on default port `5432`
+
+### 2. Installation & Database Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/kianlabs/uangku.git
+cd uangku
+
+# Install runtimes via mise
 mise install
-cp server/.env.example server/.env   # adjust if needed, never commit .env
+
+# Setup environment files
+cp server/.env.example server/.env
+cp client/.env.example client/.env.local
+
+# Create local PostgreSQL databases
 createdb uangku
 createdb uangku_test
-cd server && uv run alembic upgrade head && cd ..
+
+# Run database schema migrations
+cd server
+uv run alembic upgrade head
+cd ..
+```
+
+### 3. Run Development Servers
+
+```bash
+# Start both Next.js frontend and FastAPI backend concurrently
 mise run dev
 ```
 
-Client: http://localhost:3000
-Server: http://localhost:8000
-API docs: http://localhost:8000/docs
-Health: http://localhost:8000/health
+The application is now accessible at:
+- **Client (Web & PWA):** [http://localhost:3000](http://localhost:3000)
+- **FastAPI API Server:** [http://localhost:8000](http://localhost:8000)
+- **Interactive Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **API Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
 
-The client proxies `/api/*` to the server via Next.js rewrites
-(`SERVER_URL`, see `client/next.config.ts`), so no CORS setup is needed.
+*(The frontend automatically proxies `/api/*` requests to port `8000` via Next.js rewrites, eliminating CORS setup in local development).*
 
-## Commands
+---
 
-```sh
-mise run dev     # client + server together
-mise run test    # server pytest + client vitest
-mise run lint    # server ruff + client eslint
-mise run build   # client production build
-mise run test:e2e  # Playwright E2E (butuh dev server running)
+## Verification & Testing Suite
+
+Execute the comprehensive automated test suite across both stacks:
+
+```bash
+# Run both backend pytest and frontend vitest suites
+mise run test
+
+# Run code formatters and linters (Ruff + ESLint)
+mise run lint
+
+# Run End-to-End Playwright test suite (dev server must be running)
+mise run test:e2e
+
+# Execute production client build
+mise run build
 ```
 
-Direct equivalents:
-
-```sh
+Individual service commands:
+```bash
+# Backend pytest & linter
 cd server && uv run pytest && uv run ruff check .
+
+# Frontend vitest, linter, & build
 cd client && npm test && npm run lint && npm run build
-cd client && npx playwright test        # E2E
-cd client && npx playwright install     # install browsers (first time)
 ```
 
-## Environment variables
+---
 
-| Variable | Example | Notes |
-|---|---|---|
-| `DATABASE_URL` | `postgresql+psycopg://.../uangku` | dev database |
-| `DATABASE_URL_TEST` | `postgresql+psycopg://.../uangku_test` | pytest database |
-| `SECRET_KEY` | random string, min 32 chars | **required in production** (`APP_ENV=production` refuses default and enforces min 32 chars) |
-| `HTTPS_ONLY` | `false` | must be `true` in production (enforced) or session cookies go over HTTP |
-| `SERVER_URL` | `http://localhost:8000` | client env (`client/.env.local`, see `client/.env.example`), rewrite target (server-side only) |
-| `APP_ENV` | `development` | set `production` in prod to enable guards |
-| `TRUSTED_PROXY_IPS` | `10.0.0.1` | comma-separated IPs of trusted reverse proxies; enables `X-Forwarded-For` reading for rate limiting. Loopback peers are always trusted. Catatan: di belakang proxy terkelola (Render/Vercel) peer bukan loopback dan IP-nya dinamis — semua user berbagi satu bucket rate-limit; untuk skala keluarga tidak masalah |
-| `GOOGLE_CLIENT_ID` | `...apps.googleusercontent.com` | Client ID OAuth 2.0 dari Google Cloud Console (kosong = nonaktif) |
-| `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | Client Secret OAuth 2.0 dari Google Cloud Console |
-| `GOOGLE_REDIRECT_URI` | `http://localhost:3000/api/v1/auth/google/callback` | (Opsional) Override redirect URI callback Google |
+## Environment Configuration
 
-## Architecture
+| Variable | Scope | Example | Description |
+|---|---|---|---|
+| `DATABASE_URL` | Server | `postgresql+psycopg://user:pass@localhost:5432/uangku` | Primary application database |
+| `DATABASE_URL_TEST` | Server | `postgresql+psycopg://user:pass@localhost:5432/uangku_test` | Dedicated pytest database |
+| `SECRET_KEY` | Server | `random_string_min_32_characters` | Required session signing secret |
+| `HTTPS_ONLY` | Server | `false` (dev) / `true` (prod) | Enforces SSL flags on session cookies |
+| `SERVER_URL` | Client | `http://localhost:8000` | Target URL for Next.js server-side API proxying |
+| `APP_ENV` | Server | `development` / `production` | Enforces production security guards |
+| `TRUSTED_PROXY_IPS` | Server | `10.0.0.1` | Reverse proxy IP whitelist for accurate rate limiting |
+| `GOOGLE_CLIENT_ID` | Server | `...apps.googleusercontent.com` | Google Cloud Console OAuth 2.0 Client ID |
+| `GOOGLE_CLIENT_SECRET` | Server | `GOCSPX-...` | Google Cloud Console OAuth 2.0 Secret |
+| `GEMINI_API_KEY` | Server | `AIzaSy...` | API key for AI Receipt Scanner vision extraction |
 
-- `client/src/` — Next.js App Router (`app/`), reusable components (`components/`), API clients (`lib/`)
-- `server/app/` — FastAPI app: `api/v1/` (HTTP layer), `services/` (business logic), `schemas/` (Pydantic validation), `models/` (SQLAlchemy), `core/` (config, deps, domain errors)
-- `server/tests/` — pytest suite (API + service level, per-user isolation)
-- `server/migrations/` — Alembic migrations
-- `docs/` — architecture, ERD, product brief, maintenance runbook
+---
 
-Error contract: services raise typed `DomainError`s (`app/core/errors.py`);
-the API layer maps them to a stable JSON shape: `{"error": {"code": ..., "message": ...}}`.
-Authorization rule: every query is scoped to `current_user.id` — resource IDs
-from the client are never trusted for ownership.
+## Production Deployment Architecture
 
-
-## Login dengan Google (OAuth 2.0)
-
-Uangku mendukung autentikasi Google (OAuth 2.0 Authorization Code Flow). Pengguna baru yang mendaftar via Google otomatis dibuatkan akun dengan kategori default. Jika pengguna sudah memiliki akun email/password sebelumnya, akun akan otomatis ditautkan saat masuk menggunakan Google.
-
-### Langkah Konfigurasi Google Cloud Console:
-
-1. Buka [Google Cloud Console](https://console.cloud.google.com/) dan buat project baru (misal: `uangku-app`).
-2. Masuk ke menu **APIs & Services** > **OAuth consent screen**:
-   - Pilih tipe pengguna **External** lalu klik **Create**.
-   - Isi nama aplikasi (misal: `Uangku`), email dukungan pengguna, dan email kontak pengembang.
-   - Di bagian **Scopes**, pastikan scope dasar tersedia: `.../auth/userinfo.email`, `.../auth/userinfo.profile`, `openid`.
-   - Di bagian **Test users** (jika masih status Testing), tambahkan alamat email Google yang akan digunakan untuk pengujian.
-3. Masuk ke menu **APIs & Services** > **Credentials**:
-   - Klik **Create Credentials** > **OAuth client ID**.
-   - Pilih Application type: **Web application**.
-   - Masukkan nama client (misal: `Uangku Web Client`).
-    - Pada **Authorized JavaScript origins**, tambahkan:
-      - Development: `http://localhost:3000`
-      - Production: `https://uangku-web.my.id`
-    - Pada **Authorized redirect URIs**, tambahkan:
-      - Development: `http://localhost:3000/api/v1/auth/google/callback`
-      - Production: `https://uangku-web.my.id/api/v1/auth/google/callback`
-4. Salin nilai **Client ID** dan **Client Secret**, lalu masukkan ke `server/.env`:
-   ```env
-   GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-   GOOGLE_CLIENT_SECRET=your-google-client-secret
-   ```
-5. Restart backend server FastAPI. Tombol "Masuk dengan Google" dan "Daftar dengan Google" akan langsung berfungsi.
-## Production notes
-
-- Set `APP_ENV=production`, a strong `SECRET_KEY`, and `HTTPS_ONLY=true`.
-- Set `TRUSTED_PROXY_IPS` to the IP(s) of your reverse proxy (e.g. Nginx/Cloudflare) so rate limiting correctly identifies individual clients behind the proxy. Without this, all users share the same rate-limit bucket.
-- Run `alembic upgrade head` on deploy; never edit applied migrations.
-  Wajib: tanpa ini, query transaksi/dashboard gagal total (mis. kolom
-  `is_opening_balance` tidak ada di DB) dan semua halaman tampil
-  "Gagal memuat data". Cek dengan `alembic current` — harus di head terbaru.
-- Auth endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`) are rate-limited
-  in-app to 5 requests/minute per IP (SlowAPI); export to 30/minute and
-  dashboard/transaction-list to 60/minute. Storage is in-memory per process —
-  for multi-worker production, switch the limiter to Redis (see
-  `server/app/core/rate_limit.py`). For defense in depth, also put
-  login/register behind reverse-proxy rate limiting (e.g. nginx `limit_req`)
-  in production.
-- Session cookies are `httpOnly`, `SameSite=lax`, and expire after 7 days
-  (cookie `Max-Age` + absolute `issued_at` cap enforced server-side; logout
-  clears the server-side session). Deploying this change logs out all existing
-  sessions once (forced re-login).
-- Transaction dates are validated server-side: at most tomorrow (payday
-  tolerance) and year >= 2000 (422 otherwise); the client mirrors the rule
-  with Indonesian messages.
-- Unhandled server errors return a stable envelope (`INTERNAL_ERROR` 500,
-  `SERVICE_UNAVAILABLE` 503) with the traceback logged server-side only —
-  never leaked to clients.
-- The app is online-only: when the API is unreachable, mutations fail with a
-  clear error and are not queued or auto-retried; the server remains the
-  source of truth.
-- Recurring reminders are server-side monthly templates synced across devices.
-  They never create a transaction automatically: the user must confirm each due
-  reminder (manual confirmation, idempotent per month).
-- See `docs/architecture.md`, `docs/erd.md`, and `docs/product-brief.md` for deeper design docs.
-
-## Production Readiness & Deployment
-
-Arsitektur produksi saat ini (2026-09):
-
-```text
-Pengguna (Browser / Mobile PWA)
-      │ HTTPS
+```
+Internet Users (Desktop Browser / Mobile PWA)
+      │
+      │ HTTPS (TLS 1.3)
       ▼
-uangku-web.my.id ──► Vercel (frontend Next.js)
-      │  rewrite /api/* ──► Render (backend FastAPI: uangku-api.onrender.com)
-      │                         │  SSL (?sslmode=require)
-      │                         ▼
-      │                    PostgreSQL produksi
+uangku-web.my.id ───► Vercel Edge Network (Next.js 16)
+      │
+      │ /api/* Rewrites (Secure HTTPS)
       ▼
-DNS: Idwebhost (NS1/NS2.IDWEBHOST.ID) → A @ 216.198.79.1,
-     CNAME www → <id>.vercel-dns-017.com (lihat Vercel Domains)
+Render Managed Containers (FastAPI ASGI Service)
+      │
+      │ PostgreSQL SSL Connection (?sslmode=require)
+      ▼
+Managed PostgreSQL Production Cluster
 ```
 
-- **Frontend**: project Vercel `uangku`, Root Directory `client`, auto-deploy
-  dari branch `master`. Custom domain `uangku-web.my.id` (apex = Production,
-  `www` + `uangku-website.vercel.app` redirect 308 ke apex).
-- **Backend**: service Render `uangku-api` (Docker dari `server/Dockerfile`),
-  auto-deploy dari branch `master`. `entrypoint.sh` menjalankan
-  `alembic upgrade head` otomatis tiap deploy (`RUN_MIGRATIONS=true`).
-- **Detail operasional** (env produksi, domain, runbook insiden, jadwal
-  rutin): lihat `docs/maintenance.md`.
+- **Frontend**: Hosted on Vercel (`client` root directory). Production branch: `master`. Custom apex domain `uangku-web.my.id` with automatic 308 canonical redirects from `www` and Vercel preview domains.
+- **Backend**: Hosted on Render (`server/Dockerfile`). Production branch: `master`. `entrypoint.sh` automatically runs database migrations (`alembic upgrade head`) before booting Gunicorn/Uvicorn workers.
+- **Rate Limiting**: Built-in SlowAPI rate limiting protects sensitive routes (`/api/v1/auth/*` limited to 5 requests/minute per IP; export limited to 30 requests/minute).
 
-### Production Checklist
-1. **Environment Variables** (Render → Environment; Vercel → Settings):
-   - Backend (Render): `APP_ENV=production`, `SECRET_KEY` (acak, min 32 char),
-     `HTTPS_ONLY=true`, `DATABASE_URL` (pakai `?sslmode=require`),
-     `ALLOWED_ORIGINS=https://uangku-web.my.id`,
-     `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`.
-   - Frontend (Vercel): `SERVER_URL=https://uangku-api.onrender.com`
-     (target rewrite `/api/*`, server-side only).
-2. **Database Migrations**: otomatis via `entrypoint.sh` saat deploy backend;
-   verifikasi di log Render (`Migrations complete.`).
-3. **Verification Gate**:
-   ```bash
-   mise run test    # server pytest + client vitest
-   mise run lint    # Ruff & ESLint
-   mise run build   # Next.js production build
-   ```
+---
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE) © 2026 Ridzkyan Buti Pratama (Kyan).
