@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toMonthKey } from "@/lib/date";
 import { MonthlyWrapupModal } from "./MonthlyWrapupModal";
 
 const mockGetDashboardSummary = vi.fn();
@@ -108,18 +109,19 @@ describe("MonthlyWrapupModal", () => {
   });
 
   it("disables prev and next buttons when there is no transaction in previous months", async () => {
+    const currentMonth = toMonthKey(new Date());
     mockGetDashboardSummary.mockResolvedValue({
       balance: "1000000",
       monthly_income: "2000000",
       monthly_expense: "1000000",
       expense_by_category: [],
       recent_transactions: [],
-      earliest_transaction_date: "2026-09-15",
+      earliest_transaction_date: `${currentMonth}-15`,
     });
 
-    mockListBudgets.mockResolvedValue({ items: [], month: "2026-09" });
+    mockListBudgets.mockResolvedValue({ items: [], month: currentMonth });
 
-    render(<MonthlyWrapupModal open={true} onClose={() => {}} initialMonth="2026-09" />);
+    render(<MonthlyWrapupModal open={true} onClose={() => {}} initialMonth={currentMonth} />);
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /bulan sebelumnya/i })).toBeTruthy();
@@ -128,7 +130,7 @@ describe("MonthlyWrapupModal", () => {
     const prevButton = screen.getByRole("button", { name: /bulan sebelumnya/i });
     const nextButton = screen.getByRole("button", { name: /bulan berikutnya/i });
 
-    // Karena earliest_transaction_date = 2026-09 dan initialMonth = 2026-09 (bulan saat ini):
+    // Karena earliest_transaction_date = currentMonth dan initialMonth = currentMonth (bulan saat ini):
     // Tombol < harus nonaktif (di bulan sebelumnya belum ada transaksi)
     expect(prevButton.hasAttribute("disabled")).toBe(true);
     // Tombol > harus nonaktif (sudah di bulan saat ini / terbaru)
