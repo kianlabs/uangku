@@ -104,3 +104,9 @@ jobs:
         working-directory: server
       - run: npx playwright test
         working-directory: client
+      # Hentikan backend sebelum post-step. Tanpa ini proses uvicorn (dan
+      # induknya `uv`) tetap hidup, memegang lock cache uv, dan post-step
+      # setup-uv gagal dengan exit code 2 walau semua tes lulus.
+      - name: Stop backend
+        if: always()
+        run: pkill -f "uvicorn app.main:app" || true
