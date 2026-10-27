@@ -22,26 +22,48 @@ Multi-worker note:
   ``Limiter(key_func=get_client_ip, storage_uri="redis://localhost:6379")``.
 """
 
+import ipaddress
+
 from fastapi import Request
 from slowapi import Limiter
 
 from app.core.config import settings
-from app.core.csrf import is_loopback_peer
+
+
+def _is_trusted_proxy(ip: str) -> bool:
+    """True bila IP adalah proxy tepercaya (CIDR-aware) atau loopback."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
+        addr = addr.ipv4_mapped
+    if addr.is_loopback:
+        return True
+    return any(addr in net for net in settings.trusted_proxy_networks)
 
 
 def get_client_ip(request: Request) -> str:
-    """Return the real client IP, accounting for trusted reverse proxies."""
+    """Return the real client IP, accounting for trusted reverse proxies.
+
+    X-Forwarded-For hanya dipercaya bila koneksi langsung datang dari proxy
+    tepercaya, dan hop dibaca dari KANAN (hop yang ditambahkan proxy kita),
+    bukan entri pertama yang bisa dipalsukan client.
+    """
     direct_ip = request.client.host if request.client else "unknown"
 
-    # X-Forwarded-For hanya dari proxy tepercaya (eksplisit atau loopback,
-    # konsisten dengan CSRF middleware).
-    if direct_ip in settings.trusted_proxy_set or is_loopback_peer(direct_ip):
-        forwarded_for = request.headers.get("X-Forwarded-For", "")
-        if forwarded_for:
-            # X-Forwarded-For may be a comma-separated list; first entry is client IP.
-            client_ip = forwarded_for.split(",")[0].strip()
-            if client_ip:
-                return client_ip
+    if not _is_trusted_proxy(direct_ip):
+        return direct_ip
+
+    forwarded_for = request.headers.get("X-Forwarded-For", "")
+    hops = [hop.strip() for hop in forwarded_for.split(",") if hop.strip()]
+    for hop in reversed(hops):
+        try:
+            ipaddress.ip_address(hop)
+        except ValueError:
+            continue
+        if not _is_trusted_proxy(hop):
+            return hop
 
     return direct_ip
 

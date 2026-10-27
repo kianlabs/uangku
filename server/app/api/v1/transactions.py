@@ -204,23 +204,57 @@ def delete_transaction_endpoint(
     return Response(status_code=204)
 
 
+_MAX_RECEIPT_BYTES = 5 * 1024 * 1024
+_ALLOWED_IMAGE_TYPES = frozenset(
+    {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+)
+
+
+def _sniff_image_mime(data: bytes) -> str | None:
+    """Deteksi tipe gambar dari magic bytes, bukan dari Content-Type client."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if (
+        len(data) >= 12
+        and data[4:8] == b"ftyp"
+        and data[8:12] in {b"heic", b"heix", b"hevc", b"heif", b"mif1"}
+    ):
+        return "image/heic"
+    return None
+
+
+async def _read_limited(file: UploadFile, limit: int) -> bytes:
+    """Baca upload dengan batas ukuran, tanpa memuat seluruh body lebih dulu."""
+    buf = bytearray()
+    while chunk := await file.read(64 * 1024):
+        if len(buf) + len(chunk) > limit:
+            raise HTTPException(
+                status_code=413,
+                detail={
+                    "code": "FILE_TOO_LARGE",
+                    "message": "Ukuran file struk maksimal 5 MB.",
+                },
+            )
+        buf.extend(chunk)
+    return bytes(buf)
+
+
 @router.post("/scan-receipt", response_model=ScanReceiptResponse)
-@limiter.limit("30/minute")
+@limiter.limit("10/minute")
 async def scan_receipt(
     request: Request,
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Ekstraksi data struk belanja dengan AI OCR multimodal (Gemini) atau fallback cerdas.
     Menerima file gambar struk dan mengembalikan data transaksi terstruktur.
     """
-    try:
-        content = await file.read()
-    except (OSError, ValueError, RuntimeError) as exc:
-        raise HTTPException(
-            status_code=400,
-            detail={"code": "FILE_READ_ERROR", "message": f"Gagal membaca file: {exc}"},
-        ) from exc
+    content = await _read_limited(file, _MAX_RECEIPT_BYTES)
 
     if not content:
         raise HTTPException(
@@ -228,7 +262,17 @@ async def scan_receipt(
             detail={"code": "EMPTY_FILE", "message": "File struk tidak boleh kosong."},
         )
 
-    mime_type = file.content_type or "image/jpeg"
+    # Tipe ditentukan dari isi file; Content-Type dari client tidak dipercaya.
+    mime_type = _sniff_image_mime(content)
+    if mime_type is None or mime_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=415,
+            detail={
+                "code": "UNSUPPORTED_MEDIA_TYPE",
+                "message": "Format struk harus JPEG, PNG, WEBP, atau HEIC.",
+            },
+        )
+
     filename = file.filename or "receipt.jpg"
 
     extracted = await process_receipt_image(

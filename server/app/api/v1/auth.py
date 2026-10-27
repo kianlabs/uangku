@@ -19,6 +19,8 @@ from app.schemas.auth import LoginRequest, RegisterRequest, UserResponse
 from app.services.auth import _seed_default_categories, authenticate_user, register_user
 from app.services.demo import seed_demo_data
 from app.services.google_auth import (
+    GoogleEmailUnverifiedError,
+    GoogleLinkRequiredError,
     build_google_auth_url,
     exchange_google_code,
     fetch_google_user_info,
@@ -199,12 +201,26 @@ async def google_callback(
         user_info = await fetch_google_user_info(access_token)
         google_id = user_info.get("sub")
         email = user_info.get("email")
+        email_verified = user_info.get("email_verified") is True
         if not google_id or not email:
             return RedirectResponse(
                 url="/masuk?error=google_auth_failed", status_code=302
             )
 
-        user = find_or_create_google_user(db, google_id=google_id, email=email)
+        user = find_or_create_google_user(
+            db,
+            google_id=google_id,
+            email=email,
+            email_verified=email_verified,
+        )
+    except GoogleEmailUnverifiedError:
+        return RedirectResponse(
+            url="/masuk?error=google_email_unverified", status_code=302
+        )
+    except GoogleLinkRequiredError:
+        return RedirectResponse(
+            url="/masuk?error=google_link_required", status_code=302
+        )
     except DomainError:
         return RedirectResponse(url="/masuk?error=google_auth_failed", status_code=302)
 

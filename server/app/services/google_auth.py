@@ -72,8 +72,26 @@ async def fetch_google_user_info(access_token: str) -> dict:
         return resp.json()
 
 
-def find_or_create_google_user(db: Session, google_id: str, email: str) -> User:
-    """Cari atau buat akun pengguna berdasarkan akun Google."""
+class GoogleEmailUnverifiedError(Exception):
+    """Email dari Google belum terverifikasi (email_verified != true)."""
+
+
+class GoogleLinkRequiredError(Exception):
+    """Akun dengan email sama sudah punya password — linking butuh bukti kepemilikan."""
+
+
+def find_or_create_google_user(
+    db: Session, google_id: str, email: str, email_verified: bool = False
+) -> User:
+    """Cari atau buat akun pengguna berdasarkan akun Google.
+
+    Keamanan:
+    - ``email_verified`` wajib true; email yang belum terverifikasi tidak boleh
+      dipakai sebagai kunci identitas.
+    - Auto-link berdasarkan email DITOLAK bila akun lokal sudah punya password.
+      Tanpa ini, penyerang bisa mendaftar dengan email korban lebih dulu lalu
+      menunggu korban login Google (pre-hijacking / account takeover).
+    """
     normalized_email = email.strip().lower()
 
     # 1. Cari berdasarkan google_id
@@ -81,9 +99,16 @@ def find_or_create_google_user(db: Session, google_id: str, email: str) -> User:
     if user:
         return user
 
-    # 2. Cari berdasarkan email (linking akun yang sebelumnya daftar lewat email/password)
+    if not email_verified:
+        raise GoogleEmailUnverifiedError()
+
+    # 2. Email sudah terpakai akun lokal
     user = db.scalar(select(User).where(User.email == normalized_email))
     if user:
+        if user.password_hash is not None:
+            # Akun password milik seseorang (mungkin korban, mungkin penyerang).
+            # Jangan pernah menautkan otomatis — minta login password dulu.
+            raise GoogleLinkRequiredError()
         user.google_id = google_id
         db.commit()
         db.refresh(user)

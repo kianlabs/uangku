@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
+from app.core.config import settings
 from app.core.rate_limit import get_client_ip
 
 
@@ -50,23 +51,26 @@ def test_no_proxy_ignores_xff_header():
 # ---------------------------------------------------------------------------
 
 
-def test_trusted_proxy_reads_xff():
-    """Request dari trusted proxy → pakai IP pertama di X-Forwarded-For."""
+def test_trusted_proxy_reads_xff(monkeypatch):
+    """Request dari trusted proxy → pakai IP client di X-Forwarded-For."""
     # 10.0.0.1 adalah IP proxy, 5.6.7.8 adalah client asli
+    monkeypatch.setattr(settings, "trusted_proxy_ips", "10.0.0.1")
     request = _make_request("10.0.0.1", x_forwarded_for="5.6.7.8")
-    with patch("app.core.rate_limit.settings") as mock_settings:
-        mock_settings.trusted_proxy_set = frozenset({"10.0.0.1"})
-        ip = get_client_ip(request)
-    assert ip == "5.6.7.8"
+    assert get_client_ip(request) == "5.6.7.8"
 
 
-def test_trusted_proxy_xff_chain_takes_first():
-    """X-Forwarded-For chain (multi-hop) → ambil IP paling pertama (client asli)."""
+def test_trusted_proxy_xff_chain_skips_trusted_hops(monkeypatch):
+    """Chain multi-hop: hop tepercaya dilewati, ambil client asli dari kanan."""
+    monkeypatch.setattr(settings, "trusted_proxy_ips", "10.0.0.0/8")
     request = _make_request("10.0.0.1", x_forwarded_for="5.6.7.8, 10.0.0.2, 10.0.0.1")
-    with patch("app.core.rate_limit.settings") as mock_settings:
-        mock_settings.trusted_proxy_set = frozenset({"10.0.0.1"})
-        ip = get_client_ip(request)
-    assert ip == "5.6.7.8"
+    assert get_client_ip(request) == "5.6.7.8"
+
+
+def test_spoofed_xff_prefix_is_ignored(monkeypatch):
+    """Client memalsukan entri kiri XFF; proxy menambahkan IP asli di kanan."""
+    monkeypatch.setattr(settings, "trusted_proxy_ips", "10.0.0.0/8")
+    request = _make_request("10.0.0.1", x_forwarded_for="1.2.3.4, 203.0.113.9")
+    assert get_client_ip(request) == "203.0.113.9"
 
 
 def test_trusted_proxy_no_xff_falls_back_to_client_host():
