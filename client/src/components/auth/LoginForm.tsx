@@ -31,7 +31,11 @@ export function LoginForm() {
         ? "Sesi autentikasi Google kedaluwarsa. Silakan coba lagi."
         : oauthError === "google_auth_failed"
           ? "Autentikasi Google gagal atau dibatalkan."
-          : null;
+          : oauthError === "google_email_unverified"
+            ? "Email Google kamu belum terverifikasi, jadi belum bisa dipakai masuk."
+            : oauthError === "google_link_required"
+              ? "Email ini sudah terdaftar dengan password. Masuk dengan password dulu, lalu hubungkan Google dari pengaturan."
+              : null;
   const activeError = serverError || oauthErrorMessage;
 
   function validate(): typeof errors {

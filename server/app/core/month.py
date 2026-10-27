@@ -14,14 +14,15 @@ def parse_month(month_str: str) -> tuple[date, date]:
     try:
         parts = month_str.split("-")
         year, month = int(parts[0]), int(parts[1])
-        if not (1 <= month <= 12):
+        # Batas atas 9998: date_to_exclusive butuh year+1 sehingga 9999-12
+        # akan melempar ValueError (dulu bocor sebagai 500).
+        if not (1 <= month <= 12) or not (2000 <= year <= 9998):
             raise InvalidMonthError()
         date_from = date(year, month, 1)
+        if month == 12:
+            date_to_exclusive = date(year + 1, 1, 1)
+        else:
+            date_to_exclusive = date(year, month + 1, 1)
     except (ValueError, OverflowError):
         raise InvalidMonthError() from None
-
-    if month == 12:
-        date_to_exclusive = date(year + 1, 1, 1)
-    else:
-        date_to_exclusive = date(year, month + 1, 1)
     return date_from, date_to_exclusive

@@ -134,10 +134,15 @@ async def extract_receipt_with_gemini(
 
     try:
         async with httpx.AsyncClient(timeout=25.0) as client:
+            # API key dikirim lewat header, bukan query string: URL sering
+            # tercatat di access log / proxy / APM dan akan membocorkan key.
             resp = await client.post(
-                f"{GEMINI_API_URL}?key={api_key}",
+                GEMINI_API_URL,
                 json=payload,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": api_key,
+                },
             )
             if resp.status_code != 200:
                 logger.warning(

@@ -21,7 +21,7 @@ from app.api.v1.transactions import router as transactions_router
 from app.api.v1.transactions import scan_receipt
 from app.api.v1.user import router as user_router
 from app.core.config import settings
-from app.core.deps import get_db
+from app.core.deps import get_current_user, get_db
 from app.core.rate_limit import limiter
 from app.schemas.transaction import ScanReceiptResponse
 
@@ -37,9 +37,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="UangKu API",
-    docs_url=None if settings.app_env == "production" else "/docs",
-    redoc_url=None if settings.app_env == "production" else "/redoc",
-    openapi_url=None if settings.app_env == "production" else "/openapi.json",
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
     lifespan=lifespan,
 )
 app.state.limiter = limiter
@@ -66,6 +66,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "same-origin"
+        # Respons API berisi data finansial: jangan pernah disimpan di cache
+        # browser, proxy, atau disk.
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
         if settings.https_only:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=31536000; includeSubDomains"
@@ -198,12 +202,15 @@ app.include_router(export_router, prefix="/api/v1")
 app.include_router(recurring_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 
-# Route alias untuk /api/transactions/scan-receipt
+# Route alias untuk /api/transactions/scan-receipt.
+# Wajib punya dependency auth yang sama — add_api_route tidak mewarisi
+# dependency dari router asal.
 app.add_api_route(
     "/api/transactions/scan-receipt",
     scan_receipt,
     methods=["POST"],
     response_model=ScanReceiptResponse,
+    dependencies=[Depends(get_current_user)],
     tags=["transactions"],
 )
 

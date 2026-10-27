@@ -29,6 +29,7 @@ services:
       HTTPS_ONLY: ${HTTPS_ONLY:-true}
       INVITE_CODE: ${INVITE_CODE:-}
       TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-127.0.0.1}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?ALLOWED_ORIGINS wajib diisi, mis. https://uangku-web.my.id}
       RUN_MIGRATIONS: "true"
       WEB_CONCURRENCY: 2
     ports:

@@ -13,6 +13,9 @@ from app.models.category import Category
 from app.models.user import User
 
 _pwd_hash = PasswordHash([Argon2Hasher()])
+# Hash statis untuk menyamakan waktu verifikasi saat email tidak ada / akun
+# Google-only, supaya respons tidak membocorkan keberadaan akun lewat timing.
+_DUMMY_HASH = _pwd_hash.hash("uangku-dummy-password-for-timing-equalization")
 _DEFAULT_EXPENSE_CATEGORIES = [
     "Makanan", "Transportasi", "Belanja", "Hiburan",
     "Tagihan", "Listrik & Air", "Internet & Telepon", "Langganan Digital",
@@ -47,7 +50,13 @@ def register_user(db: Session, email: str, password: str) -> User:
 def authenticate_user(db: Session, email: str, password: str) -> User:
     normalized = email.strip().lower()
     user = db.scalar(select(User).where(User.email == normalized))
-    if not user or not _pwd_hash.verify(password, user.password_hash):
+    # Akun Google-only punya password_hash=None. Tanpa cabang ini, pwdlib
+    # melempar TypeError -> 500, yang jadi oracle enumerasi akun (500 vs 401).
+    # Dummy verify menyamakan waktu respons dengan akun yang benar-benar ada.
+    if user is None or not user.password_hash:
+        _pwd_hash.verify(password, _DUMMY_HASH)
+        raise InvalidCredentialsError()
+    if not _pwd_hash.verify(password, user.password_hash):
         raise InvalidCredentialsError()
     return user
 

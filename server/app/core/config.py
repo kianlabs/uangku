@@ -1,5 +1,19 @@
+import ipaddress
+import logging
+import re
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger("uangku.config")
+
+# Nilai SECRET_KEY yang dianggap placeholder/publik. Ditolak di production.
+_PLACEHOLDER_SECRET = re.compile(
+    r"(change[-_ ]?me|change[-_ ]?in[-_ ]?production|dev[-_ ]?secret|"
+    r"secret[-_ ]?key|random[-_ ]?string|example|placeholder|ganti[-_ ]?dengan)",
+    re.IGNORECASE,
+)
 
 
 class Settings(BaseSettings):
@@ -11,7 +25,9 @@ class Settings(BaseSettings):
     )
     secret_key: str = "change-me-in-production"
     https_only: bool = False
-    app_env: str = "development"
+    # Literal: typo seperti "prod"/"Production" gagal saat startup, bukan
+    # diam-diam mematikan seluruh guard produksi.
+    app_env: Literal["development", "staging", "production", "test"] = "development"
     # Comma-separated list of trusted reverse-proxy IPs (e.g. "10.0.0.1,10.0.0.2").
     # When set, X-Forwarded-For is trusted only for requests coming from these IPs.
     # Leave empty in local dev (rate-limiting falls back to request.client.host).
@@ -63,24 +79,59 @@ class Settings(BaseSettings):
                 hosts.add(raw.split(":")[0])
         return frozenset(hosts)
 
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
+    @property
+    def trusted_proxy_networks(self) -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+        """Trusted proxy list, CIDR-aware (e.g. "10.0.0.0/8,172.18.0.0/16")."""
+        networks = []
+        for item in self.trusted_proxy_ips.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                networks.append(ipaddress.ip_network(item, strict=False))
+            except ValueError:
+                logger.warning("TRUSTED_PROXY_IPS: entri tidak valid diabaikan: %r", item)
+        return tuple(networks)
+
     @model_validator(mode="after")
     def _check_production_secret(self) -> "Settings":
-        if self.app_env == "production":
-            if self.secret_key == "change-me-in-production":
+        if self.is_production:
+            if _PLACEHOLDER_SECRET.search(self.secret_key):
                 raise ValueError(
-                    "SECRET_KEY must be changed from the default value in production."
+                    "SECRET_KEY masih berupa nilai placeholder/publik. "
+                    "Generate dengan: openssl rand -hex 32"
                 )
             if len(self.secret_key) < 32:
                 raise ValueError(
                     "SECRET_KEY must be at least 32 characters in production."
                 )
+            if len(set(self.secret_key)) < 8:
+                raise ValueError(
+                    "SECRET_KEY entropinya terlalu rendah (karakter unik < 8)."
+                )
         return self
 
     @model_validator(mode="after")
     def _check_production_transport(self) -> "Settings":
-        if self.app_env == "production" and not self.https_only:
+        if self.is_production and not self.https_only:
             raise ValueError(
                 "HTTPS_ONLY must be true in production so session cookies are never sent over HTTP."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_production_origins(self) -> "Settings":
+        # Tidak fail-fast: CSRF sudah fail-closed. Warning supaya operator
+        # tidak "memperbaiki" 403 dengan melonggarkan pengecekan origin.
+        if self.is_production and not self.allowed_origins:
+            logger.warning(
+                "ALLOWED_ORIGINS kosong di production — semua request tulis "
+                "(POST/PATCH/DELETE) akan ditolak 403 CSRF_FAILED. "
+                "Set ALLOWED_ORIGINS=https://<domain-frontend>."
             )
         return self
 

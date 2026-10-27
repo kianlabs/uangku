@@ -179,6 +179,7 @@ def test_google_callback_links_existing_email(
     mock_fetch_info.return_value = {
         "sub": "google-existing-999",
         "email": "existing@example.com",
+        "email_verified": True,
     }
 
     with patch.object(settings, "google_client_id", "cid"), patch.object(
@@ -194,11 +195,48 @@ def test_google_callback_links_existing_email(
             follow_redirects=False,
         )
         assert cb_res.status_code == 302
-        assert "/beranda" in cb_res.headers["location"]
+        # Akun dengan password TIDAK boleh di-autolink (pre-hijacking).
+        assert "google_link_required" in cb_res.headers["location"]
 
         user = db_session.scalar(
             select(User).where(User.email == "existing@example.com")
         )
         assert user is not None
-        assert user.google_id == "google-existing-999"
-        assert user.password_hash is not None  # original password intact
+        assert user.google_id is None  # tidak tertaut
+        assert user.password_hash is not None  # password asli utuh
+
+
+@patch("app.api.v1.auth.exchange_google_code", new_callable=AsyncMock)
+@patch("app.api.v1.auth.fetch_google_user_info", new_callable=AsyncMock)
+def test_google_callback_rejects_unverified_email(
+    mock_fetch_info, mock_exchange, client, db_session
+):
+    """email_verified=false tidak boleh dipakai sebagai kunci identitas."""
+    mock_exchange.return_value = {"access_token": "fake-access-token-3"}
+    mock_fetch_info.return_value = {
+        "sub": "google-unverified-1",
+        "email": "unverified@example.com",
+        "email_verified": False,
+    }
+
+    with patch.object(settings, "google_client_id", "cid"), patch.object(
+        settings, "google_client_secret", "sec"
+    ):
+        login_res = client.get("/api/v1/auth/google/login", follow_redirects=False)
+        from urllib.parse import parse_qs, urlparse
+
+        state = parse_qs(urlparse(login_res.headers["location"]).query)["state"][0]
+
+        cb_res = client.get(
+            f"/api/v1/auth/google/callback?code=code_3&state={state}",
+            follow_redirects=False,
+        )
+        assert cb_res.status_code == 302
+        assert "google_email_unverified" in cb_res.headers["location"]
+
+    assert (
+        db_session.scalar(
+            select(User).where(User.email == "unverified@example.com")
+        )
+        is None
+    )
