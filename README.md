@@ -1,4 +1,4 @@
-# UangKu — Modern Personal Finance Tracker & AI Receipt Assistant
+# UangKu — Personal Finance Tracker with AI Receipt Scanning
 
 [![CI](https://github.com/kianlabs/uangku/actions/workflows/ci.yml/badge.svg)](https://github.com/kianlabs/uangku/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-uangku--web.my.id-024691?logo=vercel&logoColor=white)](https://uangku-web.my.id)
@@ -11,13 +11,13 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-Production-ready, mobile-first personal finance tracker for daily income, expense tracking, and intelligent budgeting. Live in production with custom domain, automated CI/CD, and AI-driven document intelligence.
+A mobile-first personal finance tracker for individuals who want daily income/expense tracking, category budgets, and AI receipt scanning — live in production with Google sign-in, automated CI/CD, and PDF/CSV export.
 
-🌐 **Production URL:** [https://uangku-web.my.id](https://uangku-web.my.id)
+🌐 **Live demo:** [https://uangku-web.my.id](https://uangku-web.my.id)
 
 ---
 
-## Visual Showcase
+## Screenshots
 
 | Landing Page | Google OAuth & Session Login |
 |:---:|:---:|
@@ -29,11 +29,11 @@ Production-ready, mobile-first personal finance tracker for daily income, expens
 
 ---
 
-## Key Highlights & Featured Innovations
+## Features
 
-- 🧾 **AI Receipt Scanner (Vision OCR)**: Capture receipts directly using a smartphone camera or file upload (`POST /api/v1/transactions/scan-receipt`). Powered by Vision LLM / OCR parsing, it automatically extracts the merchant name, transaction date, total amount, and predicts the expense category with instant form pre-filling in both `QuickAddModal` and the Add Transaction page.
+- 🧾 **AI Receipt Scanner (Vision OCR)**: Capture receipts with a smartphone camera or file upload (`POST /api/v1/transactions/scan-receipt`). Vision LLM / OCR parsing extracts the merchant name, transaction date, total amount, and predicts the expense category, with instant form pre-filling in both `QuickAddModal` and the Add Transaction page.
 - 🤖 **Mochi Mascot Guide & Monthly Wrap-Up**: Interactive personal finance agent offering retrospective monthly summaries, savings ratio tracking, top spending categories, and AI-driven budget adherence insights.
-- 🎯 **Indicator Spotlight Tour**: Guided onboarding spotlighting essential metrics—Safe-to-Spend calculations, overall balance vs. safe cushion, category budget pacing, and daily recording streaks.
+- 🎯 **Indicator Spotlight Tour**: Guided onboarding spotlighting essential metrics — Safe-to-Spend calculations, overall balance vs. safe cushion, category budget pacing, and daily recording streaks.
 - 📊 **Dynamic Budgeting Engine**: Real-time budget tracking with 75% and 90% threshold warning notifications, 400ms debounced autosave, zero-flicker UI, and strict chronological month navigation.
 - 🔄 **Idempotent Recurring Reminders**: Server-side monthly transaction templates synchronized across devices, requiring explicit user confirmation before recording to prevent accidental duplicate entries.
 - 🔐 **Enterprise Auth & Security**: Secure server-side sessions (`httpOnly`, `SameSite=lax`, 7-day TTL, Argon2id hashing) alongside Google OAuth 2.0 with automatic account linking and strict user-scoped row-level queries.
@@ -111,7 +111,7 @@ flowchart TD
 
 ---
 
-## Quickstart & Local Development
+## Quickstart
 
 ### Option A: Docker Compose (Fastest)
 
@@ -177,9 +177,7 @@ The application is now accessible at:
 
 ---
 
-## Verification & Testing Suite
-
-Execute the comprehensive automated test suite across both stacks:
+## Testing
 
 ```bash
 # Run both backend pytest and frontend vitest suites
@@ -210,8 +208,8 @@ cd client && npm test && npm run lint && npm run build
 
 | Variable | Scope | Example | Description |
 |---|---|---|---|
-| `DATABASE_URL` | Server | `postgresql+psycopg://user:pass@localhost:5432/uangku` | Primary application database |
-| `DATABASE_URL_TEST` | Server | `postgresql+psycopg://user:pass@localhost:5432/uangku_test` | Dedicated pytest database |
+| `DATABASE_URL` | Server | `postgresql+psycopg://...` | Primary database connection string |
+| `DATABASE_URL_TEST` | Server | `postgresql+psycopg://...` | Isolated test database |
 | `SECRET_KEY` | Server | `random_string_min_32_characters` | Required session signing secret |
 | `HTTPS_ONLY` | Server | `false` (dev) / `true` (prod) | Enforces SSL flags on session cookies |
 | `SERVER_URL` | Client | `http://localhost:8000` | Target URL for Next.js server-side API proxying |
@@ -223,7 +221,7 @@ cd client && npm test && npm run lint && npm run build
 
 ---
 
-## Production Deployment Architecture
+## Production Deployment
 
 ```
 Internet Users (Desktop Browser / Mobile PWA)
@@ -244,6 +242,16 @@ Managed PostgreSQL Production Cluster
 - **Frontend**: Hosted on Vercel (`client` root directory). Production branch: `master`. Custom apex domain `uangku-web.my.id` with automatic 308 canonical redirects from `www` and Vercel preview domains.
 - **Backend**: Hosted on Render (`server/Dockerfile`). Production branch: `master`. `entrypoint.sh` automatically runs database migrations (`alembic upgrade head`) before booting Gunicorn/Uvicorn workers.
 - **Rate Limiting**: Built-in SlowAPI rate limiting protects sensitive routes (`/api/v1/auth/*` limited to 5 requests/minute per IP; export limited to 30 requests/minute).
+
+---
+
+## What I Learned
+
+- **Owning the full stack end to end.** Frontend (Next.js), backend (FastAPI), database (PostgreSQL), and deployment (Vercel + Render) in one repo taught me how a production request actually travels — and where each layer can fail.
+- **Auth is a security boundary, not a login form.** `httpOnly` cookies, Argon2id hashing, Google OAuth with account linking, and strict user-scoped queries: every one of those exists because the alternative is a data leak.
+- **Idempotency is a product feature.** Recurring reminders require explicit user confirmation before recording, because a duplicated transaction is worse than a missing one.
+- **AI features need a human in the loop.** The receipt scanner extracts merchant, date, amount, and category — but the user confirms the pre-filled form before anything is saved. The model assists; it never commits.
+- **Tests across the stack pay off.** 320+ backend tests, 175+ frontend tests, and Playwright E2E caught regressions that no single layer's tests would have found.
 
 ---
 
